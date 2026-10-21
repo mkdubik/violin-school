@@ -1,0 +1,4572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Violin School</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0e0d;
+      color: #f5f0e8;
+      padding: 1.5rem;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .app.wide { max-width: 780px; }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 1.25rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: #1c1a18;
+      border-radius: 10px;
+      padding: 0.35rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.6rem 0.35rem;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #8a8278;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab.active {
+      background: #2a2724;
+      color: #f5f0e8;
+    }
+
+    .subtabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #2a2724;
+    }
+
+    .subtab {
+      padding: 0.5rem 0.9rem;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: #8a8278;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: -1px;
+    }
+
+    .subtab.active {
+      color: #f5f0e8;
+      border-bottom-color: #d4a574;
+    }
+
+    .btn-list.rhythm-group { display: none; }
+    .btn-list.rhythm-group.active { display: flex; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #8a8278;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card-btn {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: #1c1a18;
+      color: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      text-align: left;
+    }
+
+    .card-btn:hover { background: #262320; }
+    .card-btn:active { transform: scale(0.98); }
+
+    .card-btn.active,
+    .card-btn.targeted {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, #1c1a18);
+    }
+
+    .card-btn .icon {
+      font-size: 1.5rem;
+      font-weight: 700;
+      width: 2.5rem;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .card-btn .info { flex: 1; }
+
+    .card-btn .name { font-weight: 500; }
+
+    .card-btn .detail {
+      font-size: 0.8rem;
+      color: #8a8278;
+      margin-top: 0.15rem;
+    }
+
+    .card-btn .indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3a3632;
+      flex-shrink: 0;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .card-btn.active .indicator,
+    .card-btn.targeted .indicator {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .card-btn[data-string="g"] { --accent: #c47a3a; }
+    .card-btn[data-string="d"] { --accent: #5a9e6f; }
+    .card-btn[data-string="a"] { --accent: #4a8fc4; }
+    .card-btn[data-string="e"] { --accent: #b85c8a; }
+
+    .card-btn:is([data-rhythm="a"], [data-rhythm="aPiano"]) { --accent: #c47a3a; }
+    .card-btn:is([data-rhythm="b"], [data-rhythm="bPiano"]) { --accent: #5a9e6f; }
+    .card-btn:is([data-rhythm="c"], [data-rhythm="cPiano"]) { --accent: #4a8fc4; }
+    .card-btn:is([data-rhythm="c2"], [data-rhythm="c2Piano"]) { --accent: #6a7ec4; }
+    .card-btn:is([data-rhythm="d"], [data-rhythm="dPiano"]) { --accent: #b85c8a; }
+
+    .collection-view { display: none; text-align: left; }
+    .collection-view.active { display: block; }
+    .collection-view .piece-title { margin-bottom: 1rem; }
+
+    .piece-view { display: none; text-align: left; }
+    .piece-view.active { display: block; }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      padding: 0.35rem 0.5rem;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #8a8278;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .back:hover { color: #c8c0b4; }
+
+    .piece-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .piece-meta {
+      font-size: 0.8rem;
+      color: #8a8278;
+      margin-bottom: 1rem;
+    }
+
+    .sheet-wrap {
+      background: #f5f0e8;
+      border-radius: 12px;
+      padding: 0.75rem 0.6rem;
+      overflow: hidden;
+    }
+
+    .sheet-wrap svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .piece-status {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .piece-status .now-playing,
+    .piece-view .piece-status .listen-block { margin-top: 0; }
+
+    @media (min-width: 640px) {
+      .piece-status { grid-template-columns: 1fr 1fr; }
+    }
+
+    .now-playing {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: #1c1a18;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .now-playing.live {
+      border-color: var(--accent, #d4a574);
+    }
+
+    .symbol-card {
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.9rem 1.1rem;
+      background: #1c1a18;
+      border-radius: 12px;
+    }
+
+    .symbol-glyph {
+      flex-shrink: 0;
+      width: 72px;
+      padding: 4px;
+      background: #f5f0e8;
+      border-radius: 8px;
+    }
+
+    .symbol-glyph svg { display: block; width: 100%; height: auto; }
+
+    .symbol-text { flex: 1; min-width: 0; }
+
+    .symbol-name {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .symbol-facts {
+      list-style: none;
+      display: grid;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #c8c0b4;
+    }
+
+    .symbol-facts strong {
+      color: var(--accent, #d4a574);
+      font-weight: 600;
+    }
+
+    .now-playing .label,
+    .symbol-card .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+      margin-bottom: 0.35rem;
+    }
+
+    .now-playing .note-name {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--accent, #d4a574);
+    }
+
+
+    .now-playing .note-hint {
+      font-size: 0.85rem;
+      color: #8a8278;
+      margin-top: 0.35rem;
+    }
+
+    .now-playing.with-fingerboard {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .now-playing .np-text { flex: 1; min-width: 0; }
+
+    .fingerboard { flex-shrink: 0; width: 104px; }
+    .fingerboard svg { display: block; width: 100%; height: auto; }
+    .fingerboard.idle { opacity: 0.5; }
+
+    .rhythm-display {
+      margin-top: 1.25rem;
+      padding: 1.25rem 1rem;
+      background: #1c1a18;
+      border-radius: 12px;
+      min-height: 5.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .rhythm-display.empty {
+      color: #5a5650;
+      font-size: 0.85rem;
+    }
+
+    .syllables {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.35rem 0.5rem;
+      line-height: 1.4;
+    }
+
+    .syllable {
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #8a8278;
+      transition: color 0.08s, background 0.08s, transform 0.08s;
+    }
+
+    .syllable.long { font-weight: 600; }
+
+    .syllable.hit {
+      color: #f5f0e8;
+      background: var(--accent, #c47a3a);
+      transform: scale(1.08);
+    }
+
+    .syllable.rest {
+      color: #5a5650;
+      font-style: italic;
+      border: 1px dashed #3a3632;
+    }
+
+    .syllable.rest.hit {
+      color: #8a8278;
+      background: #2a2724;
+      transform: none;
+    }
+
+    .bar {
+      color: #3a3632;
+      font-weight: 300;
+      padding: 0 0.15rem;
+      user-select: none;
+    }
+
+    .notation {
+      font-size: 1.35rem;
+      letter-spacing: 0.15em;
+      color: #8a8278;
+    }
+
+    .notation .hit {
+      color: var(--accent, #c47a3a);
+    }
+
+    .controls {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .controls button {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #3a3632;
+      border-radius: 8px;
+      background: #1c1a18;
+      color: #c8c0b4;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .controls button:hover { background: #262320; }
+
+    .slider-row {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: #8a8278;
+    }
+
+    .slider-row input {
+      flex: 1;
+      accent-color: #c47a3a;
+    }
+
+    .slider-row .value {
+      min-width: 3rem;
+      text-align: right;
+      color: #c8c0b4;
+    }
+
+    .hint {
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: #5a5650;
+      line-height: 1.5;
+    }
+
+    .listen-block {
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      background: #1c1a18;
+      border-radius: 12px;
+      border: 2px solid #2a2724;
+      transition: border-color 0.15s;
+    }
+
+    .listen-block.active {
+      border-color: #6a9ec4;
+    }
+
+    .listen-block.good {
+      border-color: #5a9e6f;
+    }
+
+    .listen-block.flat,
+    .listen-block.sharp,
+    .listen-block.off {
+      border-color: #c47a3a;
+    }
+
+    .listen-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .listen-btn {
+      flex-shrink: 0;
+      width: 3.25rem;
+      height: 3.25rem;
+      border: 2px solid #3a3632;
+      border-radius: 50%;
+      background: #262320;
+      color: #f5f0e8;
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .listen-btn:hover { background: #2f2b28; }
+
+    .listen-btn:active { transform: scale(0.96); }
+
+    .listen-btn.listening {
+      border-color: #6a9ec4;
+      background: color-mix(in srgb, #6a9ec4 22%, #262320);
+      box-shadow: 0 0 12px color-mix(in srgb, #6a9ec4 45%, transparent);
+    }
+
+    .listen-target {
+      flex: 1;
+      text-align: left;
+      min-width: 0;
+    }
+
+    .listen-target .label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+      margin-bottom: 0.2rem;
+    }
+
+    .listen-target .target-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #c8c0b4;
+    }
+
+    .listen-feedback {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: #8a8278;
+      text-align: left;
+      min-height: 2.6em;
+    }
+
+    .listen-feedback strong {
+      color: #f5f0e8;
+      font-weight: 600;
+    }
+
+    .listen-feedback.good strong { color: #7bc492; }
+
+    .listen-feedback.flat strong,
+    .listen-feedback.sharp strong,
+    .listen-feedback.off strong { color: #e0a86a; }
+
+    .piece-view .listen-block {
+      margin-top: 1rem;
+    }
+
+    .learn-section { display: none; text-align: left; }
+    .learn-section.active { display: block; }
+
+    .lesson-text {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #c8c0b4;
+      margin-bottom: 1rem;
+    }
+
+    .lesson-text strong { color: #f5f0e8; font-weight: 600; }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+    }
+
+    .chip {
+      padding: 0.4rem 0.85rem;
+      border: 1px solid #3a3632;
+      border-radius: 999px;
+      background: transparent;
+      color: #8a8278;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .chip.active {
+      border-color: #d4a574;
+      color: #f5f0e8;
+      background: color-mix(in srgb, #d4a574 14%, transparent);
+    }
+
+    .learn-group {
+      margin-top: 1.25rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+    }
+
+    .value-card {
+      display: block;
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.9rem 1.1rem 1rem;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: #1c1a18;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .value-card:hover { background: #262320; }
+
+    .value-card.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, #1c1a18);
+    }
+
+    .value-head {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .value-head .info { flex: 1; }
+    .value-head .name { font-weight: 500; }
+
+    .value-head .detail {
+      font-size: 0.8rem;
+      color: #8a8278;
+      margin-top: 0.15rem;
+      line-height: 1.4;
+    }
+
+    .value-rest {
+      flex-shrink: 0;
+      width: 42px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+      text-align: center;
+    }
+
+    .value-rest svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin-bottom: 0.25rem;
+      background: #f5f0e8;
+      border-radius: 6px;
+    }
+
+    .value-bar {
+      margin-top: 0.75rem;
+      padding: 0.25rem 0.4rem;
+      background: #f5f0e8;
+      border-radius: 8px;
+    }
+
+    .value-bar svg { display: block; width: 100%; height: auto; }
+    .value-bar .rv { color: #1c1a18; }
+    .value-bar .rv.hit { color: var(--accent); }
+    .value-bar .rv-strip { fill: var(--accent); opacity: 0.3; }
+    .value-bar .rv-strip.hit { opacity: 1; }
+    .value-bar .rv-count { fill: #5a5650; }
+    .value-bar .rv-count.held { fill: #c8bfb2; }
+    .value-bar .rv-count.hit { fill: var(--accent); font-weight: 700; }
+
+    .quiz-answers {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.35rem;
+      margin-top: 1rem;
+    }
+
+    .quiz-answer {
+      min-width: 0;
+      padding: 0.7rem 0;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      background: #1c1a18;
+      color: #f5f0e8;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .quiz-answer:hover { background: #262320; }
+    .quiz-answer:active { transform: scale(0.96); }
+
+
+    .quiz-answer.right {
+      border-color: #5a9e6f;
+      background: color-mix(in srgb, #5a9e6f 22%, #1c1a18);
+    }
+
+    .quiz-answer.wrong {
+      border-color: #c47a3a;
+      color: #5a5650;
+    }
+
+    .quiz-feedback {
+      margin-top: 1rem;
+      min-height: 4.4em;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: #8a8278;
+    }
+
+    .quiz-feedback strong { color: #f5f0e8; font-weight: 600; }
+    .quiz-feedback.right strong { color: #7bc492; }
+    .quiz-feedback.wrong strong { color: #e0a86a; }
+
+    .quiz-score {
+      min-height: 2.6em;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #5a5650;
+    }
+
+    [hidden] { display: none !important; }
+
+    .segmented {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      padding: 0.3rem;
+      background: #1c1a18;
+      border-radius: 10px;
+    }
+
+    .seg {
+      flex: 1;
+      padding: 0.5rem 0.25rem;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: #8a8278;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .seg.active {
+      background: #2a2724;
+      color: #f5f0e8;
+    }
+
+    .quiz-mode { display: none; }
+    .quiz-mode.active { display: block; }
+
+    .chip-label {
+      align-self: center;
+      min-width: 3.2rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+    }
+
+    .learn-progress {
+      font-size: 0.8rem;
+      color: #8a8278;
+    }
+
+    .chip-row .learn-progress {
+      align-self: center;
+      margin-left: auto;
+    }
+
+    p.learn-progress { margin: -0.5rem 0 0.5rem; }
+
+    .rhythm-option {
+      display: block;
+      width: 100%;
+      margin-top: 0.6rem;
+      padding: 0.45rem;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: #1c1a18;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .rhythm-option:hover { background: #262320; }
+    .rhythm-option .value-bar { margin-top: 0; }
+    .rhythm-option.right { border-color: #5a9e6f; }
+
+    .rhythm-option.wrong {
+      border-color: #c47a3a;
+      opacity: 0.55;
+    }
+
+    .value-bar .rv.good { color: #3f8a55; }
+    .value-bar .rv.early,
+    .value-bar .rv.late { color: #c47a3a; }
+    .value-bar .rv.miss { color: #b8574a; }
+
+    .tap-pad {
+      display: block;
+      width: 100%;
+      height: 6.5rem;
+      margin-top: 1rem;
+      border: 2px solid #3a3632;
+      border-radius: 16px;
+      background: #1c1a18;
+      color: #f5f0e8;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.06s, border-color 0.15s;
+    }
+
+    .tap-pad.armed { border-color: #d4a574; }
+    .tap-pad.hit { background: color-mix(in srgb, #d4a574 35%, #1c1a18); }
+
+    .sign-quiz-glyph {
+      width: 150px;
+      margin: 0 auto;
+      padding: 8px;
+      background: #f5f0e8;
+      border-radius: 12px;
+    }
+
+    .sign-quiz-glyph svg { display: block; width: 100%; height: auto; }
+
+    .sign-answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .sign-answers .quiz-answer {
+      padding: 0.8rem 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .link-btn {
+      display: block;
+      margin: 1.5rem auto 0;
+      padding: 0.3rem 0.5rem;
+      border: none;
+      background: transparent;
+      color: #5a5650;
+      font-size: 0.78rem;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .link-btn:hover { color: #8a8278; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Violin School</h1>
+
+    <div class="tabs">
+      <button class="tab active" data-panel="tuner">Tuner</button>
+      <button class="tab" data-panel="rhythms">Rhythms</button>
+      <button class="tab" data-panel="notes">Notes</button>
+      <button class="tab" data-panel="learn">Learn</button>
+    </div>
+
+    <!-- Tuner -->
+    <div class="panel active" id="panel-tuner">
+      <p class="subtitle">A = 440 Hz &middot; tap a string to play or stop</p>
+
+      <div class="btn-list">
+        <button class="card-btn" data-string="g" data-freq="196.00">
+          <span class="icon">G</span>
+          <span class="info">
+            <div class="name">G string</div>
+            <div class="detail">196.00 Hz</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-string="d" data-freq="293.66">
+          <span class="icon">D</span>
+          <span class="info">
+            <div class="name">D string</div>
+            <div class="detail">293.66 Hz</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-string="a" data-freq="440.00">
+          <span class="icon">A</span>
+          <span class="info">
+            <div class="name">A string</div>
+            <div class="detail">440.00 Hz</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-string="e" data-freq="659.25">
+          <span class="icon">E</span>
+          <span class="info">
+            <div class="name">E string</div>
+            <div class="detail">659.25 Hz</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+      </div>
+
+      <div class="controls">
+        <button id="play-all-strings">Play all</button>
+        <button id="stop-tuner">Stop</button>
+      </div>
+
+      <div class="listen-block" id="tuner-listen-block">
+        <div class="listen-row">
+          <button type="button" class="listen-btn" id="tuner-listen-btn" title="Listen and check tuning" aria-pressed="false" aria-label="Microphone: check string tuning">&#127908;</button>
+          <div class="listen-target">
+            <div class="label">Listen mode</div>
+            <div class="target-name" id="tuner-listen-target">Select a string above</div>
+          </div>
+        </div>
+        <div class="listen-feedback" id="tuner-listen-feedback">Tap the mic, then play the open string. You&rsquo;ll see whether it&rsquo;s in tune and which way to turn the peg. While listening, tapping another string switches the target silently.</div>
+      </div>
+
+      <p class="hint">Tap a string for a sustained tone while you tune.</p>
+    </div>
+
+    <!-- Rhythms -->
+    <div class="panel" id="panel-rhythms">
+      <p class="subtitle">Your rhythms &middot; tap to loop</p>
+
+      <div class="subtabs">
+        <button type="button" class="subtab active" data-group="clicks">Rhythms</button>
+        <button type="button" class="subtab" data-group="piano">With piano</button>
+      </div>
+
+      <div class="btn-list rhythm-group active" id="rhythm-group-clicks">
+        <button class="card-btn" data-rhythm="a">
+          <span class="icon">a</span>
+          <span class="info">
+            <div class="name">Kópavogur hoppstopp</div>
+            <div class="detail">4 sixteenths + 2 eighths</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="b">
+          <span class="icon">b</span>
+          <span class="info">
+            <div class="name">Hann fer &mdash; Hún fer</div>
+            <div class="detail">2 eighths, rest, eighth (×2)</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="c">
+          <span class="icon">c</span>
+          <span class="info">
+            <div class="name">Fá epli fá epli</div>
+            <div class="detail">eighth + 2 sixteenths (×2)</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="c2">
+          <span class="icon">c</span>
+          <span class="info">
+            <div class="name">Banani</div>
+            <div class="detail">triplet: 3 equal eighths (×2)</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="d">
+          <span class="icon">d</span>
+          <span class="info">
+            <div class="name">Apríkósa</div>
+            <div class="detail">4 sixteenths (×2)</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+      </div>
+
+      <div class="btn-list rhythm-group" id="rhythm-group-piano">
+        <button class="card-btn" data-rhythm="aPiano">
+          <span class="icon">a</span>
+          <span class="info">
+            <div class="name">Kópavogur hoppstopp</div>
+            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="bPiano">
+          <span class="icon">b</span>
+          <span class="info">
+            <div class="name">Hann fer &mdash; Hún fer</div>
+            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="cPiano">
+          <span class="icon">c</span>
+          <span class="info">
+            <div class="name">Fá epli fá epli</div>
+            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="c2Piano">
+          <span class="icon">c</span>
+          <span class="info">
+            <div class="name">Banani</div>
+            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+        <button class="card-btn" data-rhythm="dPiano">
+          <span class="icon">d</span>
+          <span class="info">
+            <div class="name">Apríkósa</div>
+            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+          </span>
+          <span class="indicator"></span>
+        </button>
+      </div>
+
+      <div class="rhythm-display empty" id="rhythm-display">
+        Select a rhythm to see the beat pattern
+      </div>
+
+      <div class="controls">
+        <button id="stop-rhythm">Stop</button>
+      </div>
+
+      <div class="slider-row">
+        <label for="bpm">Tempo</label>
+        <input type="range" id="bpm" min="20" max="100" value="36" step="1">
+        <span class="value" id="bpm-val">36</span>
+      </div>
+
+      <p class="hint">Bow on each highlighted syllable. Rests are silent — don&rsquo;t bow. Tap again to stop.</p>
+    </div>
+
+    <!-- Notes -->
+    <div class="panel" id="panel-notes">
+      <div id="notes-catalog">
+        <div id="collection-list">
+          <p class="subtitle">Sheet music &middot; pick a songbook</p>
+          <div class="btn-list" id="collection-buttons"></div>
+        </div>
+        <div class="collection-view" id="collection-view">
+          <button type="button" class="back" id="collection-back">&larr; Songbooks</button>
+          <div class="piece-title" id="collection-title"></div>
+          <div class="btn-list" id="piece-buttons"></div>
+        </div>
+        <p class="hint">Play along highlights each note. Tap a notehead on the staff to hear its pitch.</p>
+      </div>
+
+      <div class="piece-view" id="piece-view">
+        <button type="button" class="back" id="piece-back">&larr; Songbook</button>
+        <div class="piece-title" id="piece-title"></div>
+        <div class="piece-meta" id="piece-meta"></div>
+        <div class="sheet-wrap" id="sheet-wrap"></div>
+        <div class="symbol-card" id="symbol-card">
+          <div class="symbol-glyph" id="symbol-glyph" aria-hidden="true"></div>
+          <div class="symbol-text">
+            <div class="label">What the symbol means</div>
+            <div class="symbol-name" id="symbol-name">&mdash;</div>
+            <ul class="symbol-facts" id="symbol-facts"></ul>
+          </div>
+        </div>
+        <div class="piece-status">
+          <div class="now-playing with-fingerboard" id="now-playing">
+            <div class="np-text">
+              <div class="label">Current note</div>
+              <div class="note-name" id="np-name">&mdash;</div>
+              <div class="note-hint" id="np-hint">Press Play to follow the melody</div>
+            </div>
+            <div class="fingerboard idle" id="np-fingerboard" role="img" aria-label="Violin fingerboard"></div>
+          </div>
+          <div class="listen-block" id="note-listen-block">
+            <div class="listen-row">
+              <button type="button" class="listen-btn" id="note-listen-btn" title="Listen and check pitch" aria-pressed="false" aria-label="Microphone: check this note">&#127908;</button>
+              <div class="listen-target">
+                <div class="label">Listen mode</div>
+                <div class="target-name" id="note-listen-target">No note selected</div>
+              </div>
+            </div>
+            <div class="listen-feedback" id="note-listen-feedback">Tap a note on the staff, then tap the mic and play it. You&rsquo;ll see whether the pitch is good and which way to move your finger. While listening, tapping another note switches the target silently.</div>
+          </div>
+        </div>
+        <div class="chip-row" id="piece-sound" hidden>
+          <span class="chip-label">Sound</span>
+          <button type="button" class="chip active" data-piece-sound="melody">Melody</button>
+          <button type="button" class="chip" data-piece-sound="both">With piano</button>
+          <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
+        </div>
+        <div class="controls">
+          <button type="button" id="piece-play">Play</button>
+          <button type="button" id="piece-stop">Stop</button>
+        </div>
+        <div class="slider-row">
+          <label for="piece-bpm">Tempo</label>
+          <input type="range" id="piece-bpm" min="40" max="120" value="72" step="1">
+          <span class="value" id="piece-bpm-val">72</span>
+        </div>
+        <div class="slider-row">
+          <label for="piece-delay">Start delay</label>
+          <input type="range" id="piece-delay" min="0" max="10" value="0" step="1">
+          <span class="value" id="piece-delay-val">0 s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learn -->
+    <div class="panel" id="panel-learn">
+      <p class="subtitle" id="learn-subtitle">Learn to read sheet music &middot; step by step</p>
+
+      <div class="subtabs">
+        <button type="button" class="subtab active" data-group="staff">Staff</button>
+        <button type="button" class="subtab" data-group="values">Note values</button>
+        <button type="button" class="subtab" data-group="signs">Signs</button>
+        <button type="button" class="subtab" data-group="quiz">Quiz</button>
+      </div>
+
+      <div class="learn-section active" id="learn-staff">
+        <p class="lesson-text">Music is written on a <strong>staff</strong> of five lines. Every line and every space between them is a note, and the higher it sits, the higher it sounds. Going up, the letters run C D E F G A H, then start again.</p>
+        <div class="sheet-wrap" id="ladder-wrap"></div>
+        <div class="chip-row">
+          <button type="button" class="chip active" id="ladder-names" aria-pressed="true">Show names</button>
+          <span class="learn-progress" id="staff-progress"></span>
+        </div>
+        <div class="now-playing with-fingerboard" id="ladder-info">
+          <div class="np-text">
+            <div class="label">Note</div>
+            <div class="note-name" id="ladder-name">&mdash;</div>
+            <div class="note-hint" id="ladder-hint">Tap a note on the staff to hear it and see where it is on the violin.</div>
+          </div>
+          <div class="fingerboard idle" id="ladder-fingerboard" role="img" aria-label="Violin fingerboard"></div>
+        </div>
+        <div class="symbol-card">
+          <div class="symbol-text">
+            <div class="label">Remember</div>
+            <ul class="symbol-facts">
+              <li><strong>Lines</strong> — from the bottom: E, G, H, D, F. (In English H is B: &ldquo;Every Good Boy Does Fine&rdquo;.)</li>
+              <li><strong>Spaces</strong> — from the bottom: F, A, C, E. They spell &ldquo;face&rdquo;.</li>
+              <li><strong>Coloured notes</strong> — your open strings: G under two ledger lines, D just below the staff, A in the 2nd space, E in the 4th space.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-section" id="learn-values">
+        <p class="lesson-text">The <strong>shape</strong> of a note shows how long it lasts, counted in beats. Each row fills one bar of four beats. Tap a row to hear it against a steady beat, and tap again to stop.</p>
+        <p class="learn-progress" id="values-progress"></p>
+        <div id="value-list"></div>
+        <p class="hint">Every note has a <strong>rest</strong> of the same length, shown on the right: a silence where the bow stops.</p>
+      </div>
+
+      <div class="learn-section" id="learn-signs">
+        <p class="lesson-text">Besides the notes, the page is full of small signs that tell you how to play them. Test yourself under Quiz &rsaquo; Signs.</p>
+        <p class="learn-progress" id="signs-progress"></p>
+        <div id="signs-list"></div>
+      </div>
+
+      <div class="learn-section" id="learn-quiz">
+        <div class="segmented" id="quiz-modes">
+          <button type="button" class="seg active" data-mode="name">Name it</button>
+          <button type="button" class="seg" data-mode="play">Play it</button>
+          <button type="button" class="seg" data-mode="rhythm">Rhythm</button>
+          <button type="button" class="seg" data-mode="signs">Signs</button>
+        </div>
+
+        <!-- Shared by Name it and Play it -->
+        <div id="read-settings">
+          <div class="chip-row">
+            <span class="chip-label">Notes</span>
+            <button type="button" class="chip active" data-read-range="staff">On the staff</button>
+            <button type="button" class="chip" data-read-range="all">With ledger lines</button>
+          </div>
+          <div class="chip-row">
+            <span class="chip-label">Key</span>
+            <button type="button" class="chip active" data-read-key="none">None</button>
+            <button type="button" class="chip" data-read-key="G">G major</button>
+            <button type="button" class="chip" data-read-key="D">D major</button>
+            <button type="button" class="chip" data-read-key="A">A major</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode active" id="quiz-mode-name">
+          <p class="lesson-text">Read the note and tap its name. Pick a key to read with a key signature, as in a real songbook.</p>
+          <div class="sheet-wrap" id="quiz-wrap"></div>
+          <div class="quiz-answers" id="quiz-answers"></div>
+          <div class="quiz-feedback" id="quiz-feedback"></div>
+          <div class="quiz-score" id="quiz-score-name"></div>
+          <div class="controls">
+            <button type="button" id="quiz-next">Skip</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-play">
+          <p class="lesson-text">Read the note and play it on your violin. Tap the mic first: it moves on once it hears the right note.</p>
+          <div class="chip-row">
+            <button type="button" class="chip active" data-play-length="1">One note</button>
+            <button type="button" class="chip" data-play-length="4">Short phrase</button>
+          </div>
+          <div class="sheet-wrap" id="play-wrap"></div>
+          <div class="listen-block" id="play-listen-block">
+            <div class="listen-row">
+              <button type="button" class="listen-btn" id="play-listen-btn" title="Listen to your playing" aria-pressed="false" aria-label="Microphone: listen to your playing">&#127908;</button>
+              <div class="listen-target">
+                <div class="label">Listen mode</div>
+                <div class="target-name" id="play-listen-target">Play the note on the staff</div>
+              </div>
+            </div>
+            <div class="listen-feedback" id="play-feedback"></div>
+          </div>
+          <div class="now-playing with-fingerboard" id="play-hint" hidden>
+            <div class="np-text">
+              <div class="label">Where to play it</div>
+              <div class="note-name" id="play-hint-name"></div>
+              <div class="note-hint" id="play-hint-text"></div>
+            </div>
+            <div class="fingerboard" id="play-fingerboard" role="img" aria-label="Violin fingerboard"></div>
+          </div>
+          <div class="quiz-score" id="quiz-score-play"></div>
+          <div class="controls">
+            <button type="button" id="play-hint-btn">Show me where</button>
+            <button type="button" id="play-next">Skip</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-rhythm">
+          <div class="chip-row">
+            <button type="button" class="chip active" data-rhythm-kind="pick">Which one?</button>
+            <button type="button" class="chip" data-rhythm-kind="tap">Tap along</button>
+          </div>
+          <div class="chip-row">
+            <span class="chip-label">Notes</span>
+            <button type="button" class="chip active" data-rhythm-level="easy">Quarters &amp; eighths</button>
+            <button type="button" class="chip" data-rhythm-level="hard">With sixteenths</button>
+          </div>
+          <div id="rhythm-pick">
+            <p class="lesson-text">Press Play: four clicks count you in, then one bar plays. Tap the rhythm you heard.</p>
+            <div id="rhythm-options"></div>
+            <div class="quiz-feedback" id="rhythm-feedback"></div>
+            <div class="controls">
+              <button type="button" id="rhythm-play">Play</button>
+              <button type="button" id="rhythm-next">Skip</button>
+            </div>
+          </div>
+          <div id="rhythm-tap" hidden>
+            <p class="lesson-text">Read the bar. Press Start, listen to four clicks, then tap every note in time with the beat, on the pad or with the space bar.</p>
+            <div class="value-bar" id="tap-bar" style="--accent:#d4a574"></div>
+            <button type="button" class="tap-pad" id="tap-pad">Start</button>
+            <div class="quiz-feedback" id="tap-feedback"></div>
+            <div class="controls">
+              <button type="button" id="tap-hear">Hear it</button>
+              <button type="button" id="tap-new">New rhythm</button>
+            </div>
+          </div>
+          <div class="quiz-score" id="quiz-score-rhythm"></div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-signs">
+          <p class="lesson-text">What is this sign called?</p>
+          <div class="sign-quiz-glyph" id="sign-quiz-glyph"></div>
+          <div class="sign-answers" id="sign-answers"></div>
+          <div class="quiz-feedback" id="sign-feedback"></div>
+          <div class="quiz-score" id="quiz-score-signs"></div>
+          <div class="controls">
+            <button type="button" id="sign-next">Skip</button>
+          </div>
+        </div>
+
+        <button type="button" class="link-btn" id="progress-reset">Reset stars and progress on this device</button>
+      </div>
+    </div>
+
+    <div class="slider-row">
+      <label for="vol">Volume</label>
+      <input type="range" id="vol" min="0" max="100" value="60">
+    </div>
+  </div>
+
+  <!-- Local-only songbooks (not published); see local/songbooks.js. -->
+  <script src="local/songbooks.js"></script>
+  <script>
+    // Piano chords in A major, voiced under the violin: a low bass note, then the chord.
+    const PIANO_CHORDS = {
+      A: { bass: "A2", chord: ["A3", "C#4", "E4"] },
+      D: { bass: "D3", chord: ["F#3", "A3", "D4"] },
+      E: { bass: "E2", chord: ["G#3", "B3", "E4"] },
+      E7: { bass: "E2", chord: ["G#3", "B3", "D4"] },
+    };
+
+    const RHYTHMS = {
+      a: {
+        name: "Kópavogur hoppstopp",
+        steps: [
+          { dur: 0.25, text: "kö", note: "♬", accent: true },
+          { dur: 0.25, text: "pa", note: "♬" },
+          { dur: 0.25, text: "vog", note: "♬" },
+          { dur: 0.25, text: "ur", note: "♬" },
+          { dur: 0.5, text: "hopp", note: "♪" },
+          { dur: 0.5, text: "stopp", note: "♪" },
+        ],
+      },
+      b: {
+        name: "Hann fer — Hún fer",
+        steps: [
+          { dur: 0.5, text: "Hann", note: "♪", accent: true },
+          { dur: 0.5, text: "fer", note: "♪" },
+          { dur: 0.5, rest: true, note: "𝄾" },
+          { dur: 0.5, text: "og", note: "♪" },
+          { dur: 0.5, text: "Hún", note: "♪", bar: true, accent: true },
+          { dur: 0.5, text: "fer", note: "♪" },
+          { dur: 0.5, rest: true, note: "𝄾" },
+          { dur: 0.5, text: "og", note: "♪" },
+        ],
+      },
+      c: {
+        name: "Fá epli fá epli",
+        steps: [
+          { dur: 0.5, text: "Fá", note: "♪", accent: true },
+          { dur: 0.25, text: "epl", note: "♬" },
+          { dur: 0.25, text: "i", note: "♬" },
+          { dur: 0.5, text: "Fá", note: "♪", accent: true },
+          { dur: 0.25, text: "epl", note: "♬" },
+          { dur: 0.25, text: "i", note: "♬" },
+        ],
+      },
+      c2: {
+        name: "Banani",
+        steps: [
+          { dur: 1 / 3, text: "Ba", note: "♪₃", accent: true },
+          { dur: 1 / 3, text: "na", note: "♪₃" },
+          { dur: 1 / 3, text: "ni", note: "♪₃" },
+          { dur: 1 / 3, text: "ba", note: "♪₃", accent: true },
+          { dur: 1 / 3, text: "na", note: "♪₃" },
+          { dur: 1 / 3, text: "ni", note: "♪₃" },
+        ],
+      },
+      d: {
+        name: "Apríkósa",
+        steps: [
+          { dur: 0.25, text: "A", note: "♬", accent: true },
+          { dur: 0.25, text: "prí", note: "♬" },
+          { dur: 0.25, text: "kó", note: "♬" },
+          { dur: 0.25, text: "sa", note: "♬" },
+          { dur: 0.25, text: "A", note: "♬", accent: true },
+          { dur: 0.25, text: "prí", note: "♬" },
+          { dur: 0.25, text: "kó", note: "♬" },
+          { dur: 0.25, text: "sa", note: "♬" },
+        ],
+      },
+    };
+
+    // Every rhythm also comes with piano, on open E only: the piano plays I–IV–V–I in A major,
+    // one chord per bar. Each chord sits under the open E: it is the 5th of A, 9th of D and root of E.
+    for (const id of Object.keys(RHYTHMS)) {
+      RHYTHMS[`${id}Piano`] = {
+        ...RHYTHMS[id],
+        name: `${RHYTHMS[id].name} · E string + piano`,
+        piano: ["A", "D", "E", "A"].map((name) => PIANO_CHORDS[name]),
+      };
+    }
+
+    let ctx = null;
+    let activeTone = null;
+    let rhythmLoop = null;
+    let playAllAbort = null;
+    let selectedTunerBtn = null;
+    let focusedNoteIndex = -1;
+    let pitchListener = null;
+    let learnSound = null;
+
+    function getCtx() {
+      if (!ctx) ctx = new AudioContext();
+      if (ctx.state !== "running") ctx.resume();
+      return ctx;
+    }
+
+    // All app sounds go through this bus: a boost so laptop speakers are loud enough, then a
+    // limiter so the boosted chords and clicks don't clip. Rebuilt if the context is replaced.
+    const MASTER_BOOST = 2.5;
+    let masterBus = null;
+
+    function output() {
+      const audio = getCtx();
+      if (masterBus?.ctx !== audio) {
+        const boost = audio.createGain();
+        boost.gain.value = MASTER_BOOST;
+        const limiter = audio.createDynamicsCompressor();
+        limiter.threshold.value = -10;
+        limiter.knee.value = 4;
+        limiter.ratio.value = 12;
+        // Not too fast: a very quick limiter follows the wave of low piano notes and buzzes.
+        limiter.attack.value = 0.01;
+        limiter.release.value = 0.25;
+        boost.connect(limiter);
+        limiter.connect(audio.destination);
+        masterBus = { ctx: audio, input: boost };
+      }
+      return masterBus.input;
+    }
+
+    const GOOD_CENTS = 10;
+    const GOOD_HOLD_CENTS = 13; // once "good", stay good until drifting past this (avoids flicker)
+    const HISTORY_LEN = 7;
+
+    function centsOff(detectedHz, targetHz) {
+      if (!detectedHz || !targetHz || detectedHz <= 0) return null;
+      return 1200 * Math.log2(detectedHz / targetHz);
+    }
+
+    function alignPitchToTarget(detectedHz, targetHz) {
+      if (!detectedHz || !targetHz) return detectedHz;
+      const shift = Math.round(Math.log2(targetHz / detectedHz));
+      return detectedHz * Math.pow(2, shift);
+    }
+
+    // With auto gain off, a violin a metre or two from a laptop/phone mic often sits around
+    // -45 to -55 dBFS, so the gate has to be low; the periodicity check below rejects noise.
+    const MIN_RMS = 0.0005;
+
+    function bufferRms(buf) {
+      let energy = 0;
+      for (let i = 0; i < buf.length; i++) energy += buf[i] * buf[i];
+      return Math.sqrt(energy / buf.length);
+    }
+
+    function autoCorrelatePitch(buf, sampleRate) {
+      const SIZE = buf.length;
+      let energy = 0;
+      for (let i = 0; i < SIZE; i++) energy += buf[i] * buf[i];
+      const rms = Math.sqrt(energy / SIZE);
+      if (rms < MIN_RMS) return null;
+
+      // Only correlate over lags that correspond to 55–1400 Hz. This is far cheaper than a full
+      // autocorrelation (the old version did ~8M multiplies per frame and stalled phones).
+      const minLag = Math.max(2, Math.floor(sampleRate / 1400));
+      const maxLag = Math.min(Math.ceil(sampleRate / 55), (SIZE >> 1) - 2);
+      if (maxLag <= minLag) return null;
+
+      const c = new Float32Array(maxLag + 2);
+      for (let lag = minLag - 1; lag <= maxLag + 1; lag++) {
+        let sum = 0;
+        for (let i = 0; i < SIZE - lag; i++) sum += buf[i] * buf[i + lag];
+        c[lag] = sum / (SIZE - lag);
+      }
+
+      const mean = energy / SIZE; // correlation at lag 0
+      let maxval = -Infinity;
+      for (let lag = minLag; lag <= maxLag; lag++) if (c[lag] > maxval) maxval = c[lag];
+      // No clear periodicity (noise, talking, bow scratch) -> nothing detected.
+      if (maxval < 0.4 * mean) return null;
+
+      // Take the FIRST local peak that is nearly as strong as the strongest one: that is the
+      // fundamental, whereas the global max is often an octave below it.
+      let T0 = -1;
+      for (let lag = minLag; lag <= maxLag; lag++) {
+        if (c[lag] >= 0.85 * maxval && c[lag] >= c[lag - 1] && c[lag] >= c[lag + 1]) { T0 = lag; break; }
+      }
+      if (T0 < 0) return null;
+
+      const x1 = c[T0 - 1];
+      const x2 = c[T0];
+      const x3 = c[T0 + 1];
+      const a = (x1 + x3 - 2 * x2) / 2;
+      const b = (x3 - x1) / 2;
+      let period = T0;
+      if (a) period = T0 - b / (2 * a);
+
+      const freq = sampleRate / period;
+      if (freq < 55 || freq > 1400) return null;
+      return freq;
+    }
+
+    function formatCents(c) {
+      const n = Math.round(Math.abs(c));
+      return n < 1 ? "less than 1" : String(n);
+    }
+
+    function median(values) {
+      const s = [...values].sort((a, b) => a - b);
+      const mid = Math.floor(s.length / 2);
+      return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+    }
+
+    function tuningFeedback(cents, mode, goodLimit = GOOD_CENTS) {
+      if (cents === null || cents === undefined) {
+        return { state: "waiting", html: "Listening&hellip; play a clear, sustained note." };
+      }
+      if (Math.abs(cents) <= goodLimit) {
+        const line = mode === "string"
+          ? "In tune — good for that open string."
+          : "That pitch matches the note.";
+        return { state: "good", html: `<strong>Good!</strong> ${line}` };
+      }
+      if (Math.abs(cents) > 80) {
+        // Nearly a semitone or more away: peg/finger advice would be misleading.
+        const html = mode === "string"
+          ? "<strong>Different note</strong> — that doesn&rsquo;t sound like this string. Check you&rsquo;re bowing the right one."
+          : "<strong>Different note</strong> — that doesn&rsquo;t match. Check the string and finger, then try again.";
+        return { state: "off", html };
+      }
+      const flat = cents < 0;
+      const amt = formatCents(cents);
+      if (mode === "string") {
+        const html = flat
+          ? `<strong>Too low (flat)</strong> — about ${amt} cents. Tighten the peg (tune <em>up</em>) until it matches.`
+          : `<strong>Too high (sharp)</strong> — about ${amt} cents. Loosen the peg (tune <em>down</em>).`;
+        return { state: flat ? "flat" : "sharp", html };
+      }
+      const html = flat
+        ? `<strong>Too low</strong> — about ${amt} cents. Move your finger slightly <em>toward the bridge</em> (higher on the string).`
+        : `<strong>Too high</strong> — about ${amt} cents. Move your finger slightly <em>toward the scroll</em> (lower on the string).`;
+      return { state: flat ? "flat" : "sharp", html };
+    }
+
+    function setListenUi(block, feedbackEl, fb) {
+      block.classList.remove("good", "flat", "sharp", "off");
+      feedbackEl.classList.remove("good", "flat", "sharp", "off");
+      if (["good", "flat", "sharp", "off"].includes(fb.state)) {
+        block.classList.add(fb.state);
+        feedbackEl.classList.add(fb.state);
+      }
+      feedbackEl.innerHTML = fb.html;
+    }
+
+    function stopPitchListener() {
+      if (!pitchListener) return;
+      const { stop } = pitchListener;
+      pitchListener = null;
+      stop();
+    }
+
+    // The microphone and the app's own sounds are mutually exclusive: turning the mic on
+    // silences everything (play-along pauses), and starting any sound turns the mic off.
+    function silenceApp() {
+      stopTone();
+      stopRhythm();
+      pausePiecePlayback();
+      stopLearnSound();
+    }
+
+    function describeMicError(err) {
+      const name = err?.name || "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+        return "<strong>Microphone blocked</strong> — allow microphone access for this page in your browser settings, then tap the mic again.";
+      }
+      if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        return "<strong>No microphone found</strong> — this device doesn&rsquo;t report a microphone.";
+      }
+      if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") {
+        return "<strong>Microphone busy</strong> — another app or tab is using it. Close that and try again.";
+      }
+      return `<strong>Microphone error</strong> — ${name || "unknown"}${err?.message ? ": " + err.message : ""}.`;
+    }
+
+    function silenceHelp(stream, peak) {
+      const track = stream?.getAudioTracks()[0];
+      const name = track?.label ? `&ldquo;${track.label}&rdquo;` : "the microphone";
+      const db = peak > 0 ? `${Math.round(20 * Math.log10(peak))} dB` : "none";
+      const detail = `<br><small>Input: ${name} · level ${db}</small>`;
+      if (track?.muted || track?.readyState === "ended") {
+        return `<strong>Microphone muted</strong> — the system has muted ${name}. Unmute it (or close other apps using it), then tap the mic again.${detail}`;
+      }
+      if (peak === 0) {
+        // Exact digital silence: the device delivers nothing, which on macOS almost always means
+        // the browser itself isn't allowed to use the microphone.
+        return `<strong>No sound is coming in</strong> — the browser gets pure silence. On a MacBook, the built-in microphone is switched off while the lid is closed: open the lid or plug in an external mic. Otherwise open System Settings → Privacy &amp; Security → Microphone and turn on this browser, then reload the page. Also check System Settings → Sound → Input.${detail}`;
+      }
+      return `<strong>Very quiet</strong> — ${name} hears only faint background noise. Choose the right input and raise <em>Input volume</em> in System Settings → Sound → Input, or play closer to the computer.${detail}`;
+    }
+
+    // `onReading(cents)` lets a quiz follow along; whatever feedback it returns replaces the usual.
+    function startPitchListener({ getTargetHz, mode, block, btn, feedbackEl, onReading }) {
+      stopPitchListener();
+      silenceApp();
+      getCtx();
+
+      let analyser = null;
+      let timeBuf = null;
+      let silentSink = null;
+      let stream = null;
+      let source = null;
+      let timerId = null;
+      let stopped = false;
+      let lastTargetHz = null;
+      let lastState = "waiting";
+      const ANALYSE_EVERY_MS = 50;
+      const SILENT_WARN_MS = 3000;
+      let lastSoundAt = 0;
+      let quietPeak = 0; // loudest level seen while too quiet to analyse
+      const history = []; // recent readings in cents (null = nothing detected)
+
+      block.classList.add("active");
+      btn.classList.add("listening");
+      btn.setAttribute("aria-pressed", "true");
+
+      function cleanup() {
+        stopped = true;
+        // When the mic fails to start, forget this listener so one tap tries again.
+        if (pitchListener === listener) pitchListener = null;
+        if (timerId) clearInterval(timerId);
+        block.classList.remove("active", "good", "flat", "sharp");
+        btn.classList.remove("listening");
+        btn.setAttribute("aria-pressed", "false");
+        markListenedString();
+        if (source) {
+          try { source.disconnect(); } catch (_) {}
+        }
+        if (silentSink) {
+          try { silentSink.disconnect(); } catch (_) {}
+        }
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+      }
+
+      const listener = { stop: cleanup, btn };
+      pitchListener = listener;
+      markListenedString();
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        cleanup();
+        const insecure = !window.isSecureContext;
+        feedbackEl.innerHTML = insecure
+          ? "<strong>Microphone unavailable</strong> — browsers only allow the microphone on a secure page. Open this app over <em>https://</em> (or <em>localhost</em> / the file directly), not plain http:// on a network address."
+          : "<strong>Not supported</strong> — this browser can&rsquo;t use the microphone here.";
+        return;
+      }
+
+      setListenUi(block, feedbackEl, { state: "waiting", html: "Asking for microphone access&hellip;" });
+
+      // Echo cancellation / noise suppression / auto gain are tuned for speech and will
+      // attenuate or distort a sustained violin tone, so ask for the raw signal. Fall back to
+      // whatever the browser offers if it rejects the constraints.
+      const rawAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      navigator.mediaDevices.getUserMedia({ audio: rawAudio, video: false })
+        .catch((err) => {
+          if (err?.name === "OverconstrainedError" || err?.name === "ConstraintNotSatisfiedError" || err?.name === "TypeError") {
+            return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          }
+          throw err;
+        })
+        .then((s) => {
+          if (stopped) {
+            s.getTracks().forEach((t) => t.stop());
+            return;
+          }
+          stream = s;
+
+          // On iOS, turning the microphone on switches the audio session and the mic runs at a
+          // different sample rate than the AudioContext we created for playback. Feeding that
+          // stream into the old context gives silence or a wrong pitch, so recreate it.
+          const trackRate = stream.getAudioTracks()[0]?.getSettings?.().sampleRate;
+          if (trackRate && ctx.sampleRate !== trackRate) {
+            try { ctx.close(); } catch (_) {}
+            ctx = new AudioContext({ sampleRate: trackRate });
+          }
+          getCtx();
+
+          analyser = ctx.createAnalyser();
+          analyser.fftSize = 4096;
+          timeBuf = new Float32Array(analyser.fftSize);
+          source = ctx.createMediaStreamSource(stream);
+          source.connect(analyser);
+          // Some browsers only run a node graph that reaches the destination; use a muted sink.
+          silentSink = ctx.createGain();
+          silentSink.gain.value = 0;
+          analyser.connect(silentSink);
+          silentSink.connect(ctx.destination);
+
+          setListenUi(block, feedbackEl, tuningFeedback(null, mode));
+          lastSoundAt = performance.now();
+
+          function tick() {
+            if (stopped) return;
+            if (ctx.state !== "running") ctx.resume();
+            const now = performance.now();
+
+            // Target can change while listening (e.g. tapping another note on the staff).
+            const targetHz = getTargetHz();
+            if (targetHz !== lastTargetHz) {
+              history.length = 0;
+              lastState = "waiting";
+              lastTargetHz = targetHz;
+              if (!targetHz) {
+                setListenUi(block, feedbackEl, {
+                  state: "waiting",
+                  html: mode === "string"
+                    ? "<strong>Pick a string</strong> — tap G, D, A, or E above."
+                    : "<strong>Select a note</strong> — tap a notehead on the staff.",
+                });
+              }
+            }
+            if (!targetHz) return;
+
+            analyser.getFloatTimeDomainData(timeBuf);
+            const level = bufferRms(timeBuf);
+            if (level >= MIN_RMS) { lastSoundAt = now; quietPeak = 0; }
+            else quietPeak = Math.max(quietPeak, level);
+            if (now - lastSoundAt > SILENT_WARN_MS) {
+              // Nothing at all is reaching us: muted/wrong input, or the audio context is stuck.
+              history.length = 0;
+              lastState = "off";
+              setListenUi(block, feedbackEl, {
+                state: "off",
+                html: ctx.state !== "running"
+                  ? "<strong>Audio paused</strong> — tap the mic button twice to switch it off and on again."
+                  : silenceHelp(stream, quietPeak),
+              });
+              return;
+            }
+            const rawFreq = autoCorrelatePitch(timeBuf, ctx.sampleRate);
+            const cents = rawFreq ? centsOff(alignPitchToTarget(rawFreq, targetHz), targetHz) : null;
+
+            history.push(cents);
+            if (history.length > HISTORY_LEN) history.shift();
+            const valid = history.filter((c) => c !== null);
+            const wentQuiet = history.slice(-3).every((c) => c === null);
+            const shown = !wentQuiet && valid.length >= 3 ? median(valid) : null;
+
+            const fb = tuningFeedback(shown, mode, lastState === "good" ? GOOD_HOLD_CENTS : GOOD_CENTS);
+            lastState = fb.state;
+            setListenUi(block, feedbackEl, onReading?.(shown) ?? fb);
+          }
+          // A timer, not requestAnimationFrame: rAF pauses whenever the page isn't being painted.
+          timerId = setInterval(tick, ANALYSE_EVERY_MS);
+          tick();
+        })
+        .catch((err) => {
+          cleanup();
+          console.error("Microphone error", err);
+          feedbackEl.innerHTML = describeMicError(err);
+        });
+    }
+
+    function toggleListen({ getTarget, mode, block, btn, feedbackEl, onReading }) {
+      if (pitchListener?.btn === btn) {
+        stopPitchListener();
+        return;
+      }
+      stopPitchListener();
+      if (!getTarget()) return;
+      startPitchListener({
+        getTargetHz: () => getTarget({ quiet: true })?.hz ?? null,
+        mode,
+        block,
+        btn,
+        feedbackEl,
+        onReading,
+      });
+    }
+
+    function isListening(btnId) {
+      return !!pitchListener && pitchListener.btn?.id === btnId;
+    }
+
+    // While the tuner mic is on, the string being checked is highlighted like a playing one.
+    function markListenedString() {
+      const on = isListening("tuner-listen-btn");
+      document.querySelectorAll("[data-string]").forEach((b) => {
+        b.classList.toggle("targeted", on && b === selectedTunerBtn);
+      });
+    }
+
+    function updateTunerListenTarget() {
+      const el = document.getElementById("tuner-listen-target");
+      if (!selectedTunerBtn) {
+        el.textContent = "Select a string above";
+        return;
+      }
+      const name = selectedTunerBtn.querySelector(".name").textContent;
+      const freq = selectedTunerBtn.dataset.freq;
+      el.textContent = `${name} · ${freq} Hz`;
+    }
+
+    function updateNoteListenTarget() {
+      const el = document.getElementById("note-listen-target");
+      if (focusedNoteIndex < 0 || !flatNotes[focusedNoteIndex]) {
+        el.textContent = "No note selected";
+        return;
+      }
+      const pitch = flatNotes[focusedNoteIndex].pitch;
+      el.textContent = `${noteName(pitch)} · ${hintForPitch(pitch)}`;
+    }
+
+    function getTunerListenTarget({ quiet = false } = {}) {
+      if (!selectedTunerBtn) {
+        if (!quiet) {
+          document.getElementById("tuner-listen-feedback").innerHTML =
+            "<strong>Pick a string</strong> — tap G, D, A, or E above, then use the microphone.";
+        }
+        return null;
+      }
+      return { hz: parseFloat(selectedTunerBtn.dataset.freq) };
+    }
+
+    function getNoteListenTarget({ quiet = false } = {}) {
+      if (focusedNoteIndex < 0 || !flatNotes[focusedNoteIndex]) {
+        if (!quiet) {
+          document.getElementById("note-listen-feedback").innerHTML =
+            "<strong>Select a note</strong> — tap a notehead on the staff or press Play, then use the microphone.";
+        }
+        return null;
+      }
+      return { hz: midiToFreq(pitchToMidi(flatNotes[focusedNoteIndex].pitch)) };
+    }
+
+    function volume() {
+      return document.getElementById("vol").value / 100;
+    }
+
+    function bpm() {
+      return parseInt(document.getElementById("bpm").value, 10);
+    }
+
+    // --- Tabs ---
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        stopPitchListener();
+        stopLearnSound();
+        if (tab.dataset.panel !== "notes") pausePiecePlayback();
+        document.querySelector(".app").classList.toggle("wide", tab.dataset.panel === "notes" && !!activePieceId);
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById("panel-" + tab.dataset.panel).classList.add("active");
+        if (tab.dataset.panel === "notes" && activePieceId) {
+          renderSheet(activePieceId, sheetHighlight);
+          reserveNotePanelHeights();
+        }
+      });
+    });
+
+    // --- Tuner ---
+    function startTone(btn, { fromPlayAll = false } = {}) {
+      stopPitchListener();
+      stopTone({ cancelPlayAll: !fromPlayAll });
+      const audio = getCtx();
+      const freq = parseFloat(btn.dataset.freq);
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.value = volume() * 0.4;
+      osc.connect(gain);
+      gain.connect(output());
+      osc.start();
+      btn.classList.add("active");
+      activeTone = { osc, gain, btn };
+    }
+
+    function cancelPlayAll() {
+      if (!playAllAbort) return;
+      playAllAbort.abort = true;
+      if (playAllAbort.timeoutId) clearTimeout(playAllAbort.timeoutId);
+      playAllAbort = null;
+    }
+
+    function playAllDelay(ms) {
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(resolve, ms);
+        if (playAllAbort) playAllAbort.timeoutId = timeoutId;
+      });
+    }
+
+    function stopTone({ cancelPlayAll: shouldCancelPlayAll = true } = {}) {
+      if (shouldCancelPlayAll) cancelPlayAll();
+      if (!activeTone) return;
+      const { osc, gain, btn } = activeTone;
+      const audio = getCtx();
+      const t = audio.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.setTargetAtTime(0, t, 0.03);
+      setTimeout(() => osc.stop(), 120);
+      btn.classList.remove("active");
+      activeTone = null;
+    }
+
+    document.querySelectorAll("[data-string]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedTunerBtn = btn;
+        updateTunerListenTarget();
+        // While the mic is listening, picking a string only changes the target: no tone, and
+        // the mic stays on (the listener follows the target on its next tick).
+        if (isListening("tuner-listen-btn")) {
+          markListenedString();
+          return;
+        }
+        if (activeTone?.btn === btn) stopTone();
+        else startTone(btn);
+      });
+    });
+
+    document.getElementById("stop-tuner").addEventListener("click", stopTone);
+
+    document.getElementById("tuner-listen-btn").addEventListener("click", () => {
+      toggleListen({
+        getTarget: getTunerListenTarget,
+        mode: "string",
+        block: document.getElementById("tuner-listen-block"),
+        btn: document.getElementById("tuner-listen-btn"),
+        feedbackEl: document.getElementById("tuner-listen-feedback"),
+      });
+    });
+
+    document.getElementById("note-listen-btn").addEventListener("click", () => {
+      toggleListen({
+        getTarget: getNoteListenTarget,
+        mode: "finger",
+        block: document.getElementById("note-listen-block"),
+        btn: document.getElementById("note-listen-btn"),
+        feedbackEl: document.getElementById("note-listen-feedback"),
+      });
+    });
+
+    document.getElementById("play-all-strings").addEventListener("click", async () => {
+      stopPitchListener();
+      stopRhythm();
+      cancelPlayAll();
+      stopTone();
+      playAllAbort = { abort: false, timeoutId: null };
+      const session = playAllAbort;
+      const buttons = [...document.querySelectorAll("[data-string]")];
+      for (const btn of buttons) {
+        if (session.abort) break;
+        startTone(btn, { fromPlayAll: true });
+        await playAllDelay(2500);
+        if (session.abort) {
+          stopTone({ cancelPlayAll: false });
+          break;
+        }
+        stopTone({ cancelPlayAll: false });
+        await playAllDelay(400);
+      }
+      if (playAllAbort === session) playAllAbort = null;
+    });
+
+    // --- Rhythms ---
+    function playClick(time, accent, out) {
+      const audio = getCtx();
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = "sine";
+      osc.frequency.value = accent ? 880 : 440;
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume() * (accent ? 0.5 : 0.3), time + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + (accent ? 0.12 : 0.08));
+      osc.connect(gain);
+      gain.connect(out);
+      osc.start(time);
+      osc.stop(time + 0.15);
+    }
+
+    // A plucked-string piano-ish tone: triangle + soft octave partial, fast attack, long decay.
+    function playPianoNote(pitch, time, level, decaySec, out) {
+      const audio = getCtx();
+      const freq = midiToFreq(pitchToMidi(pitch));
+      const gain = audio.createGain();
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume() * level, time + 0.006);
+      gain.gain.exponentialRampToValueAtTime(volume() * level * 0.35, time + 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + decaySec);
+      gain.connect(out);
+      [[1, "triangle", 1], [2, "sine", 0.25], [3, "sine", 0.08]].forEach(([mult, type, amt]) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = type;
+        osc.frequency.value = freq * mult;
+        g.gain.value = amt;
+        osc.connect(g);
+        g.connect(gain);
+        osc.start(time);
+        osc.stop(time + decaySec + 0.05);
+      });
+    }
+
+    // One strike of a chord lasting `beats`, with its bass note when `bass` is set.
+    function playPianoChord(chord, { bass, accent, beats }, time, beatDur, out) {
+      if (bass) playPianoNote(chord.bass, time, 0.22, Math.max(1.5, beatDur * 2.2), out);
+      const level = accent ? 0.11 : 0.07;
+      chord.chord.forEach((p) => playPianoNote(p, time, level, Math.max(0.5, beats * beatDur * 1.6), out));
+    }
+
+    // Fades an output to silence and disconnects it; anything still ringing in it is cut.
+    function fadeOutBus(out, fadeSec) {
+      const now = out.context.currentTime;
+      out.gain.cancelScheduledValues(now);
+      out.gain.setValueAtTime(out.gain.value, now);
+      out.gain.linearRampToValueAtTime(0, now + fadeSec);
+      setTimeout(() => out.disconnect(), fadeSec * 1000 + 40);
+    }
+
+    function renderRhythmDisplay(rhythm, hitStep) {
+      const el = document.getElementById("rhythm-display");
+      el.classList.remove("empty");
+      el.style.setProperty("--accent", getComputedStyle(
+        document.querySelector(`[data-rhythm="${rhythm.id}"]`)
+      ).getPropertyValue("--accent"));
+
+      const sylHtml = rhythm.steps.map((step, i) => {
+        const hit = i === hitStep ? " hit" : "";
+        const rest = step.rest ? " rest" : "";
+        const bar = step.bar ? '<span class="bar">|</span>' : "";
+        const text = step.rest ? (step.note || "𝄾") : step.text;
+        return `${bar}<span class="syllable${rest}${hit}">${text}</span>`;
+      }).join("");
+
+      const noteHtml = rhythm.steps.map((step, i) => {
+        const hit = i === hitStep ? " hit" : "";
+        return `<span class="${hit.trim()}">${step.note}</span>`;
+      }).join(" ");
+
+      el.innerHTML = `
+        <div class="syllables">${sylHtml}</div>
+        <div class="notation">${noteHtml}</div>
+      `;
+    }
+
+    function startRhythm(btn) {
+      stopPitchListener();
+      stopRhythm();
+      stopTone();
+
+      const id = btn.dataset.rhythm;
+      const rhythm = { ...RHYTHMS[id], id };
+      let cancelled = false;
+      const timers = [];
+      // Each cycle is scheduled ahead on the audio clock, so all of this loop's sounds go
+      // through one output that stop() cuts at once (no tail overlapping the next rhythm).
+      const out = getCtx().createGain();
+      out.connect(output());
+
+      btn.classList.add("active");
+      renderRhythmDisplay(rhythm, -1);
+
+      function scheduleAtAudioTime(audioTime, fn) {
+        const delayMs = Math.max(0, (audioTime - getCtx().currentTime) * 1000);
+        timers.push(setTimeout(() => {
+          if (!cancelled) fn();
+        }, delayMs));
+      }
+
+      let bar = 0;
+
+      function playCycle(cycleStart) {
+        if (cancelled) return;
+        let chord = null;
+        const audio = getCtx();
+        const beatDur = 60 / bpm();
+        let offset = 0;
+        const start = cycleStart ?? audio.currentTime + 0.05;
+
+        rhythm.steps.forEach((step, i) => {
+          const t = start + offset;
+          // Each bar (the cycle start or a bar line) moves the piano to its next chord.
+          const newBar = i === 0 || step.bar;
+          if (rhythm.piano && newBar) chord = rhythm.piano[bar++ % rhythm.piano.length];
+          if (!step.rest) {
+            if (chord) playPianoChord(chord, { bass: newBar, accent: step.accent, beats: step.dur }, t, beatDur, out);
+            else playClick(t, !!step.accent, out);
+          }
+          scheduleAtAudioTime(t, () => renderRhythmDisplay(rhythm, i));
+          offset += step.dur * beatDur;
+        });
+
+        // Queue the next round a little before it starts. Scheduling it exactly on time means
+        // the timer sometimes fires a few ms late, the first note skips its fade-in and clicks.
+        const nextStart = start + offset;
+        const lookahead = Math.min(0.25, offset / 2);
+        scheduleAtAudioTime(nextStart - lookahead, () => playCycle(nextStart));
+      }
+
+      rhythmLoop = {
+        btn,
+        stop() {
+          cancelled = true;
+          timers.forEach(clearTimeout);
+          fadeOutBus(out, 0.02);
+        },
+      };
+      playCycle();
+    }
+
+    function stopRhythm() {
+      if (!rhythmLoop) return;
+      rhythmLoop.stop();
+      rhythmLoop.btn.classList.remove("active");
+      rhythmLoop = null;
+      const el = document.getElementById("rhythm-display");
+      el.classList.add("empty");
+      el.textContent = "Select a rhythm to see the beat pattern";
+    }
+
+    document.querySelectorAll("[data-rhythm]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (rhythmLoop?.btn === btn) stopRhythm();
+        else startRhythm(btn);
+      });
+    });
+
+    document.getElementById("stop-rhythm").addEventListener("click", stopRhythm);
+
+    document.querySelectorAll("#panel-rhythms .subtab").forEach(sub => {
+      sub.addEventListener("click", () => {
+        stopRhythm();
+        document.querySelectorAll("#panel-rhythms .subtab").forEach(s => s.classList.toggle("active", s === sub));
+        document.querySelectorAll(".rhythm-group").forEach(g =>
+          g.classList.toggle("active", g.id === "rhythm-group-" + sub.dataset.group));
+      });
+    });
+
+    document.getElementById("bpm").addEventListener("input", () => {
+      document.getElementById("bpm-val").textContent = bpm();
+      if (rhythmLoop) {
+        const btn = rhythmLoop.btn;
+        stopRhythm();
+        startRhythm(btn);
+      }
+    });
+
+    document.getElementById("vol").addEventListener("input", () => {
+      if (activeTone) activeTone.gain.gain.value = volume() * 0.4;
+    });
+
+    // --- Notes / sheet music ---
+    const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+    const OPEN_STRING = {
+      G3: { string: "g", label: "G string · open" },
+      D4: { string: "d", label: "D string · open" },
+      A4: { string: "a", label: "A string · open" },
+      E5: { string: "e", label: "E string · open" },
+    };
+
+    const STRING_ACCENT = { g: "#c47a3a", d: "#5a9e6f", a: "#4a8fc4", e: "#b85c8a" };
+
+    // First-position fingering in A major (the beginner pieces).
+    const DEFAULT_FINGER_HINTS = {
+      B4: "1st finger (A string)",
+      "C#5": "2nd finger (A string)",
+      D5: "3rd finger (A string)",
+      "F#5": "1st finger (E string)",
+      "G#5": "2nd finger (E string)",
+      A5: "3rd finger (E string)",
+      E4: "1st finger (D string)",
+      "F#4": "2nd finger (D string)",
+      G4: "3rd finger (D string)",
+    };
+
+    // A measure is a list of notes: "A4" = quarter note, h("A4") = half note, w("A4") = whole
+    // note, e("A4") = eighth note, s("A4") = sixteenth note, REST = quarter rest, rest(beats) =
+    // any other rest (4 whole, 2 half, ½ eighth, ¼ sixteenth), dotted("A4") / dotted(h("A4")) =
+    // dotted, tied(...) = held on into the next note (same pitch, not played again).
+    // `detail` is the songbook card line; `meta` shows under the title on the sheet.
+    // `piano` is the accompaniment, one entry per measure naming its PIANO_CHORDS ("D A"
+    // splits the measure in half); the chord sounds on every beat.
+    // Eighth notes are beamed per `beamBeats` beats (default 2, one beam per 2/4 bar); where
+    // that span holds sixteenths, the beams break at every beat.
+    const h = (pitch) => ({ pitch, beats: 2 });
+    const w = (pitch) => ({ pitch, beats: 4 });
+    const e = (pitch) => ({ pitch, beats: 0.5 });
+    const s = (pitch) => ({ pitch, beats: 0.25 });
+    const dotted = (item) => {
+      const note = noteSpec(item);
+      return { ...note, beats: note.beats * 1.5, dotted: true };
+    };
+    const tied = (item) => ({ ...noteSpec(item), tie: true });
+    const rest = (beats) => ({ rest: true, beats });
+    const REST = rest(1);
+
+    // One pass of Rússakeisari: the E D C B lead-in, then bars that alternate two quarters and
+    // four eighths (the exercise is the rhythm). The piece plays it three times, faster each time.
+    const russakeisariPass = () => [
+      [e("E5"), e("D5"), e("C5"), e("B4")],
+      ["A4", "A4"],
+      [e("A4"), e("A4"), e("A4"), e("B4")],
+      ["C5", "C5"],
+      [e("D4"), e("D4"), e("D4"), e("E4")],
+      ["F4", "F4"],
+      [e("E5"), e("E5"), e("E5"), e("E5")],
+      ["E5", "E5"],
+    ];
+
+    const PIECES = {
+      twinkle: {
+        title: "Twinkle, Twinkle, Little Star",
+        detail: "Theme · A major · 4/4",
+        meta: "Theme · Folk Song · A major · 4/4",
+        accent: "#d4a574",
+        measures: [
+          ["A4", "A4", "E5", "E5"],
+          ["F#5", "F#5", h("E5")],
+          ["D5", "D5", "C#5", "C#5"],
+          ["B4", "B4", h("A4")],
+          ["E5", "E5", "D5", "D5"],
+          ["C#5", "C#5", h("B4")],
+          ["E5", "E5", "D5", "D5"],
+          ["C#5", "C#5", h("B4")],
+          ["A4", "A4", "E5", "E5"],
+          ["F#5", "F#5", h("E5")],
+          ["D5", "D5", "C#5", "C#5"],
+          ["B4", "B4", h("A4")],
+        ],
+        piano: ["A", "D A", "D A", "E A", "A D", "A E", "A D", "A E", "A", "D A", "D A", "E A"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      lightlyRow: {
+        title: "Lightly Row",
+        detail: "No. 2 · A major · 2/2",
+        meta: "No. 2 · Folk Song · A major · 2/2 (counted in quarters)",
+        accent: "#6a9e8a",
+        measures: [
+          ["E5", "C#5", h("C#5")],
+          ["D5", "B4", h("B4")],
+          ["A4", "B4", "C#5", "D5"],
+          ["E5", "E5", h("E5")],
+          ["E5", "C#5", "C#5", "C#5"],
+          ["D5", "B4", "B4", "B4"],
+          ["A4", "C#5", "E5", "E5"],
+          ["C#5", "C#5", h("C#5")],
+          ["B4", "B4", "B4", "B4"],
+          ["B4", "C#5", h("D5")],
+          ["C#5", "C#5", "C#5", "C#5"],
+          ["C#5", "D5", h("E5")],
+          ["E5", "C#5", "C#5", "C#5"],
+          ["D5", "B4", "B4", "B4"],
+          ["A4", "C#5", "E5", "E5"],
+          ["C#5", "C#5", h("C#5")],
+        ],
+        piano: ["A", "E7", "A", "A", "A", "E7", "A E7", "A", "E7", "E7", "A", "A", "A", "E7", "A E7", "A"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      songOfTheWind: {
+        title: "Song of the Wind",
+        detail: "No. 3 · A major · 2/4",
+        meta: "No. 3 · Folk Song · A major · 2/4 · staccato, played twice",
+        accent: "#9a86c4",
+        repeat: true,
+        staccato: true,
+        measures: [
+          [e("A4"), e("B4"), e("C#5"), e("D5")],
+          [e("E5"), e("E5"), e("E5"), e("E5")],
+          [e("F#5"), e("D5"), e("A5"), e("F#5")],
+          ["E5", REST],
+          [e("F#5"), e("D5"), e("A5"), e("F#5")],
+          ["E5", REST],
+          [e("E5"), e("D5"), e("D5"), e("D5")],
+          [e("D5"), e("C#5"), e("C#5"), e("C#5")],
+          [e("C#5"), e("B4"), e("B4"), e("B4")],
+          [e("A4"), e("C#5"), "E5"],
+          [e("E5"), e("D5"), e("D5"), e("D5")],
+          [e("D5"), e("C#5"), e("C#5"), e("C#5")],
+          [e("C#5"), e("B4"), e("B4"), e("B4")],
+          ["A4", REST],
+        ],
+        piano: ["A", "A", "D", "A", "D", "A", "E7", "A", "E", "A", "E7", "A", "E", "A"],
+        // One line per phrase: A, B, B'.
+        sheetLayout: { systems: [6, 4, 4] },
+      },
+      // Written out from a recording of a violin group, following the lead violin: steady at
+      // about ♩=80, speeding up through the second pass to about 145 for the third, then a run
+      // up the E string to A. The open-A eighths heard between the Cs and Fs are a second violin.
+      russakeisari: {
+        title: "Rússakeisari",
+        detail: "A minor · 2/4 · speeds up",
+        meta: "Written out from a recording · A minor · 2/4 · three times, faster each time",
+        accent: "#c4826a",
+        fingerHints: {
+          F4: "Low 2nd finger (D string)",
+          C5: "Low 2nd finger (A string)",
+          F5: "Low 1st finger (E string)",
+        },
+        tempo: [{ bar: 1, bpm: 80 }, { bar: 9, bpm: 80, text: "poco a poco accel." }, { bar: 17, bpm: 145 }],
+        measures: [
+          ...russakeisariPass(),
+          ...russakeisariPass(),
+          ...russakeisariPass(),
+          [e("A5"), e("F5"), e("F#5"), e("G#5")],
+          [e("A4"), e("A5"), "A5"],
+        ],
+      },
+    };
+
+    // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here.
+    const COLLECTIONS = [
+      {
+        id: "beginner",
+        title: "Beginner Pieces",
+        detail: "Folk songs · A major and A minor · first position",
+        accent: "#d4a574",
+        pieces: ["twinkle", "lightlyRow", "songOfTheWind", "russakeisari"],
+      },
+    ];
+
+    // Songbooks kept on this computer only: local/songbooks.js is never published, and
+    // without it the Notes tab shows just the songbooks above.
+    for (const songbook of window.LOCAL_SONGBOOKS ?? []) {
+      const { pieces, collection } = songbook({ h, w, e, s, dotted, tied, rest, REST });
+      Object.assign(PIECES, pieces);
+      COLLECTIONS.push(collection);
+    }
+
+    let activePieceId = null;
+    let piecePlayback = null;
+    let pausedPlayback = null; // { pass } while paused; resume starts at the highlighted note
+    let pieceSound = "melody"; // "melody", "both" or "piano", for pieces with a piano part
+    let flatNotes = [];
+
+    function parsePitch(pitch) {
+      const m = pitch.match(/^([A-G])(#?)(\d)$/);
+      if (!m) return null;
+      const letter = m[1];
+      const sharp = m[2] === "#" ? 1 : 0;
+      const octave = parseInt(m[3], 10);
+      const idx = NOTE_NAMES.indexOf(letter + (sharp ? "#" : ""));
+      return { idx, octave, label: pitch };
+    }
+
+    function pitchToMidi(pitch) {
+      const p = parsePitch(pitch);
+      if (!p) return 60;
+      return (p.octave + 1) * 12 + p.idx;
+    }
+
+    function midiToFreq(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function pitchToStaffY(pitch, staffTop = 28) {
+      const p = parsePitch(pitch);
+      if (!p) return staffTop + 20;
+      const letter = pitch.match(/^([A-G])/)[1];
+      const DIATONIC = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+      const stepsFromC = p.octave * 7 + DIATONIC[letter];
+      const stepsFromE4 = stepsFromC - (4 * 7 + DIATONIC.E);
+      const bottomLine = staffTop + 40;
+      return bottomLine - stepsFromE4 * 5;
+    }
+
+    // Letter name without the octave, e.g. "C♯", "B", "A".
+    function noteName(pitch) {
+      const p = parsePitch(pitch);
+      return p ? NOTE_NAMES[p.idx].replace("#", "\u266F") : pitch;
+    }
+
+    function hintForPitch(pitch) {
+      if (OPEN_STRING[pitch]) return OPEN_STRING[pitch].label;
+      const piece = activePieceId ? PIECES[activePieceId] : null;
+      if (piece?.fingerHints?.[pitch]) return piece.fingerHints[pitch];
+      if (DEFAULT_FINGER_HINTS[pitch]) return DEFAULT_FINGER_HINTS[pitch];
+      return "See your fingering chart";
+    }
+
+    function accentForPitch(pitch) {
+      const open = OPEN_STRING[pitch];
+      if (open) return STRING_ACCENT[open.string];
+      const piece = activePieceId ? PIECES[activePieceId] : null;
+      return piece?.accent || "#d4a574";
+    }
+
+    function noteSpec(item) {
+      if (typeof item === "string") return { pitch: item, beats: 1 };
+      return { pitch: item.pitch, beats: item.beats || 1, rest: !!item.rest, dotted: !!item.dotted, tie: !!item.tie };
+    }
+
+    function pieceBeats(piece) {
+      return piece.measures.flat().reduce((sum, item) => sum + noteSpec(item).beats, 0);
+    }
+
+    // Where a piece changes speed, `tempo` lists { bar, bpm } marks (bar 1 is the first) and
+    // the beat moves in a straight line from each mark to the next, steady before the first and
+    // after the last. The Tempo slider sets the first mark and the rest keep their proportion.
+    // Returns the seconds from the start to any beat, and the beat length at any beat; a piece
+    // without `tempo` plays at the slider's speed throughout.
+    function pieceTiming(piece, sliderBpm, passes = 1) {
+      const passBeats = pieceBeats(piece);
+      const starts = [];
+      let at = 0;
+      piece.measures.forEach((measure) => {
+        starts.push(at);
+        at += measure.reduce((sum, item) => sum + noteSpec(item).beats, 0);
+      });
+      const points = piece.tempo?.length ? piece.tempo : [{ bar: 1, bpm: sliderBpm }];
+      const scale = sliderBpm / points[0].bpm;
+      const marks = points.map(({ bar, bpm }) => ({ beat: starts[bar - 1] ?? passBeats, bpm: bpm * scale }));
+
+      function bpmAt(beat) {
+        const b = beat % passBeats;
+        let i = marks.findIndex((m) => b < m.beat);
+        if (i === 0) return marks[0].bpm;
+        if (i === -1) i = marks.length;
+        const from = marks[i - 1];
+        const to = marks[i];
+        if (!to) return from.bpm;
+        return from.bpm + (to.bpm - from.bpm) * (b - from.beat) / (to.beat - from.beat);
+      }
+
+      // Seconds to each sixteenth, adding up the beat length through the tempo changes.
+      const step = 0.25;
+      const times = [0];
+      for (let b = 0; b < passes * passBeats; b += step) {
+        times.push(times[times.length - 1] + step * 60 / bpmAt(b + step / 2));
+      }
+      const timeAt = (beat) => {
+        const k = Math.min(Math.max(beat / step, 0), times.length - 1);
+        const i = Math.floor(k);
+        return i >= times.length - 1 ? times[times.length - 1] : times[i] + (times[i + 1] - times[i]) * (k - i);
+      };
+      return { timeAt, beatDurAt: (beat) => 60 / bpmAt(beat) };
+    }
+
+    // The piano part's chord strikes in one pass: one per beat, with the bass where a chord
+    // comes in and an accent on the first beat of each measure.
+    function pianoStrikes(piece) {
+      const strikes = [];
+      let at = 0;
+      piece.piano.forEach((names, mi) => {
+        const length = piece.measures[mi].reduce((sum, item) => sum + noteSpec(item).beats, 0);
+        const chords = names.split(" ");
+        const span = length / chords.length;
+        chords.forEach((name, ci) => {
+          for (let b = 0; b < span; b++) {
+            strikes.push({ beat: at + ci * span + b, chord: PIANO_CHORDS[name], bass: b === 0, accent: ci === 0 && b === 0 });
+          }
+        });
+        at += length;
+      });
+      return strikes;
+    }
+
+    // What plays: a piece without a piano part always plays its melody.
+    function pieceSounds(piece) {
+      const sound = piece.piano ? pieceSound : "melody";
+      return { melody: sound !== "piano", piano: sound !== "melody" };
+    }
+
+    // Rests take time (`start` counts them) but are not notes you can tap or play; each note
+    // keeps the lengths of the rests that follow it (`restsAfter`).
+    // Consecutive eighth and sixteenth notes share a beam when they fall in the same
+    // `beamBeats` span of the bar, or the same beat when the span holds sixteenths.
+    function flattenMeasures(measures, beamBeats = 2) {
+      const out = [];
+      let start = 0;
+      let beamCount = 0;
+      measures.forEach((measure, mi) => {
+        let beam = -1;
+        let beamSpan = -1;
+        let beat = 0;
+        const sixteenthSpans = new Set();
+        measure.reduce((at, item) => {
+          const spec = noteSpec(item);
+          if (!spec.rest && spec.beats === 0.25) sixteenthSpans.add(Math.floor(at / beamBeats));
+          return at + spec.beats;
+        }, 0);
+        measure.forEach((item, ni) => {
+          const { pitch, beats, rest, dotted, tie } = noteSpec(item);
+          const wide = Math.floor(beat / beamBeats);
+          const span = sixteenthSpans.has(wide) ? `${wide}:${Math.floor(beat)}` : wide;
+          if (!rest && !dotted && beats <= 0.5) {
+            if (beam < 0 || span !== beamSpan) {
+              beam = beamCount++;
+              beamSpan = span;
+            }
+          } else {
+            beam = -1;
+          }
+          if (rest) {
+            out[out.length - 1]?.restsAfter.push(beats);
+          } else {
+            out.push({ pitch, beats, dotted, tie, start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
+          }
+          start += beats;
+          beat += beats;
+        });
+      });
+      return out;
+    }
+
+    // Beats a note is held for, counting the notes it is tied into.
+    function heldBeats(i) {
+      return flatNotes[i].beats + (flatNotes[i].tie && flatNotes[i + 1] ? heldBeats(i + 1) : 0);
+    }
+
+    // Units are SVG user units; the SVG scales to the full card width, so fewer
+    // measures per line means bigger notes. Staff lines are 10 units apart.
+    const DEFAULT_SHEET_LAYOUT = {
+      noteW: 20,
+      gap: 6,
+      halfNoteExtra: 10,
+      eighthNoteTrim: 5,
+      dotExtra: 6,
+      accW: 11,
+      padL: 40,
+      padR: 12,
+      staffTop: 24,
+      staffH: 40,
+      systemGap: 74,
+      measuresPerSystem: 4,
+      minScale: 0.9,
+      maxScale: 1.6,
+      noteRx: 6.2,
+      noteRy: 4.6,
+      stemLen: 27,
+      beamW: 4.5,
+      clefSize: 34,
+    };
+
+    function sheetLayoutFor(piece) {
+      return { ...DEFAULT_SHEET_LAYOUT, ...piece.sheetLayout };
+    }
+
+    function noteAdvance({ beats, dotted }, layout) {
+      return layout.noteW + layout.gap
+        + (beats >= 2 ? layout.halfNoteExtra : 0)
+        - (beats < 1 ? layout.eighthNoteTrim : 0)
+        + (dotted ? layout.dotExtra : 0);
+    }
+
+    // Natural left-to-right layout per system (sharps reserve room before the notehead).
+    // `counts` gives the bars on each line; the last count repeats for the remaining lines.
+    // Lines are stretched to at least `minRight`, so short pieces don't blow up on wide screens.
+    function layoutSystems(piece, layout, counts, minRight = 0) {
+      const systems = [];
+      for (let i = 0, line = 0; i < piece.measures.length; line++) {
+        const n = counts[Math.min(line, counts.length - 1)];
+        systems.push(piece.measures.slice(i, i + n));
+        i += n;
+      }
+      const natural = systems.map((sysMeasures) => {
+        let x = layout.padL;
+        const notes = [];
+        const rests = [];
+        const bars = [];
+        sysMeasures.forEach((measure) => {
+          measure.forEach((item) => {
+            const spec = noteSpec(item);
+            if (spec.rest) {
+              rests.push({ x: x + layout.noteRx, beats: spec.beats, dotted: spec.dotted });
+            } else {
+              if (spec.pitch.includes("#")) x += layout.accW;
+              notes.push({ x: x + layout.noteRx, pitch: spec.pitch });
+            }
+            x += noteAdvance(spec, layout);
+          });
+          const barX = x - layout.gap + 6;
+          bars.push(barX);
+          x = barX + 8;
+        });
+        return { notes, rests, bars, end: bars[bars.length - 1] };
+      });
+      const contentRight = Math.max(minRight, ...natural.map((s) => s.end));
+      return { systems, natural, contentRight, width: contentRight + layout.padR };
+    }
+
+    // Prefer the piece's line breaks (4 bars per line, as in print, unless it sets
+    // `systems`); drop to 2 when the screen is too narrow for the staff to stay readable,
+    // since the SVG is scaled to the card width. Never zoom past `maxScale`.
+    function chooseSystems(piece, layout, availablePx) {
+      const candidates = [layout.systems || [layout.measuresPerSystem], [2]];
+      const minRight = availablePx ? availablePx / layout.maxScale - layout.padR : 0;
+      let chosen = null;
+      for (const counts of candidates) {
+        chosen = layoutSystems(piece, layout, counts, minRight);
+        if (!availablePx || availablePx / chosen.width >= layout.minScale) break;
+      }
+      return chosen;
+    }
+
+    // Quarter rest, centred on the staff: a zigzag with a thick middle stroke and a hook.
+    // Drawn as paths because the music-symbol rest glyph is missing from many fonts.
+    function quarterRestSvg(x, top, ink) {
+      return `<g stroke="${ink}" fill="none">
+        <path d="M${x - 2.5} ${top + 7.5} L${x + 3} ${top + 14.5}" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M${x + 3.4} ${top + 14} L${x - 1.9} ${top + 21.8}" stroke-width="4.4"/>
+        <path d="M${x - 1.5} ${top + 21.3} L${x + 3.5} ${top + 28.5}" stroke-width="2.2"/>
+        <path d="M${x + 3.5} ${top + 28.5} C${x - 0.5} ${top + 26.2} ${x - 4} ${top + 30.5} ${x + 0.8} ${top + 35.5}" stroke-width="2.4" stroke-linecap="round"/>
+      </g>`;
+    }
+
+    // A rest of any length on a staff whose lines run from `top` to `top + 40`. Whole and half
+    // rests are blocks; eighth and sixteenth rests a slanted stem with a dot-and-hook per flag.
+    function restGlyphSvg(beats, x, top, ink) {
+      const hook = (dx, dy) => `<circle cx="${x - 3 + dx}" cy="${top + 15 + dy}" r="2.4" fill="${ink}"/>
+        <path d="M${x - 3 + dx} ${top + 17 + dy} Q${x + 1 + dx} ${top + 18 + dy} ${x + 4 + dx} ${top + 14 + dy}" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+      if (beats === 4) return `<rect x="${x - 7}" y="${top + 10}" width="14" height="5" fill="${ink}"/>`; // hangs from the 4th line
+      if (beats === 2) return `<rect x="${x - 7}" y="${top + 15}" width="14" height="5" fill="${ink}"/>`; // sits on the middle line
+      if (beats === 1) return quarterRestSvg(x, top, ink);
+      if (beats === 0.5) return `${hook(0, 0)}<line x1="${x + 4}" y1="${top + 14}" x2="${x - 1}" y2="${top + 32}" stroke="${ink}" stroke-width="1.5"/>`;
+      return `${hook(0, 0)}${hook(-2.8, 10)}<line x1="${x + 4}" y1="${top + 14}" x2="${x - 2.5}" y2="${top + 37.5}" stroke="${ink}" stroke-width="1.5"/>`;
+    }
+
+    let sheetHighlight = -1;
+
+    function renderSheet(pieceId, highlightIndex = -1) {
+      const piece = PIECES[pieceId];
+      const wrap = document.getElementById("sheet-wrap");
+      const layout = sheetLayoutFor(piece);
+      const { padL, padR, staffTop, staffH, systemGap, noteRx, noteRy, stemLen, beamW, clefSize } = layout;
+      const ink = "#2a2724";
+      const noteInk = "#1c1a18";
+      sheetHighlight = highlightIndex;
+
+      const wrapStyle = getComputedStyle(wrap);
+      const availablePx = wrap.clientWidth - parseFloat(wrapStyle.paddingLeft) - parseFloat(wrapStyle.paddingRight);
+      const { systems, natural, contentRight } = chooseSystems(piece, layout, availablePx);
+
+      // Stretch each system so every line ends at the same right edge.
+      const notePositions = [];
+      const restPositions = [];
+      const barXs = [];
+      natural.forEach((s, si) => {
+        const k = (contentRight - padL) / (s.end - padL);
+        s.notes.forEach((n) => notePositions.push({ x: padL + (n.x - padL) * k, pitch: n.pitch, systemIndex: si }));
+        s.rests.forEach((r) => restPositions.push({ ...r, x: padL + (r.x - padL) * k, systemIndex: si }));
+        s.bars.forEach((bx) => barXs.push({ x: padL + (bx - padL) * k, systemIndex: si }));
+      });
+
+      const maxWidth = contentRight + padR;
+      // A line whose notes climb high above the staff (ledger lines, plus room for a tie)
+      // moves down so they don't run into the line above; one whose notes hang far below it
+      // pushes the next line down the same way.
+      const systemYs = (si) => notePositions.filter((p) => p.systemIndex === si).map((p) => pitchToStaffY(p.pitch, 0));
+      const lowest = (si) => Math.max(staffH, ...systemYs(si));
+      // Tempo marks sit above the first line, so it starts lower.
+      const markRoom = piece.tempo?.length ? 16 : 0;
+      const systemTops = [];
+      systems.forEach((_, si) => {
+        const highest = Math.min(0, ...systemYs(si));
+        const extra = Math.max(0, -highest + noteRy + 8 - 22);
+        const below = si === 0 ? 0 : Math.max(0, lowest(si - 1) + noteRy + 8 - staffH - 22);
+        systemTops.push((si === 0 ? staffTop + markRoom : systemTops[si - 1] + systemGap + below) + extra);
+      });
+      const height = systemTops[systemTops.length - 1] + Math.max(staffH + 14, lowest(systems.length - 1) + noteRy + 4);
+      const staffRight = contentRight + 1;
+
+      let lines = "";
+      let clefs = "";
+      let bars = "";
+      systems.forEach((_, si) => {
+        const top = systemTops[si];
+        [0, 10, 20, 30, 40].forEach((d) => {
+          lines += `<line x1="2" y1="${top + d}" x2="${staffRight}" y2="${top + d}" stroke="${ink}" stroke-width="1"/>`;
+        });
+        clefs += `<text x="6" y="${top + 31}" font-size="${clefSize}" fill="${ink}" font-family="serif">\u{1D11E}</text>`;
+      });
+      barXs.forEach(({ x, systemIndex }, i) => {
+        const top = systemTops[systemIndex];
+        const last = i === barXs.length - 1;
+        bars += `<line x1="${x}" y1="${top}" x2="${x}" y2="${top + 40}" stroke="${ink}" stroke-width="${last ? 2.4 : 1.4}"/>`;
+        if (last) {
+          bars += `<line x1="${x - 4}" y1="${top}" x2="${x - 4}" y2="${top + 40}" stroke="${ink}" stroke-width="1.2"/>`;
+          if (piece.repeat) {
+            bars += `<circle cx="${x - 9}" cy="${top + 15}" r="1.8" fill="${ink}"/><circle cx="${x - 9}" cy="${top + 25}" r="1.8" fill="${ink}"/>`;
+          }
+        }
+      });
+
+      // Tempo marks, as in print: a metronome mark (♩ = 80) above the first bar and wherever the
+      // speed settles anew; a gradual change is "accel." or "rit." (or the mark's own `text`)
+      // at the bar it starts in, trailed by a dashed line to the next mark, across line breaks.
+      let tempoEls = "";
+      if (piece.tempo?.length) {
+        const barStart = (m) => (barXs[m].systemIndex !== barXs[m - 1]?.systemIndex ? padL : barXs[m - 1].x + 5);
+        const markY = (m) => systemTops[barXs[m].systemIndex] - 9;
+        const metronome = (m, bpm) => `<text x="${barStart(m)}" y="${markY(m)}" font-size="11" font-weight="700" fill="${ink}" font-family="-apple-system, sans-serif"><tspan font-family="serif" font-weight="400" font-size="13">♩</tspan> = ${Math.round(bpm)}</text>`;
+        const marks = piece.tempo.map((t) => ({ ...t, m: Math.min(Math.max(t.bar, 1), piece.measures.length) - 1 }));
+        tempoEls += metronome(marks[0].m, marks[0].bpm);
+        marks.slice(1).forEach((mark, i) => {
+          const prev = marks[i];
+          if (mark.bpm === prev.bpm) return;
+          const text = prev.text || (mark.bpm > prev.bpm ? "accel." : "rit.");
+          const x0 = barStart(prev.m);
+          tempoEls += `<text x="${x0}" y="${markY(prev.m)}" font-size="10.5" font-style="italic" fill="${ink}" font-family="serif">${text}</text>`;
+          const endM = Math.max(prev.m, mark.m - 1);
+          const from = barXs[prev.m].systemIndex;
+          const to = barXs[endM].systemIndex;
+          for (let si = from; si <= to; si++) {
+            const x1 = si === from ? x0 + text.length * 5.3 + 4 : padL;
+            const x2 = si === to ? barXs[endM].x - 3 : staffRight;
+            const y = systemTops[si] - 12;
+            if (x2 > x1) tempoEls += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${ink}" stroke-width="1" stroke-dasharray="4 3"/>`;
+          }
+          tempoEls += metronome(mark.m, mark.bpm);
+        });
+      }
+
+      let restEls = "";
+      restPositions.forEach(({ x, beats, dotted, systemIndex }) => {
+        const top = systemTops[systemIndex];
+        restEls += restGlyphSvg(dotted ? beats / 1.5 : beats, x, top, ink);
+        if (dotted) restEls += `<circle cx="${x + 10}" cy="${top + 15}" r="1.7" fill="${ink}"/>`;
+      });
+
+      // Noteheads and stems. Stems go up below the middle line, down from it and above;
+      // whole notes have none.
+      const heads = flatNotes.map((note, gi) => {
+        const pos = notePositions[gi];
+        if (!pos) return null;
+        const top = systemTops[pos.systemIndex];
+        const y = pitchToStaffY(note.pitch, top);
+        const up = y > top + 20;
+        const base = note.dotted ? note.beats / 1.5 : note.beats;
+        const whole = base >= 4;
+        // A sixteenth's stem is longer, to fit two flags if it ends up alone.
+        const len = base === 0.25 ? stemLen + 5 : stemLen;
+        return { x: pos.x, y, top, up, stemEnd: whole ? y : up ? y - len : y + len, flag: false, whole, sixteenth: base === 0.25 };
+      });
+      const stemXFor = (hd) => (hd.up ? hd.x + noteRx - 0.8 : hd.x - noteRx + 0.8);
+
+      // Eighth notes on one beam share a stem direction, set by the note farthest from the
+      // middle line (down on a tie), and their stems end on one gently sloped beam. Sixteenths
+      // add a second beam inside it: across to a sixteenth beside them, otherwise a short stub.
+      const beamGroups = new Map();
+      flatNotes.forEach((note, gi) => {
+        if (note.beam < 0 || !heads[gi]) return;
+        if (!beamGroups.has(note.beam)) beamGroups.set(note.beam, []);
+        beamGroups.get(note.beam).push(heads[gi]);
+      });
+      let beams = "";
+      beamGroups.forEach((group) => {
+        if (group.length === 1) {
+          group[0].flag = true;
+          return;
+        }
+        const mid = group[0].top + 20;
+        const below = Math.max(...group.map((hd) => hd.y - mid));
+        const above = Math.max(...group.map((hd) => mid - hd.y));
+        const up = below > above;
+        group.forEach((hd) => { hd.up = up; });
+        const first = group[0];
+        const lastHd = group[group.length - 1];
+        const x0 = stemXFor(first);
+        const x1 = stemXFor(lastHd);
+        const slope = Math.max(-5, Math.min(5, lastHd.y - first.y)) / (x1 - x0);
+        // Place the beam so the shortest stem is still a full stem length.
+        const ends = group.map((hd) => hd.y + (up ? -stemLen : stemLen) - slope * (stemXFor(hd) - x0));
+        const base = up ? Math.min(...ends) : Math.max(...ends);
+        group.forEach((hd) => { hd.stemEnd = base + slope * (stemXFor(hd) - x0); });
+        const t = up ? beamW : -beamW;
+        const beamAt = (from, to, inset) => {
+          const ya = base + slope * (from - x0) + inset;
+          const yb = base + slope * (to - x0) + inset;
+          return `<polygon points="${from - 0.75},${ya} ${to + 0.75},${yb} ${to + 0.75},${yb + t} ${from - 0.75},${ya + t}" fill="${ink}"/>`;
+        };
+        beams += beamAt(x0, x1, 0);
+        const inset = t + (up ? 2.5 : -2.5);
+        group.forEach((hd, i) => {
+          if (!hd.sixteenth) return;
+          const sx = stemXFor(hd);
+          const nextHd = group[i + 1];
+          if (nextHd?.sixteenth) beams += beamAt(sx, stemXFor(nextHd), inset);
+          else if (!group[i - 1]?.sixteenth) beams += nextHd ? beamAt(sx, sx + 8, inset) : beamAt(sx - 8, sx, inset);
+        });
+      });
+
+      // Ties curve away from the stems. A tie that crosses a line break is drawn as two
+      // halves: out of the first note and into the second.
+      let ties = "";
+      const tieArc = (x1, x2, hd) => {
+        const dir = hd.up ? 1 : -1;
+        const y = hd.y + dir * (noteRy + 1.5);
+        return `<path d="M${x1} ${y} Q${(x1 + x2) / 2} ${y + dir * 6} ${x2} ${y}" fill="none" stroke="${ink}" stroke-width="1.4" stroke-linecap="round"/>`;
+      };
+      flatNotes.forEach((note, gi) => {
+        const from = heads[gi];
+        const to = heads[gi + 1];
+        if (!note.tie || !from || !to) return;
+        if (from.top === to.top) {
+          ties += tieArc(from.x + noteRx - 1, to.x - noteRx + 1, from);
+        } else {
+          ties += tieArc(from.x + noteRx - 1, from.x + noteRx + 16, from);
+          ties += tieArc(to.x - noteRx - 16, to.x - noteRx + 1, to);
+        }
+      });
+
+      let noteEls = "";
+      let ledgers = "";
+      flatNotes.forEach((note, gi) => {
+        const hd = heads[gi];
+        if (!hd) return;
+        const pos = notePositions[gi];
+        const { top, y } = hd;
+        const hit = gi === highlightIndex;
+        const accent = accentForPitch(note.pitch);
+        const color = hit ? accent : noteInk;
+        const isHalf = note.beats >= 2;
+        // Half notes are hollow; a highlighted half note gets a translucent accent fill.
+        const fill = isHalf ? (hit ? `${accent}55` : "none") : color;
+        if (y < top - 2 || y > top + staffH + 2) {
+          for (let ly = y <= top ? top - 10 : top + 50; y <= top ? ly >= y : ly <= y; ly += y <= top ? -10 : 10) {
+            ledgers += `<line x1="${pos.x - 10}" y1="${ly}" x2="${pos.x + 10}" y2="${ly}" stroke="${ink}" stroke-width="1"/>`;
+          }
+        }
+        const stemUp = hd.up;
+        const stemX = stemXFor(hd);
+        const stemY1 = stemUp ? y - 1 : y + 1;
+        const stemY2 = hd.stemEnd;
+        const acc = note.pitch.includes("#")
+          ? `<text x="${pos.x - noteRx - 10}" y="${y + 4}" font-size="13" fill="${color}" font-family="serif">\u266F</text>`
+          : "";
+        // A lone eighth note gets a flag instead of a beam; a lone sixteenth gets two shorter ones.
+        const flagDir = stemUp ? 1 : -1;
+        const flagAt = (fy, k = 1) => `<path d="M${stemX} ${fy} C${stemX + 1} ${fy + 6 * k * flagDir} ${stemX + 8} ${fy + 8 * k * flagDir} ${stemX + 6} ${fy + 16 * k * flagDir}" fill="none" stroke="${color}" stroke-width="2"/>`;
+        const flag = !hd.flag ? "" : hd.sixteenth ? flagAt(stemY2, 0.7) + flagAt(stemY2 + 7 * flagDir, 0.7) : flagAt(stemY2);
+        // A dot on a line moves up into the space above.
+        const dotY = (y - top) % 10 === 0 ? y - 5 : y;
+        const dot = note.dotted ? `<circle cx="${pos.x + noteRx + 4.5}" cy="${dotY}" r="1.7" fill="${color}"/>` : "";
+        const hitTop = Math.min(stemY2, y - noteRy) - 4;
+        const hitBottom = Math.max(stemY2, y + noteRy) + 4;
+        // A whole note's head is rounder and wider, with a thicker rim.
+        const head = hd.whole
+          ? `<ellipse cx="${pos.x}" cy="${y}" rx="${noteRx + 1.4}" ry="${noteRy + 0.4}" fill="${fill}" stroke="${color}" stroke-width="2.4"/>`
+          : `<ellipse cx="${pos.x}" cy="${y}" rx="${noteRx}" ry="${noteRy}" fill="${fill}" stroke="${color}" stroke-width="${isHalf ? 1.9 : (hit ? 1.5 : 0)}" transform="rotate(-20 ${pos.x} ${y})"/>`;
+        const stem = hd.whole ? "" : `<line x1="${stemX}" y1="${stemY1}" x2="${stemX}" y2="${stemY2}" stroke="${color}" stroke-width="1.5"/>`;
+        noteEls += `<g class="sheet-note" data-idx="${gi}" style="cursor:pointer">
+          <rect x="${pos.x - noteRx - 10}" y="${hitTop}" width="${noteRx * 2 + 14}" height="${hitBottom - hitTop}" fill="transparent"/>
+          ${acc}
+          ${head}
+          ${stem}
+          ${flag}
+          ${dot}
+        </g>`;
+      });
+
+      wrap.innerHTML = `<svg viewBox="0 0 ${maxWidth} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${piece.title} sheet music" preserveAspectRatio="xMidYMid meet">
+        ${lines}
+        ${clefs}
+        ${bars}
+        ${tempoEls}
+        ${ledgers}
+        ${restEls}
+        ${ties}
+        ${beams}
+        ${noteEls}
+      </svg>`;
+
+      wrap.querySelectorAll(".sheet-note").forEach((g) => {
+        g.addEventListener("click", () => {
+          const idx = parseInt(g.dataset.idx, 10);
+          // While the mic is listening, tapping a note only changes the target — no sound.
+          if (!isListening("note-listen-btn")) playNoteTone(flatNotes[idx].pitch, 0.45);
+          setNowPlaying(idx, false);
+          renderSheet(pieceId, idx);
+        });
+      });
+    }
+
+    function setNowPlaying(index, live) {
+      const box = document.getElementById("now-playing");
+      const nameEl = document.getElementById("np-name");
+      const hintEl = document.getElementById("np-hint");
+      if (index < 0 || !flatNotes[index]) {
+        focusedNoteIndex = -1;
+        updateNoteListenTarget();
+        nameEl.textContent = "\u2014";
+        hintEl.textContent = "Press Play to follow the melody";
+        box.classList.remove("live");
+        renderFingerboard(null);
+        renderNoteSymbol(-1);
+        return;
+      }
+      focusedNoteIndex = index;
+      updateNoteListenTarget();
+      const pitch = flatNotes[index].pitch;
+      const accent = accentForPitch(pitch);
+      box.style.setProperty("--accent", accent);
+      nameEl.innerHTML = noteName(pitch);
+      hintEl.textContent = hintForPitch(pitch);
+      box.classList.toggle("live", live);
+      renderFingerboard(pitch, accent);
+      renderNoteSymbol(index, accent);
+    }
+
+    // Notes differ in how much there is to say about them, so the panels under the sheet
+    // get the height of the piece's wordiest note up front and the controls stay put.
+    const STEADY_PANELS = ["symbol-card", "now-playing", "note-listen-block"];
+
+    function reserveNotePanelHeights() {
+      const panels = STEADY_PANELS.map((id) => document.getElementById(id));
+      const current = focusedNoteIndex;
+      const live = document.getElementById("now-playing").classList.contains("live");
+      panels.forEach((el) => { el.style.minHeight = ""; });
+      const tallest = panels.map(() => 0);
+      for (let i = -1; i < flatNotes.length; i++) {
+        setNowPlaying(i, false);
+        panels.forEach((el, k) => { tallest[k] = Math.max(tallest[k], Math.ceil(el.getBoundingClientRect().height)); });
+      }
+      panels.forEach((el, k) => { el.style.minHeight = `${tallest[k]}px`; });
+      setNowPlaying(current, live);
+    }
+
+    // --- What the current note's symbol means ---
+    const NOTE_VALUE_NAMES = { 0.25: "sixteenth note", 0.5: "eighth note", 1: "quarter note", 2: "half note", 4: "whole note" };
+    const BEAT_WORDS = { 0.25: "¼ beat", 0.5: "½ beat", 1: "1 beat", 1.5: "1½ beats" };
+    const BEAT_FRACTIONS = { 0.25: "¼", 0.5: "½", 0.75: "¾" };
+    const beatsText = (beats) => BEAT_WORDS[beats] || `${BEAT_FRACTIONS[beats % 1] ? Math.floor(beats) + BEAT_FRACTIONS[beats % 1] : beats} beats`;
+    // Counting eighths as "1 & 2 &" and sixteenths as "1 e & a": a note on the second half of
+    // a beat starts on "&".
+    const countText = (beatInBar) => `${Math.floor(beatInBar) + 1}${["", " e", " &", " a"][(beatInBar % 1) * 4] ?? " &"}`;
+
+    // One short line for each part of the symbol (and the marks around it) on the sheet.
+    function noteSymbolFacts(index) {
+      const piece = PIECES[activePieceId];
+      const note = flatNotes[index];
+      const prev = flatNotes[index - 1];
+      const next = flatNotes[index + 1];
+      const base = note.dotted ? note.beats / 1.5 : note.beats;
+      const facts = [];
+      const fact = (term, text) => facts.push(`<strong>${term}</strong> — ${text}`);
+
+      const beamed = note.beam >= 0 && (prev?.beam === note.beam || next?.beam === note.beam);
+      if (base === 0.25) {
+        if (beamed) fact("Double beam", "two thick bars join sixteenth notes. Each lasts ¼ beat, so four fit in one beat (count “1 e & a”).");
+        else fact("Double flag", "a lone sixteenth note has two flags instead of beams: ¼ beat.");
+      } else if (base === 0.5) {
+        if (beamed) fact("Beam", "the thick bar joins eighth notes. Each lasts ½ beat, so two fit in one beat (count “1 &”).");
+        else fact("Flag", "a lone eighth note has a flag instead of a beam: ½ beat.");
+      } else if (base === 1) {
+        fact("Filled head with a stem", "a quarter note, 1 beat.");
+      } else if (base === 2) {
+        fact("Hollow head with a stem", `a half note, 2 beats${note.dotted ? "" : ": hold it while you count “1, 2”"}.`);
+      } else if (base === 4) {
+        fact("Hollow head, no stem", "a whole note, 4 beats: hold it while you count “1, 2, 3, 4”.");
+      }
+      if (note.dotted) {
+        fact("Dot", `adds half the note's length: ${beatsText(base)} + ${beatsText(base / 2)} = ${beatsText(note.beats)}.`);
+      }
+      fact("Count", `bar ${note.measure + 1}, starting on “${countText(note.beatInBar)}”.`);
+      if (note.pitch.includes("#")) {
+        const letters = "CDEFGAB";
+        const letter = note.pitch[0];
+        const above = letters[(letters.indexOf(letter) + 1) % 7];
+        fact("Sharp ♯", `raises the note a half step: ${noteName(note.pitch)} sits between ${letter} and ${above}, so the finger goes a little closer to the bridge.`);
+      }
+      const y = pitchToStaffY(note.pitch, 0);
+      const ledgers = y < 0 ? Math.floor(-y / 10) : y > 40 ? Math.floor((y - 40) / 10) : 0;
+      if (ledgers) {
+        const where = y < 0 ? "above" : "below";
+        fact(ledgers === 1 ? "Ledger line" : "Ledger lines", `${ledgers === 1 ? "a short extra line" : `${ledgers} short extra lines`} ${where} the staff, for notes too ${y < 0 ? "high" : "low"} to fit on it.`);
+      }
+      if (prev?.tie) fact("Tied", "this note continues the one before it: keep holding, no new bow.");
+      if (note.tie) fact("Tie", `the curve joins this note to the next one of the same pitch. Keep the bow going, don't play it again: ${beatsText(heldBeats(index))} in all.`);
+      const restBeats = (next ? next.start : pieceBeats(piece)) - (note.start + note.beats);
+      if (restBeats > 0) {
+        const sign = note.restsAfter.every((beats) => beats === 1) ? "zigzag" : "rest";
+        fact("Rest", `the ${sign} after it means ${beatsText(restBeats)} of silence: stop the bow and wait.`);
+      }
+      if (piece.staccato) fact("Staccato", "this piece is played short and separated: stop the bow briefly after each note.");
+      if (!next) {
+        if (piece.repeat) fact("Repeat sign", "the two dots before the double bar mean: play the whole piece again from the start.");
+        else fact("Final double bar", "the thick double line marks the end of the piece.");
+      }
+      return facts;
+    }
+
+    // The note drawn alone on a short staff, the same way the sheet draws it.
+    function noteSymbolSvg(index) {
+      const ink = "#1c1a18";
+      const top = 30;
+      const x = 30;
+      const rx = 6.2;
+      const ry = 4.6;
+      let svg = [0, 10, 20, 30, 40].map((d) => `<line x1="2" y1="${top + d}" x2="58" y2="${top + d}" stroke="#2a2724" stroke-width="1"/>`).join("");
+      if (index < 0) return `<svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+
+      const note = flatNotes[index];
+      const prev = flatNotes[index - 1];
+      const next = flatNotes[index + 1];
+      const y = pitchToStaffY(note.pitch, top);
+      for (let ly = top - 10; ly >= y; ly -= 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
+      for (let ly = top + 50; ly <= y; ly += 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
+      if (note.pitch.includes("#")) svg += `<text x="${x - rx - 10}" y="${y + 4}" font-size="13" fill="${ink}" font-family="serif">♯</text>`;
+      const base = note.dotted ? note.beats / 1.5 : note.beats;
+      const hollow = note.beats >= 2;
+      svg += base >= 4
+        ? `<ellipse cx="${x}" cy="${y}" rx="${rx + 1.4}" ry="${ry + 0.4}" fill="none" stroke="${ink}" stroke-width="2.4"/>`
+        : `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${hollow ? "none" : ink}" stroke="${ink}" stroke-width="${hollow ? 1.9 : 0}" transform="rotate(-20 ${x} ${y})"/>`;
+      const up = y > top + 20;
+      const beamed = note.beam >= 0 && (prev?.beam === note.beam || next?.beam === note.beam);
+      const lone16th = base === 0.25 && !beamed;
+      const stemX = up ? x + rx - 0.8 : x - rx + 0.8;
+      const stemLength = lone16th ? 32 : 27;
+      const stemEnd = up ? y - stemLength : y + stemLength;
+      if (base < 4) svg += `<line x1="${stemX}" y1="${up ? y - 1 : y + 1}" x2="${stemX}" y2="${stemEnd}" stroke="${ink}" stroke-width="1.5"/>`;
+      if (base === 0.5 || base === 0.25) {
+        const dir = up ? 1 : -1;
+        // One beam or flag for an eighth, two for a sixteenth (its lone flags shorter).
+        const f = lone16th ? 0.7 : 1;
+        for (let k = 0; k < (base === 0.25 ? 2 : 1); k++) {
+          const end = stemEnd + 7 * k * dir;
+          svg += beamed
+            ? `<polygon points="${stemX},${end} ${stemX + 16},${end} ${stemX + 16},${end + 4.5 * dir} ${stemX},${end + 4.5 * dir}" fill="${ink}"/>`
+            : `<path d="M${stemX} ${end} C${stemX + 1} ${end + 6 * f * dir} ${stemX + 8} ${end + 8 * f * dir} ${stemX + 6} ${end + 16 * f * dir}" fill="none" stroke="${ink}" stroke-width="2"/>`;
+        }
+      }
+      if (note.dotted) svg += `<circle cx="${x + rx + 4.5}" cy="${(y - top) % 10 === 0 ? y - 5 : y}" r="1.7" fill="${ink}"/>`;
+      // Ties run off the edge toward the note they join.
+      const tieY = y + (up ? 1 : -1) * (ry + 1.5);
+      const bulge = (up ? 1 : -1) * 6;
+      if (note.tie) svg += `<path d="M${x + rx - 1} ${tieY} Q${x + 18} ${tieY + bulge} ${60} ${tieY}" fill="none" stroke="${ink}" stroke-width="1.4"/>`;
+      if (prev?.tie) svg += `<path d="M0 ${tieY} Q${x - 18} ${tieY + bulge} ${x - rx + 1} ${tieY}" fill="none" stroke="${ink}" stroke-width="1.4"/>`;
+      return `<svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+    }
+
+    function renderNoteSymbol(index, accent) {
+      const card = document.getElementById("symbol-card");
+      document.getElementById("symbol-glyph").innerHTML = noteSymbolSvg(index);
+      const nameEl = document.getElementById("symbol-name");
+      const factsEl = document.getElementById("symbol-facts");
+      if (index < 0 || !flatNotes[index]) {
+        nameEl.textContent = "—";
+        factsEl.innerHTML = "<li>Tap a note or press Play to see what each part of its symbol means.</li>";
+        return;
+      }
+      const note = flatNotes[index];
+      const base = note.dotted ? note.beats / 1.5 : note.beats;
+      const name = `${note.dotted ? "Dotted " : ""}${NOTE_VALUE_NAMES[base] || "Note"}`;
+      card.style.setProperty("--accent", accent);
+      nameEl.textContent = `${name[0].toUpperCase()}${name.slice(1)} · ${beatsText(note.beats)}`;
+      factsEl.innerHTML = noteSymbolFacts(index).map((f) => `<li>${f}</li>`).join("");
+    }
+
+    // --- Fingerboard: where the current note sits in first position ---
+    // Seen from the player: G D A E left to right, nut at the top.
+    const FB_STRINGS = ["G3", "D4", "A4", "E5"];
+    const FB_FINGER = [0, 1, 1, 2, 2, 3, 3, 4]; // finger for 0\u20137 half steps above the open string
+    const FB_TAPES = [2, 4, 5]; // beginner tapes: 1st finger, high 2nd, 3rd
+
+    // Open string when possible, otherwise the one string where the note is 1\u20136 half steps up
+    // (the E string also takes the 4th finger, 7 up). Null outside first position.
+    function fingerPlacement(pitch) {
+      const midi = pitchToMidi(pitch);
+      const offsets = FB_STRINGS.map((open) => midi - pitchToMidi(open));
+      let string = offsets.indexOf(0);
+      if (string < 0) string = offsets.findIndex((o) => o >= 1 && o <= 6);
+      if (string < 0 && offsets[3] === 7) string = 3;
+      if (string < 0) return null;
+      return { string, offset: offsets[string], finger: FB_FINGER[offsets[string]] };
+    }
+
+    function renderFingerboard(pitch, accent, el = document.getElementById("np-fingerboard")) {
+      const place = pitch ? fingerPlacement(pitch) : null;
+      el.classList.toggle("idle", !place);
+      const nutY = 26;
+      const bottomY = 170;
+      // Half steps are spaced like a real string (each one ~5.6% shorter than the last).
+      const yFor = (halfSteps) => nutY + 390 * (1 - Math.pow(2, -halfSteps / 12));
+      // The board widens toward the bridge; strings spread with it.
+      const spread = (y) => 10 + 4 * ((y - nutY) / (bottomY - nutY));
+      const stringX = (i, y) => 42 + (i - 1.5) * spread(y);
+      const edgeX = (side, y) => 42 + side * 2.2 * spread(y);
+      const ink = "#8a8278";
+
+      let svg = `<polygon points="${edgeX(-1, nutY)},${nutY} ${edgeX(1, nutY)},${nutY} ${edgeX(1, bottomY)},${bottomY} ${edgeX(-1, bottomY)},${bottomY}" fill="#0f0e0d" stroke="#3a3632" stroke-width="1"/>`;
+      FB_TAPES.forEach((n) => {
+        const y = yFor(n);
+        svg += `<line x1="${edgeX(-1, y)}" y1="${y}" x2="${edgeX(1, y)}" y2="${y}" stroke="#4a4640" stroke-width="2.5"/>`;
+      });
+      svg += `<rect x="${edgeX(-1, nutY) - 1}" y="${nutY - 2.5}" width="${edgeX(1, nutY) - edgeX(-1, nutY) + 2}" height="3.5" rx="1" fill="#d4c8b4"/>`;
+      FB_STRINGS.forEach((open, i) => {
+        const active = place?.string === i;
+        const color = active ? accent : ink;
+        svg += `<line x1="${stringX(i, nutY)}" y1="${nutY}" x2="${stringX(i, bottomY)}" y2="${bottomY}" stroke="${color}" stroke-width="${1.7 - i * 0.25 + (active ? 0.8 : 0)}"/>`;
+        svg += `<text x="${stringX(i, nutY)}" y="9" font-size="8.5" font-weight="${active ? 700 : 500}" fill="${color}" text-anchor="middle" font-family="-apple-system, sans-serif">${open[0]}</text>`;
+      });
+      if (place && place.offset === 0) {
+        svg += `<circle cx="${stringX(place.string, nutY)}" cy="${nutY - 9}" r="3.6" fill="none" stroke="${accent}" stroke-width="1.6"/>`;
+      } else if (place) {
+        const y = yFor(place.offset);
+        const x = stringX(place.string, y);
+        svg += `<circle cx="${x}" cy="${y}" r="6.5" fill="${accent}"/>`;
+        svg += `<text x="${x}" y="${y + 3.2}" font-size="9" font-weight="700" fill="#0f0e0d" text-anchor="middle" font-family="-apple-system, sans-serif">${place.finger}</text>`;
+      }
+      el.innerHTML = `<svg viewBox="0 0 84 ${bottomY + 2}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+    }
+
+    renderFingerboard(null);
+    renderNoteSymbol(-1);
+
+    // Plays now, or at `time` on the audio clock; `out` lets a loop cut its own notes at once.
+    function playNoteTone(pitch, durSec, { time, out = output() } = {}) {
+      const audio = getCtx();
+      const t = time ?? audio.currentTime;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = midiToFreq(pitchToMidi(pitch));
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(volume() * 0.35, t + 0.02);
+      gain.gain.setValueAtTime(volume() * 0.35, t + durSec - 0.05);
+      gain.gain.linearRampToValueAtTime(0, t + durSec);
+      osc.connect(gain);
+      gain.connect(out);
+      osc.start(t);
+      osc.stop(t + durSec + 0.02);
+      const voice = { osc, gain };
+      noteVoices.add(voice);
+      osc.onended = () => noteVoices.delete(voice);
+    }
+
+    // Sheet-music notes still sounding, so Pause and Stop can cut them off at once
+    // (a 15 ms fade avoids a click).
+    const noteVoices = new Set();
+
+    function silenceNoteTones() {
+      noteVoices.forEach(({ osc, gain }) => {
+        const t = osc.context.currentTime;
+        gain.gain.cancelScheduledValues(t);
+        gain.gain.setValueAtTime(gain.gain.value, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.015);
+        osc.stop(t + 0.02);
+      });
+      noteVoices.clear();
+    }
+
+    function pieceBpm() {
+      return parseInt(document.getElementById("piece-bpm").value, 10);
+    }
+
+    function pieceDelay() {
+      return parseInt(document.getElementById("piece-delay").value, 10);
+    }
+
+    function showCountdown(secondsLeft) {
+      document.getElementById("np-name").textContent = secondsLeft;
+      document.getElementById("np-hint").textContent = "Get ready\u2026";
+      document.getElementById("now-playing").classList.remove("live");
+    }
+
+    function updatePlayButton() {
+      document.getElementById("piece-play").textContent = piecePlayback ? "Pause" : pausedPlayback ? "Resume" : "Play";
+    }
+
+    function cancelPlaybackTimers() {
+      if (!piecePlayback) return;
+      piecePlayback.cancelled = true;
+      piecePlayback.timers.forEach(clearTimeout);
+      if (piecePlayback.pianoOut) fadeOutBus(piecePlayback.pianoOut, 0.02);
+      piecePlayback = null;
+    }
+
+    // Stop clears everything: the position, the highlighted note and any pause.
+    function stopPiecePlayback() {
+      silenceNoteTones();
+      if (!piecePlayback && !pausedPlayback) return;
+      cancelPlaybackTimers();
+      pausedPlayback = null;
+      updatePlayButton();
+      setNowPlaying(-1, false);
+      if (activePieceId) renderSheet(activePieceId, -1);
+    }
+
+    // Pause keeps the current note highlighted. Resume continues from the highlighted note,
+    // so tapping another note while paused resumes from there.
+    function pausePiecePlayback() {
+      silenceNoteTones();
+      if (!piecePlayback) return;
+      const { pass, index } = piecePlayback;
+      cancelPlaybackTimers();
+      pausedPlayback = { pass };
+      updatePlayButton();
+      setNowPlaying(index, false);
+      renderSheet(activePieceId, index);
+    }
+
+    function togglePiecePlayback() {
+      if (piecePlayback) pausePiecePlayback();
+      else if (pausedPlayback) startPiecePlayback({ fromIndex: Math.max(focusedNoteIndex, 0), fromPass: pausedPlayback.pass });
+      else startPiecePlayback();
+    }
+
+    function startPiecePlayback({ fromIndex = 0, fromPass = 0 } = {}) {
+      if (!activePieceId) return;
+      stopPitchListener();
+      stopPiecePlayback();
+      stopRhythm();
+      stopTone();
+
+      const timers = [];
+      // Piano chords ring on past their beat, so they share one output that Pause and Stop fade.
+      const pianoOut = getCtx().createGain();
+      pianoOut.connect(output());
+      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, pianoOut };
+      piecePlayback = playback;
+      updatePlayButton();
+
+      function schedule(fn, ms) {
+        timers.push(setTimeout(() => {
+          if (!playback.cancelled) fn();
+        }, ms));
+      }
+
+      const delaySec = pieceDelay();
+      for (let s = delaySec; s > 0; s--) {
+        schedule(() => showCountdown(s), (delaySec - s) * 1000);
+      }
+
+      // Rests keep the previous note highlighted; a repeated piece plays through twice.
+      // Times count in beats from the start of the first pass, then shift to the resume point.
+      const piece = PIECES[activePieceId];
+      const passBeats = pieceBeats(piece);
+      const passes = piece.repeat ? 2 : 1;
+      const { timeAt, beatDurAt } = pieceTiming(piece, pieceBpm(), passes);
+      const fromBeat = fromPass * passBeats + flatNotes[fromIndex].start;
+      const msAt = (beat) => 50 + delaySec * 1000 + (timeAt(beat) - timeAt(fromBeat)) * 1000;
+      const soundFraction = piece.staccato ? 0.55 : 0.9;
+      // A tied note sounds once for its whole held length; the notes it ties into only move
+      // the highlight (unless playback resumes on one of them).
+      for (let pass = fromPass; pass < passes; pass++) {
+        flatNotes.forEach((note, i) => {
+          const beat = pass * passBeats + note.start;
+          if (beat < fromBeat) return;
+          const resumesHere = pass === fromPass && i === fromIndex;
+          const sounds = resumesHere || !flatNotes[i - 1]?.tie;
+          schedule(() => {
+            playback.pass = pass;
+            playback.index = i;
+            setNowPlaying(i, true);
+            renderSheet(activePieceId, i);
+            if (sounds && pieceSounds(piece).melody) playNoteTone(note.pitch, (timeAt(beat + heldBeats(i)) - timeAt(beat)) * soundFraction);
+          }, msAt(beat));
+        });
+      }
+
+      // Each chord strike is queued a little ahead on the audio clock, so the piano keeps a
+      // steady beat. The Sound chips are read then, so switching works mid-piece. A strike adds
+      // the bass when its chord comes in, or when the strike before it didn't sound (playback
+      // started or resumed, or the piano was just switched on); resuming mid-beat strikes at once.
+      if (piece.piano) {
+        const strikes = pianoStrikes(piece);
+        const audioStart = getCtx().currentTime + 0.05 + delaySec;
+        let lastStruck = -1;
+        for (let pass = fromPass; pass < passes; pass++) {
+          strikes.forEach(({ beat, chord, bass, accent }, k) => {
+            const strikeBeat = pass * passBeats + beat;
+            if (strikeBeat + 1 <= fromBeat) return;
+            const at = Math.max(strikeBeat, fromBeat);
+            const n = pass * strikes.length + k;
+            schedule(() => {
+              if (!pieceSounds(piece).piano) return;
+              const time = Math.max(audioStart + timeAt(at) - timeAt(fromBeat), getCtx().currentTime);
+              const beats = piece.staccato ? 0.5 : 1;
+              playPianoChord(chord, { bass: bass || lastStruck !== n - 1, accent, beats }, time, beatDurAt(at), pianoOut);
+              lastStruck = n;
+            }, Math.max(0, msAt(at) - 100));
+          });
+        }
+      }
+
+      schedule(() => {
+        // The last chord rings out instead of being cut off.
+        fadeOutBus(pianoOut, 1.5);
+        playback.pianoOut = null;
+        stopPiecePlayback();
+      }, msAt(passes * passBeats));
+    }
+
+    function openPiece(pieceId) {
+      const piece = PIECES[pieceId];
+      if (!piece) return;
+      activePieceId = pieceId;
+      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
+      document.querySelector(".app").classList.add("wide");
+      document.getElementById("notes-catalog").style.display = "none";
+      document.getElementById("piece-view").classList.add("active");
+      document.getElementById("piece-title").textContent = piece.title;
+      document.getElementById("piece-meta").textContent = piece.meta;
+      document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
+      document.getElementById("piece-sound").hidden = !piece.piano;
+      // A piece with its own tempo marks starts the slider at its first one.
+      if (piece.tempo?.length) {
+        const slider = document.getElementById("piece-bpm");
+        slider.value = Math.min(Math.max(piece.tempo[0].bpm, slider.min), slider.max);
+        document.getElementById("piece-bpm-val").textContent = pieceBpm();
+      }
+      setNowPlaying(-1, false);
+      renderSheet(pieceId, -1);
+      reserveNotePanelHeights();
+    }
+
+    function closePiece() {
+      stopPitchListener();
+      stopPiecePlayback();
+      activePieceId = null;
+      focusedNoteIndex = -1;
+      updateNoteListenTarget();
+      document.querySelector(".app").classList.remove("wide");
+      document.getElementById("piece-view").classList.remove("active");
+      document.getElementById("notes-catalog").style.display = "block";
+    }
+
+    // --- Songbooks: pick a collection, then a piece ---
+    function catalogCard({ icon, name, detail, accent }, onClick) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card-btn";
+      btn.style.setProperty("--accent", accent);
+      btn.innerHTML = `<span class="icon">${icon}</span>
+        <span class="info"><div class="name"></div><div class="detail"></div></span>
+        <span class="indicator"></span>`;
+      btn.querySelector(".name").textContent = name;
+      btn.querySelector(".detail").textContent = detail;
+      btn.addEventListener("click", onClick);
+      return btn;
+    }
+
+    function openCollection(collection) {
+      document.getElementById("collection-title").textContent = collection.title;
+      document.getElementById("piece-back").textContent = `← ${collection.title}`;
+      document.getElementById("piece-buttons").replaceChildren(...collection.pieces.map((id) => {
+        const piece = PIECES[id];
+        return catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
+      }));
+      document.getElementById("collection-list").style.display = "none";
+      document.getElementById("collection-view").classList.add("active");
+    }
+
+    function closeCollection() {
+      document.getElementById("collection-view").classList.remove("active");
+      document.getElementById("collection-list").style.display = "block";
+    }
+
+    document.getElementById("collection-buttons").replaceChildren(...COLLECTIONS.map((collection) => {
+      const count = collection.pieces.length;
+      const detail = `${count} ${count === 1 ? "piece" : "pieces"} · ${collection.detail}`;
+      return catalogCard({ icon: "♫", name: collection.title, detail, accent: collection.accent }, () => openCollection(collection));
+    }));
+
+    document.getElementById("collection-back").addEventListener("click", closeCollection);
+    document.getElementById("piece-back").addEventListener("click", closePiece);
+    document.getElementById("piece-play").addEventListener("click", togglePiecePlayback);
+    document.getElementById("piece-stop").addEventListener("click", stopPiecePlayback);
+
+    document.getElementById("piece-delay").addEventListener("input", () => {
+      document.getElementById("piece-delay-val").textContent = pieceDelay() + " s";
+    });
+
+    document.getElementById("piece-bpm").addEventListener("input", () => {
+      document.getElementById("piece-bpm-val").textContent = pieceBpm();
+    });
+
+    // Melody alone, melody with the piano, or the piano alone to play along with.
+    chipGroup("[data-piece-sound]", (data) => {
+      pieceSound = data.pieceSound;
+    });
+
+    // --- Learn: reading sheet music ---
+    // The drawings match the sheet: staff lines 10 units apart, noteheads 6.2 × 4.6.
+    const LEARN_INK = "#1c1a18";
+    const STAFF_INK = "#2a2724";
+    const RIGHT_INK = "#3f8a55";
+    const ORDINALS = ["1st", "2nd", "3rd", "4th", "5th"];
+    const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
+    const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
+    const shuffle = (list) => list.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+
+    // The keys of the Book 1 pieces, by the letters their key signature makes sharp (in written order).
+    const KEY_SHARPS = { none: "", G: "F", D: "FC", A: "FCG" };
+    const SHARP_PLACES = { F: "F5", C: "C5", G: "G5" };
+    const SHARP_IN_KEYS = { F: "G, D and A major", C: "D and A major", G: "A major" };
+    const inKey = (pitch, key) => (KEY_SHARPS[key].includes(pitch[0]) ? `${pitch[0]}#${pitch.slice(1)}` : pitch);
+
+    // Lines and spaces above the bottom line (E): 0 = bottom line, 1 = 1st space, -1 = just below.
+    const staffStep = (pitch) => (40 - pitchToStaffY(pitch, 0)) / 5;
+
+    function staffPlace(pitch) {
+      const s = staffStep(pitch);
+      if (s >= 0 && s <= 8) return s % 2 === 0 ? `on the ${ORDINALS[s / 2]} line` : `in the ${ORDINALS[(s - 1) / 2]} space`;
+      if (s === -1) return "just below the staff";
+      if (s === 9) return "just above the staff";
+      const below = s < 0;
+      const n = Math.floor((below ? -s : s - 8) / 2);
+      if (s % 2 === 0) return `on the ${ORDINALS[n - 1]} ledger line ${below ? "below" : "above"} the staff`;
+      return `${below ? "under" : "above"} ${n === 1 ? "one ledger line" : `${n} ledger lines`}`;
+    }
+
+    // First-position fingering in words; "low" for the fingers that sit off the beginner tapes.
+    function fingeringText(pitch) {
+      const place = fingerPlacement(pitch);
+      if (!place) return "";
+      const string = `${FB_STRINGS[place.string][0]} string`;
+      if (place.offset === 0) return `open ${string}`;
+      const low = place.offset === 1 || place.offset === 3 ? "low " : "";
+      return `${string}, ${low}${ORDINALS[place.finger - 1]} finger`;
+    }
+
+    function staffLinesSvg(top, x1, x2) {
+      return [0, 10, 20, 30, 40].map((d) => `<line x1="${x1}" y1="${top + d}" x2="${x2}" y2="${top + d}" stroke="${STAFF_INK}" stroke-width="1"/>`).join("");
+    }
+
+    function trebleClefSvg(x, top) {
+      return `<text x="${x}" y="${top + 31}" font-size="34" fill="${STAFF_INK}" font-family="serif">\u{1D11E}</text>`;
+    }
+
+    function keySignatureSvg(x, top, key, ink = STAFF_INK) {
+      return [...KEY_SHARPS[key]].map((letter, i) => `<text x="${x + i * 9}" y="${pitchToStaffY(SHARP_PLACES[letter], top) + 5}" font-size="15" fill="${ink}" font-family="serif">♯</text>`).join("");
+    }
+
+    // One note as the sheet draws it: ledger lines, head and a stem (up below the middle line).
+    function noteSvg(x, pitch, top, { hollow = false, stem = true, stemUp, color = LEARN_INK, ledger = STAFF_INK } = {}) {
+      const y = pitchToStaffY(pitch, top);
+      let svg = "";
+      for (let ly = top - 10; ly >= y; ly -= 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="${ledger}" stroke-width="1"/>`;
+      for (let ly = top + 50; ly <= y; ly += 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="${ledger}" stroke-width="1"/>`;
+      svg += `<ellipse cx="${x}" cy="${y}" rx="6.2" ry="4.6" fill="${hollow ? "none" : color}" stroke="${color}" stroke-width="${hollow ? 1.9 : 0}" transform="rotate(-20 ${x} ${y})"/>`;
+      const up = stemUp ?? y > top + 20;
+      const stemX = up ? x + 5.4 : x - 5.4;
+      if (stem) svg += `<line x1="${stemX}" y1="${up ? y - 1 : y + 1}" x2="${stemX}" y2="${up ? y - 27 : y + 27}" stroke="${color}" stroke-width="1.5"/>`;
+      return { svg, y };
+    }
+
+    function setFeedback(id, state, html) {
+      const el = document.getElementById(id);
+      el.className = `quiz-feedback ${state}`;
+      el.innerHTML = html;
+    }
+
+    // --- Learn › Staff: every line and space from the open G string up to H (B) on the E string ---
+    const LADDER = ["G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5", "A5", "B5"];
+    let ladderPick = -1;
+    let ladderNames = true;
+
+    // Two lines so the notes stay big on a phone: the G and D strings, then the A and E strings.
+    // The first line leaves room below for ledger lines, the second above.
+    const LADDER_ROWS = [
+      { first: 0, top: 14, labelY: 97, y0: 0, y1: 104 },
+      { first: 8, top: 128, labelY: 185, y0: 104, y1: 190 },
+    ];
+
+    function renderLadder() {
+      const colW = 24;
+      const left = 44;
+      const width = left + 9 * colW + 6;
+      const height = 190;
+      let staves = "";
+      let picked = "";
+      let notes = "";
+      let hits = "";
+      LADDER_ROWS.forEach(({ top }) => { staves += staffLinesSvg(top, 2, width - 4) + trebleClefSvg(6, top); });
+      LADDER.forEach((pitch, i) => {
+        const row = LADDER_ROWS[i < LADDER_ROWS[1].first ? 0 : 1];
+        const x = left + (i - row.first + 0.5) * colW;
+        const open = OPEN_STRING[pitch];
+        const color = open ? STRING_ACCENT[open.string] : LEARN_INK;
+        const isPicked = i === ladderPick;
+        const box = `x="${x - colW / 2}" y="${row.y0}" width="${colW}" height="${row.y1 - row.y0}"`;
+        if (isPicked) picked = `<rect ${box} rx="5" fill="#d4a574" opacity="0.3"/>`;
+        notes += noteSvg(x, pitch, row.top, { stem: false, color }).svg;
+        if (ladderNames || isPicked) {
+          notes += `<text x="${x}" y="${row.labelY}" font-size="10" font-weight="${isPicked ? 700 : 500}" fill="${open ? color : "#5a5650"}" text-anchor="middle" font-family="-apple-system, sans-serif">${noteName(pitch)}</text>`;
+        }
+        hits += `<rect class="ladder-note" data-idx="${i}" ${box} fill="transparent" style="cursor:pointer"/>`;
+      });
+      document.getElementById("ladder-wrap").innerHTML = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff with every note from G under the staff to H (B) above it">
+        ${picked}${staves}${notes}${hits}
+      </svg>`;
+    }
+
+    function pickLadderNote(i) {
+      ladderPick = i;
+      const pitch = LADDER[i];
+      const open = OPEN_STRING[pitch];
+      const accent = open ? STRING_ACCENT[open.string] : "#d4a574";
+      const box = document.getElementById("ladder-info");
+      box.style.setProperty("--accent", accent);
+      box.classList.add("live");
+      document.getElementById("ladder-name").innerHTML = noteName(pitch);
+      const lines = [capitalize(staffPlace(pitch)), capitalize(fingeringText(pitch))];
+      if (SHARP_IN_KEYS[pitch[0]]) lines.push(`${noteName(inKey(pitch, "A"))} in ${SHARP_IN_KEYS[pitch[0]]}`);
+      document.getElementById("ladder-hint").innerHTML = lines.join("<br>");
+      renderFingerboard(pitch, accent, document.getElementById("ladder-fingerboard"));
+      renderLadder();
+      playNoteTone(pitch, 0.6);
+      markProgress("staff", pitch);
+    }
+
+    document.getElementById("ladder-wrap").addEventListener("click", (ev) => {
+      const col = ev.target.closest(".ladder-note");
+      if (col) pickLadderNote(parseInt(col.dataset.idx, 10));
+    });
+
+    document.getElementById("ladder-names").addEventListener("click", (ev) => {
+      ladderNames = !ladderNames;
+      ev.currentTarget.classList.toggle("active", ladderNames);
+      ev.currentTarget.setAttribute("aria-pressed", String(ladderNames));
+      renderLadder();
+    });
+
+    // --- Learn sounds: one loop or one-off at a time, cut at once by stopLearnSound() ---
+    // Like the rhythm loops, everything goes through one output; `onStop` tidies up the screen.
+    function startLearnSound(onStop) {
+      stopPitchListener();
+      stopLearnSound();
+      stopTone();
+      stopRhythm();
+      pausePiecePlayback();
+      const audio = getCtx();
+      const out = audio.createGain();
+      out.connect(output());
+      const clicks = audio.createGain();
+      clicks.gain.value = 0.5; // the beat stays in the background
+      clicks.connect(out);
+      const timers = [];
+      let cancelled = false;
+      learnSound = {
+        out,
+        clicks,
+        onStop,
+        at(audioTime, fn) {
+          const delayMs = Math.max(0, (audioTime - getCtx().currentTime) * 1000);
+          timers.push(setTimeout(() => {
+            if (!cancelled) fn();
+          }, delayMs));
+        },
+        stop() {
+          cancelled = true;
+          timers.forEach(clearTimeout);
+          const now = getCtx().currentTime;
+          out.gain.cancelScheduledValues(now);
+          out.gain.setValueAtTime(out.gain.value, now);
+          out.gain.linearRampToValueAtTime(0, now + 0.02);
+          setTimeout(() => out.disconnect(), 60);
+        },
+      };
+      return learnSound;
+    }
+
+    function stopLearnSound() {
+      if (!learnSound) return;
+      const sound = learnSound;
+      learnSound = null;
+      sound.stop();
+      sound.onStop?.();
+    }
+
+    // One bar of 4/4 from `start`: soft clicks on the beats and, unless `tones` is off, a D for each note.
+    function scheduleBar(sound, start, beatDur, notes, { tones = true } = {}) {
+      for (let b = 0; b < 4; b++) playClick(start + b * beatDur, b === 0, sound.clicks);
+      if (!tones) return;
+      notes.forEach((n) => {
+        if (!n.rest) playNoteTone("D4", n.beats * beatDur * 0.85, { time: start + n.t * beatDur, out: sound.out });
+      });
+    }
+
+    // --- Rhythm bars: one bar of 4/4 on a single line, notes spaced by time ---
+    // `notes` are { t, beats, rest } with `t` in beats from the start of the bar. Notes shorter
+    // than a beat are beamed per beat, with a second beam over each run of sixteenths.
+    // `strips` draws a bar under each note as long as it lasts; `counts` writes the count below
+    // (beats a note is held through, or a rest, in a lighter colour); `states` colours graded notes.
+    const RHYTHM_BEAT_W = 68;
+    const rhythmX = (t) => 22 + t * RHYTHM_BEAT_W;
+    const countLabel = (t) => [`${Math.floor(t) + 1}`, "e", "&", "a"][(t % 1) * 4];
+
+    function rhythmBarSvg(notes, { strips = false, counts = false, states = [] } = {}) {
+      const lineY = 30;
+      const stemTop = lineY - 24;
+      const end = rhythmX(4) - 6;
+      const stemX = (n) => rhythmX(n.t) + 5.4;
+      const beam = (from, to, y) => `<rect x="${stemX(from) - 0.75}" y="${y}" width="${stemX(to) - stemX(from) + 1.5}" height="4.5" fill="${LEARN_INK}"/>`;
+      let stripEls = "";
+      let noteEls = "";
+      let beams = "";
+      let countEls = "";
+      notes.forEach((n, i) => {
+        const x = rhythmX(n.t);
+        const span = `data-from="${n.t}" data-to="${n.t + n.beats}"`;
+        if (strips) stripEls += `<rect class="rv-strip" ${span} x="${x - 7}" y="40" width="${n.beats * RHYTHM_BEAT_W - 3}" height="5" rx="2.5"/>`;
+        if (n.rest) {
+          noteEls += quarterRestSvg(x, lineY - 20, STAFF_INK);
+          return;
+        }
+        const hollow = n.beats >= 2;
+        const head = n.beats === 4
+          ? `<ellipse cx="${x}" cy="${lineY}" rx="7.6" ry="5" fill="none" stroke="currentColor" stroke-width="2.4"/>`
+          : `<ellipse cx="${x}" cy="${lineY}" rx="6.2" ry="4.6" fill="${hollow ? "none" : "currentColor"}" stroke="currentColor" stroke-width="${hollow ? 1.9 : 0}" transform="rotate(-20 ${x} ${lineY})"/>`;
+        const stem = n.beats < 4 ? `<line x1="${x + 5.4}" y1="${lineY - 1}" x2="${x + 5.4}" y2="${stemTop}" stroke="currentColor" stroke-width="1.5"/>` : "";
+        noteEls += `<g class="rv${states[i] ? ` ${states[i]}` : ""}" ${span}>${head}${stem}</g>`;
+      });
+      for (let b = 0; b < 4; b++) {
+        const group = notes.filter((n) => !n.rest && n.beats < 1 && Math.floor(n.t) === b);
+        if (group.length < 2) continue;
+        beams += beam(group[0], group[group.length - 1], stemTop);
+        for (let i = 0; i < group.length; i++) {
+          if (group[i].beats !== 0.25) continue;
+          let j = i;
+          while (group[j + 1]?.beats === 0.25) j++;
+          if (j > i) beams += beam(group[i], group[j], stemTop + 7);
+          i = j;
+        }
+      }
+      if (counts) {
+        const starts = notes.filter((n) => !n.rest).map((n) => n.t);
+        [...new Set([...notes.map((n) => n.t), 0, 1, 2, 3])].sort((a, b) => a - b).forEach((t) => {
+          const held = !starts.includes(t);
+          countEls += `<text class="rv-count${held ? " held" : ""}" data-at="${t}" x="${rhythmX(t)}" y="60" font-size="10" text-anchor="middle" font-family="-apple-system, sans-serif">${countLabel(t)}</text>`;
+        });
+      }
+      return `<svg viewBox="0 0 300 ${counts ? 66 : 50}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="4" y1="${lineY}" x2="${end}" y2="${lineY}" stroke="${STAFF_INK}" stroke-width="1"/>
+        <line x1="${end}" y1="${lineY - 12}" x2="${end}" y2="${lineY + 12}" stroke="${STAFF_INK}" stroke-width="1.4"/>
+        ${stripEls}${beams}${noteEls}${countEls}
+      </svg>`;
+    }
+
+    // Lights up the note sounding at beat `t` and its count.
+    function markRhythmStep(container, t) {
+      container.querySelectorAll(".rv, .rv-strip").forEach((el) => {
+        el.classList.toggle("hit", parseFloat(el.dataset.from) <= t && t < parseFloat(el.dataset.to));
+      });
+      container.querySelectorAll(".rv-count").forEach((el) => el.classList.toggle("hit", parseFloat(el.dataset.at) === t));
+    }
+
+    function clearRhythmMarks(container) {
+      container.querySelectorAll(".hit").forEach((el) => el.classList.remove("hit"));
+    }
+
+    // --- Learn › Note values: each one fills a bar of 4/4; tap to loop it against the beat ---
+    const VALUE_DEMO_BPM = 72;
+    const NOTE_VALUES = [
+      { name: "Whole note", beats: 4, accent: "#c47a3a", detail: "4 beats · hollow head, no stem: hold it for the whole bar" },
+      { name: "Half note", beats: 2, accent: "#5a9e6f", detail: "2 beats · hollow head with a stem" },
+      { name: "Quarter note", beats: 1, accent: "#4a8fc4", detail: "1 beat · filled head with a stem" },
+      { name: "Eighth notes", beats: 0.5, accent: "#9a86c4", detail: "½ beat each · two to a beat, joined by a beam · like “Hann fer”" },
+      { name: "Sixteenth notes", beats: 0.25, accent: "#b85c8a", detail: "¼ beat each · four to a beat, two beams · like “A-prí-kó-sa”" },
+    ];
+
+    function valueNotes(value) {
+      const notes = [];
+      for (let t = 0; t < 4; t += value.beats) notes.push({ t, beats: value.beats });
+      return notes;
+    }
+
+    // The rest of the same length, on a short staff.
+    function restSvg(beats) {
+      const top = 5;
+      const x = 20;
+      const ink = LEARN_INK;
+      // Eighth and sixteenth rests: a slanted stem with a dot-and-hook for each flag.
+      const hook = (dx, dy) => `<circle cx="${x - 3 + dx}" cy="${top + 15 + dy}" r="2.4" fill="${ink}"/>
+        <path d="M${x - 3 + dx} ${top + 17 + dy} Q${x + 1 + dx} ${top + 18 + dy} ${x + 4 + dx} ${top + 14 + dy}" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+      let rest;
+      if (beats === 4) rest = `<rect x="${x - 7}" y="${top + 10}" width="14" height="5" fill="${ink}"/>`; // hangs from the 4th line
+      else if (beats === 2) rest = `<rect x="${x - 7}" y="${top + 15}" width="14" height="5" fill="${ink}"/>`; // sits on the middle line
+      else if (beats === 1) rest = quarterRestSvg(x, top, ink);
+      else if (beats === 0.5) rest = `${hook(0, 0)}<line x1="${x + 4}" y1="${top + 14}" x2="${x - 1}" y2="${top + 32}" stroke="${ink}" stroke-width="1.5"/>`;
+      else rest = `${hook(0, 0)}${hook(-2.8, 10)}<line x1="${x + 4}" y1="${top + 14}" x2="${x - 2.5}" y2="${top + 37.5}" stroke="${ink}" stroke-width="1.5"/>`;
+      return `<svg viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${staffLinesSvg(top, 2, 38)}${rest}</svg>`;
+    }
+
+    function startValueDemo(card, value) {
+      const sound = startLearnSound(() => {
+        card.classList.remove("active");
+        clearRhythmMarks(card);
+      });
+      sound.card = card;
+      const beatDur = 60 / VALUE_DEMO_BPM;
+      const notes = valueNotes(value);
+      const steps = [...card.querySelectorAll(".rv-count")].map((el) => parseFloat(el.dataset.at));
+
+      function playBar(barStart) {
+        const start = barStart ?? getCtx().currentTime + 0.05;
+        scheduleBar(sound, start, beatDur, notes);
+        steps.forEach((t) => sound.at(start + t * beatDur, () => markRhythmStep(card, t)));
+        // Queue the next bar a little early so its first note isn't late.
+        const next = start + 4 * beatDur;
+        sound.at(next - 0.25, () => playBar(next));
+      }
+
+      card.classList.add("active");
+      markProgress("values", value.beats);
+      playBar();
+    }
+
+    document.getElementById("value-list").innerHTML = NOTE_VALUES.map((value, i) => `
+      <button type="button" class="value-card" data-value="${i}" style="--accent:${value.accent}">
+        <div class="value-head">
+          <div class="info"><div class="name">${value.name}</div><div class="detail">${value.detail}</div></div>
+          <div class="value-rest">${restSvg(value.beats)}Rest</div>
+        </div>
+        <div class="value-bar">${rhythmBarSvg(valueNotes(value), { strips: true, counts: true })}</div>
+      </button>`).join("");
+
+    document.getElementById("value-list").addEventListener("click", (ev) => {
+      const card = ev.target.closest(".value-card");
+      if (!card) return;
+      if (learnSound?.card === card) stopLearnSound();
+      else startValueDemo(card, NOTE_VALUES[card.dataset.value]);
+    });
+
+    // --- Learn › Signs: what the other marks on the page mean ---
+    // Each glyph is a short staff with its lines at top…top + 40; `ac` colours the part explained.
+    function signGlyph(body, top = 25) {
+      return `<svg viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg">${staffLinesSvg(top, 2, 58)}${body}</svg>`;
+    }
+
+    const barLine = (x, ac, width = 1.4) => `<line x1="${x}" y1="25" x2="${x}" y2="65" stroke="${ac}" stroke-width="${width}"/>`;
+    const repeatDots = (x, ac) => `<circle cx="${x}" cy="40" r="1.9" fill="${ac}"/><circle cx="${x}" cy="50" r="1.9" fill="${ac}"/>`;
+    const accidentalSvg = (x, pitch, glyph, ac) => `<text x="${x - 16.2}" y="${pitchToStaffY(pitch, 25) + 4}" font-size="13" fill="${ac}" font-family="serif">${glyph}</text>`;
+    const slurPath = (d, ac) => `<path d="${d}" fill="none" stroke="${ac}" stroke-width="1.6" stroke-linecap="round"/>`;
+    const keyGlyph = (key) => (ac) => signGlyph(`${trebleClefSvg(2, 25)}${keySignatureSvg(26, 25, key, ac)}`);
+
+    const SIGN_GROUPS = [
+      {
+        title: "At the start of every line",
+        accent: "#c47a3a",
+        signs: [
+          {
+            name: "Treble clef",
+            glyph: (ac) => signGlyph(`<line x1="2" y1="55" x2="58" y2="55" stroke="${ac}" stroke-width="2.2"/>${trebleClefSvg(18, 25)}`),
+            facts: [
+              "Also called the <strong>G clef</strong>: its curl wraps round the 2nd line from the bottom, which makes that line G.",
+              "Violin music is always written with it.",
+            ],
+          },
+          {
+            name: "Time signature",
+            glyph: (ac) => signGlyph(["43", "63"].map((y) => `<text x="30" y="${y}" font-size="24" font-weight="700" fill="${ac}" text-anchor="middle" font-family="serif">4</text>`).join("")),
+            facts: [
+              "<strong>Top number</strong> — how many beats in each bar.",
+              "<strong>Bottom number</strong> — which note gets one beat: 4 is a quarter note, 2 a half note.",
+              "Twinkle is in 4/4, Song of the Wind in 2/4, Lightly Row in 2/2.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Key signatures",
+        accent: "#6a9e8a",
+        signs: [
+          {
+            name: "G major key",
+            glyph: keyGlyph("G"),
+            facts: [
+              "Sharps right after the clef hold for the <strong>whole piece</strong>, in every octave. One sharp, on F: every F is F♯.",
+              "2nd finger: <strong>high</strong> on the G and D strings, <strong>low</strong> on the A and E strings (C and G).",
+            ],
+          },
+          {
+            name: "D major key",
+            glyph: keyGlyph("D"),
+            facts: [
+              "Two sharps, F and C: every F is F♯ and every C is C♯.",
+              "2nd finger: <strong>high</strong> on the G, D and A strings, <strong>low</strong> on the E string (G).",
+            ],
+          },
+          {
+            name: "A major key",
+            glyph: keyGlyph("A"),
+            facts: [
+              "Three sharps, F, C and G: every F is F♯, every C is C♯ and every G is G♯.",
+              "2nd finger: <strong>high</strong> on every string. The beginner pieces in this app are in A major, written with the ♯ on each note instead.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Bars",
+        accent: "#9a86c4",
+        signs: [
+          {
+            name: "Bar lines",
+            glyph: (ac) => signGlyph(`${barLine(16, ac)}${barLine(32, ac)}${barLine(46.5, ac, 1.2)}${barLine(52, ac, 3)}`),
+            facts: [
+              "Split the music into <strong>bars</strong> (measures), each with the number of beats the time signature gives.",
+              "A thin and a thick line together mark the <strong>end</strong> of the piece.",
+            ],
+          },
+          {
+            name: "Repeat signs",
+            glyph: (ac) => signGlyph(`${barLine(6, ac, 3)}${barLine(10.5, ac, 1.2)}${repeatDots(15.5, ac)}${noteSvg(30, "A4", 25).svg}${repeatDots(44.5, ac)}${barLine(49.5, ac, 1.2)}${barLine(54, ac, 3)}`),
+            facts: [
+              "Play the music between the two signs <strong>again</strong>.",
+              "With only the closing sign, go back to the very beginning, as at the end of Song of the Wind.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Pitch",
+        accent: "#5a9e6f",
+        signs: [
+          {
+            name: "Sharp ♯",
+            glyph: (ac) => signGlyph(`${accidentalSvg(38, "C5", "♯", ac)}${noteSvg(38, "C5", 25).svg}`),
+            facts: [
+              "Raises a note a <strong>half step</strong>: C♯ lies between C and D.",
+              "On the violin the finger moves a little closer to the bridge.",
+              "Written by a note, it lasts until the next bar line.",
+            ],
+          },
+          {
+            name: "Natural ♮",
+            glyph: (ac) => signGlyph(`${accidentalSvg(38, "C5", "♮", ac)}${noteSvg(38, "C5", 25).svg}`),
+            facts: [
+              "<strong>Cancels</strong> a sharp, from the key signature or earlier in the bar: play the plain note, here C instead of C♯.",
+              "It lasts until the next bar line.",
+            ],
+          },
+          {
+            name: "Ledger lines",
+            glyph: (ac) => signGlyph(noteSvg(30, "G3", 15, { ledger: ac }).svg, 15),
+            facts: [
+              "Short extra lines for notes too <strong>high or low</strong> to fit on the staff.",
+              "Your open G string hangs under two of them.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Length",
+        accent: "#4a8fc4",
+        signs: [
+          {
+            name: "Dot",
+            glyph: (ac) => signGlyph(`${noteSvg(24, "A4", 25, { hollow: true }).svg}<circle cx="34.7" cy="50" r="2" fill="${ac}"/>`),
+            facts: [
+              "A dot after a note adds <strong>half its length</strong>.",
+              "Dotted half note: 2 + 1 = 3 beats. Dotted quarter: 1 + ½ = 1½ beats.",
+            ],
+          },
+          {
+            name: "Tie",
+            glyph: (ac) => signGlyph(`${noteSvg(16, "A4", 25).svg}${noteSvg(44, "A4", 25).svg}${slurPath("M21 56 Q30 63 39 56", ac)}`),
+            facts: [
+              "A curve joining two notes of the <strong>same pitch</strong>.",
+              "Play once and hold through both: one bow, no new note.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "How to play it",
+        accent: "#b85c8a",
+        signs: [
+          {
+            name: "Fingering",
+            glyph: (ac) => signGlyph(`${noteSvg(30, "B4", 25).svg}<text x="30" y="17" font-size="12" font-weight="700" fill="${ac}" text-anchor="middle" font-family="-apple-system, sans-serif">1</text>`),
+            facts: [
+              "The small number says which finger: <strong>0</strong> open string, <strong>1</strong> index, <strong>2</strong> middle, <strong>3</strong> ring, <strong>4</strong> little finger.",
+              "Here: H (B), 1st finger on the A string.",
+            ],
+          },
+          {
+            name: "Slur",
+            glyph: (ac) => signGlyph(`${noteSvg(16, "A4", 25).svg}${noteSvg(44, "B4", 25, { stemUp: true }).svg}${slurPath("M16 57 Q30 68 44 52", ac)}`),
+            facts: [
+              "A curve over <strong>different notes</strong>.",
+              "Play them in <strong>one bow</strong>: the fingers change, the bow keeps going the same way.",
+            ],
+          },
+          {
+            name: "Staccato",
+            glyph: (ac) => signGlyph(`${noteSvg(30, "A4", 25).svg}<circle cx="30" cy="60" r="2" fill="${ac}"/>`),
+            facts: [
+              "A dot <strong>above or below</strong> the notehead, not after it.",
+              "Play short and separated: stop the bow after each note. Song of the Wind is played this way.",
+            ],
+          },
+          {
+            name: "Bowing",
+            glyph: (ac) => signGlyph(`${noteSvg(18, "A4", 25).svg}${noteSvg(44, "A4", 25).svg}
+              <path d="M13 15 V7 H23 V15" fill="none" stroke="${ac}" stroke-width="1.4"/><rect x="13" y="6" width="10" height="3" fill="${ac}"/>
+              <path d="M40 6 L44 16 L48 6" fill="none" stroke="${ac}" stroke-width="1.5" stroke-linejoin="round"/>`),
+            facts: [
+              "<strong>⊓ Down bow</strong> — pull the bow, starting near the frog (your hand).",
+              "<strong>V Up bow</strong> — push the bow, starting near the tip.",
+            ],
+          },
+          {
+            name: "Dynamics",
+            glyph: (ac) => signGlyph(`${noteSvg(18, "A4", 15).svg}${noteSvg(42, "A4", 15).svg}
+              ${[["p", 18], ["f", 42]].map(([d, x]) => `<text x="${x}" y="80" font-size="22" font-weight="700" font-style="italic" fill="${ac}" text-anchor="middle" font-family="serif">${d}</text>`).join("")}`, 15),
+            facts: [
+              "<strong>p</strong> (piano) means soft, <strong>f</strong> (forte) loud.",
+              "<strong>mp</strong> and <strong>mf</strong> are in between: a little soft, a little loud.",
+            ],
+          },
+        ],
+      },
+    ];
+    const ALL_SIGNS = SIGN_GROUPS.flatMap((group) => group.signs.map((sign) => ({ ...sign, group })));
+
+    document.getElementById("signs-list").innerHTML = SIGN_GROUPS.map((group) => `
+      <div class="learn-group">${group.title}</div>
+      ${group.signs.map((sign) => `<div class="symbol-card" style="--accent:${group.accent}">
+        <div class="symbol-glyph" aria-hidden="true">${sign.glyph(group.accent)}</div>
+        <div class="symbol-text">
+          <div class="symbol-name">${sign.name}</div>
+          <ul class="symbol-facts">${sign.facts.map((f) => `<li>${f}</li>`).join("")}</ul>
+        </div>
+      </div>`).join("")}`).join("");
+
+    // --- Progress: stars and finished lessons, kept in this browser only ---
+    // A star is an answer right on the first try. A lesson is finished when every note has been
+    // tapped (Staff), every value heard (Note values) or every sign named in the quiz (Signs).
+    const PROGRESS_KEY = "fidluaefing-learn-progress";
+    const QUIZ_MODES = ["name", "play", "rhythm", "signs"];
+    const progress = loadProgress();
+    const session = Object.fromEntries(QUIZ_MODES.map((mode) => [mode, { asked: 0, firstTry: 0, streak: 0 }]));
+
+    function emptyProgress() {
+      return {
+        staff: [],
+        values: [],
+        signs: [],
+        stars: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
+        best: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
+      };
+    }
+
+    // Storage can be missing or blocked (private windows); the lessons work the same without it.
+    function loadProgress() {
+      const empty = emptyProgress();
+      try {
+        const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+        if (!saved) return empty;
+        return { ...empty, ...saved, stars: { ...empty.stars, ...saved.stars }, best: { ...empty.best, ...saved.best } };
+      } catch (_) {
+        return empty;
+      }
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+      } catch (_) {}
+      renderProgress();
+    }
+
+    function markProgress(lesson, item) {
+      if (progress[lesson].includes(item)) return;
+      progress[lesson].push(item);
+      saveProgress();
+    }
+
+    function scoreAnswer(mode, firstTry) {
+      const s = session[mode];
+      s.asked++;
+      if (firstTry) {
+        s.firstTry++;
+        s.streak++;
+        progress.stars[mode]++;
+        progress.best[mode] = Math.max(progress.best[mode], s.streak);
+      } else {
+        s.streak = 0;
+      }
+      saveProgress();
+    }
+
+    function renderProgress() {
+      const total = QUIZ_MODES.reduce((sum, mode) => sum + progress.stars[mode], 0);
+      document.getElementById("learn-subtitle").textContent = `Learn to read sheet music · ${total ? `★ ${total}` : "step by step"}`;
+      const lessons = [
+        ["staff", LADDER.filter((p) => progress.staff.includes(p)).length, LADDER.length, (n, of) => `Explored ${n} of ${of} notes`, "✓ Every note explored"],
+        ["values", NOTE_VALUES.filter((v) => progress.values.includes(v.beats)).length, NOTE_VALUES.length, (n, of) => `Heard ${n} of ${of}`, "✓ All of them heard"],
+        ["signs", ALL_SIGNS.filter((s) => progress.signs.includes(s.name)).length, ALL_SIGNS.length, (n, of) => `Named ${n} of ${of} in the quiz`, "✓ All of them named in the quiz"],
+      ];
+      lessons.forEach(([lesson, n, of, partly, done]) => {
+        document.getElementById(`${lesson}-progress`).textContent = n < of ? partly(n, of) : done;
+        const sub = document.querySelector(`#panel-learn .subtab[data-group="${lesson}"]`);
+        sub.textContent = `${sub.dataset.label}${n < of ? "" : " ✓"}`;
+      });
+      QUIZ_MODES.forEach((mode) => {
+        const s = session[mode];
+        const now = s.asked ? `${s.firstTry} of ${s.asked} right first time${s.streak >= 3 ? ` · ${s.streak} in a row` : ""}<br>` : "";
+        const stars = progress.stars[mode];
+        const best = progress.best[mode] ? ` · best streak ${progress.best[mode]}` : "";
+        document.getElementById(`quiz-score-${mode}`).innerHTML = `${now}★ ${stars} ${stars === 1 ? "star" : "stars"}${best}`;
+      });
+    }
+
+    document.getElementById("progress-reset").addEventListener("click", () => {
+      if (!confirm("Reset all stars and lesson progress on this device?")) return;
+      Object.assign(progress, emptyProgress());
+      QUIZ_MODES.forEach((mode) => Object.assign(session[mode], { asked: 0, firstTry: 0, streak: 0 }));
+      saveProgress();
+    });
+
+    // --- Learn › Quiz: the notes and key shared by Name it and Play it ---
+    const QUIZ_RANGES = {
+      staff: ["D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5"],
+      all: LADDER,
+    };
+    const readSettings = { range: "staff", key: "none" };
+    const sounding = (pitch) => inKey(pitch, readSettings.key);
+
+    // One note in the middle, or a phrase of quarter notes ending in a bar line. `marked` shades
+    // the note being played.
+    function readStaffSvg(pitches, { colors = [], marked = -1 } = {}) {
+      const top = 26;
+      const phrase = pitches.length > 1;
+      const xs = phrase ? pitches.map((_, i) => 86 + i * 28) : [120];
+      let svg = "";
+      if (marked >= 0) svg += `<rect x="${xs[marked] - 13}" y="2" width="26" height="96" rx="6" fill="#4a8fc4" opacity="0.18"/>`;
+      svg += staffLinesSvg(top, 4, 196) + trebleClefSvg(8, top) + keySignatureSvg(32, top, readSettings.key);
+      pitches.forEach((p, i) => { svg += noteSvg(xs[i], p, top, { color: colors[i] || LEARN_INK }).svg; });
+      if (phrase) svg += `<line x1="196" y1="${top}" x2="196" y2="${top + 40}" stroke="${STAFF_INK}" stroke-width="1.4"/>`;
+      return `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Notes to read">${svg}</svg>`;
+    }
+
+    function quizHint(pitch) {
+      const s = staffStep(pitch);
+      if (s === -1) return "It hangs just below the bottom line (E): one letter down.";
+      if (s === 9) return "It sits just above the top line (F): one letter up.";
+      if (s < -1 || s > 9) return "Count from the staff, one letter for each line and space: below the bottom line go D, C, H, A, G; above the top line go G, A, H.";
+      return s % 2 === 0
+        ? "It’s on a line. Lines from the bottom: E, G, H, D, F."
+        : "It’s in a space. Spaces from the bottom: F, A, C, E.";
+    }
+
+    // --- Learn › Quiz › Name it ---
+    const nameQuiz = { pitch: null, missed: false, done: false, timer: null };
+
+    function renderNameStaff(color) {
+      document.getElementById("quiz-wrap").innerHTML = readStaffSvg([nameQuiz.pitch], { colors: [color] });
+    }
+
+    // C D E F G A B; with a key signature, the buttons name its sharps (F♯, C♯, G♯).
+    function renderNameAnswers() {
+      document.getElementById("quiz-answers").innerHTML = [..."CDEFGAB"].map((letter) =>
+        `<button type="button" class="quiz-answer" data-letter="${letter}">${noteName(sounding(`${letter}4`))}</button>`
+      ).join("");
+    }
+
+    function nextQuiz() {
+      clearTimeout(nameQuiz.timer);
+      nameQuiz.pitch = pickOne(QUIZ_RANGES[readSettings.range].filter((p) => p !== nameQuiz.pitch));
+      nameQuiz.missed = false;
+      nameQuiz.done = false;
+      renderNameStaff();
+      renderNameAnswers();
+      setFeedback("quiz-feedback", "", "Which note is this?");
+    }
+
+    // Only a first-try answer earns a star; a wrong one stays marked so you can try again.
+    function answerQuiz(btn) {
+      if (nameQuiz.done || btn.classList.contains("wrong")) return;
+      const pitch = nameQuiz.pitch;
+      const heard = sounding(pitch);
+      if (btn.dataset.letter === pitch[0]) {
+        nameQuiz.done = true;
+        btn.classList.add("right");
+        renderNameStaff(RIGHT_INK);
+        playNoteTone(heard, 0.7);
+        const key = heard !== pitch ? " The key signature makes it sharp." : "";
+        setFeedback("quiz-feedback", "right", `<strong>Yes — ${noteName(heard)}.</strong> ${capitalize(staffPlace(pitch))}.${key}`);
+        scoreAnswer("name", !nameQuiz.missed);
+        nameQuiz.timer = setTimeout(nextQuiz, 1600);
+      } else {
+        nameQuiz.missed = true;
+        btn.classList.add("wrong");
+        setFeedback("quiz-feedback", "wrong", `<strong>Not ${btn.firstChild.textContent}.</strong> ${quizHint(pitch)}`);
+      }
+    }
+
+    document.getElementById("quiz-answers").addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".quiz-answer");
+      if (btn) answerQuiz(btn);
+    });
+
+    document.getElementById("quiz-next").addEventListener("click", nextQuiz);
+
+    // --- Learn › Quiz › Play it: the microphone checks the note you play ---
+    // Within PLAY_RIGHT_CENTS counts as the right note (the tuning advice still shows); it has to
+    // be held for PLAY_HOLD_MS. Holding a different note for PLAY_WRONG_MS loses the star, except
+    // just after a right note, while the bow is still on the old one.
+    const PLAY_RIGHT_CENTS = 40;
+    const PLAY_HOLD_MS = 400;
+    const PLAY_WRONG_MS = 600;
+    const PLAY_GRACE_MS = 1000;
+    const playQuiz = { length: 1, pitches: [], index: 0, missed: false, done: false, rightSince: null, wrongSince: null, graceUntil: 0, flash: null, timer: null };
+    const playTarget = () => sounding(playQuiz.pitches[Math.min(playQuiz.index, playQuiz.pitches.length - 1)]);
+    const PLAY_IDLE_TEXT = "Tap the mic, then play the note you see. Hold it steady until it turns green.";
+
+    // A short tune moving by steps and skips, never repeating a note.
+    function randomPhrase(pool, length) {
+      let i = Math.floor(Math.random() * pool.length);
+      const phrase = [pool[i]];
+      while (phrase.length < length) {
+        const j = i + pickOne([-2, -1, 1, 2]);
+        if (j < 0 || j >= pool.length) continue;
+        i = j;
+        phrase.push(pool[i]);
+      }
+      return phrase;
+    }
+
+    function renderPlayStaff() {
+      const { pitches, index, done } = playQuiz;
+      const phrase = pitches.length > 1;
+      const colors = pitches.map((_, i) => (i < index || done ? RIGHT_INK : LEARN_INK));
+      document.getElementById("play-wrap").innerHTML = readStaffSvg(pitches, { colors, marked: phrase && !done ? index : -1 });
+      document.getElementById("play-listen-target").textContent = phrase
+        ? `Note ${Math.min(index + 1, pitches.length)} of ${pitches.length}`
+        : "Play the note on the staff";
+    }
+
+    function nextPlay() {
+      clearTimeout(playQuiz.timer);
+      const pool = QUIZ_RANGES[readSettings.range];
+      playQuiz.pitches = playQuiz.length === 1
+        ? [pickOne(pool.filter((p) => p !== playQuiz.pitches[0]))]
+        : randomPhrase(pool, playQuiz.length);
+      Object.assign(playQuiz, { index: 0, missed: false, done: false, rightSince: null, wrongSince: null, graceUntil: 0, flash: null });
+      document.getElementById("play-hint").hidden = true;
+      renderPlayStaff();
+      if (!isListening("play-listen-btn")) document.getElementById("play-feedback").innerHTML = PLAY_IDLE_TEXT;
+    }
+
+    function onPlayReading(cents) {
+      const now = performance.now();
+      if (playQuiz.done) return { state: "good", html: playQuiz.flash.html };
+      if (cents !== null && Math.abs(cents) <= PLAY_RIGHT_CENTS) {
+        playQuiz.wrongSince = null;
+        playQuiz.rightSince ??= now;
+        if (now - playQuiz.rightSince >= PLAY_HOLD_MS) return playNoteRight(now);
+      } else {
+        playQuiz.rightSince = null;
+        if (cents !== null && Math.abs(cents) > 80 && now > playQuiz.graceUntil) {
+          playQuiz.wrongSince ??= now;
+          if (now - playQuiz.wrongSince >= PLAY_WRONG_MS) playQuiz.missed = true;
+        } else {
+          playQuiz.wrongSince = null;
+        }
+      }
+      // Keep "Yes!" up for a moment after a right note in a phrase.
+      return playQuiz.flash && now < playQuiz.flash.until ? playQuiz.flash : null;
+    }
+
+    function playNoteRight(now) {
+      const pitch = playTarget();
+      scoreAnswer("play", !playQuiz.missed);
+      Object.assign(playQuiz, { missed: false, rightSince: null, wrongSince: null, graceUntil: now + PLAY_GRACE_MS });
+      document.getElementById("play-hint").hidden = true;
+      playQuiz.index++;
+      const phrase = playQuiz.pitches.length > 1;
+      if (playQuiz.index < playQuiz.pitches.length) {
+        playQuiz.flash = { state: "good", html: `<strong>Yes — ${noteName(pitch)}!</strong> Now the next note.`, until: now + 900 };
+      } else {
+        playQuiz.done = true;
+        playQuiz.flash = {
+          state: "good",
+          html: phrase
+            ? "<strong>The whole phrase — well done!</strong> Here comes a new one…"
+            : `<strong>Yes — ${noteName(pitch)}!</strong> ${capitalize(fingeringText(pitch))}.`,
+        };
+        playQuiz.timer = setTimeout(nextPlay, 1800);
+      }
+      renderPlayStaff();
+      return playQuiz.flash;
+    }
+
+    // The hint shows where the note is played, and costs the star.
+    function showPlayHint() {
+      if (playQuiz.done) return;
+      const pitch = playTarget();
+      playQuiz.missed = true;
+      const box = document.getElementById("play-hint");
+      box.hidden = false;
+      box.style.setProperty("--accent", "#d4a574");
+      document.getElementById("play-hint-name").innerHTML = noteName(pitch);
+      document.getElementById("play-hint-text").textContent = capitalize(fingeringText(pitch));
+      renderFingerboard(pitch, "#d4a574", document.getElementById("play-fingerboard"));
+    }
+
+    document.getElementById("play-listen-btn").addEventListener("click", () => {
+      toggleListen({
+        getTarget: () => ({ hz: midiToFreq(pitchToMidi(playTarget())) }),
+        mode: "finger",
+        block: document.getElementById("play-listen-block"),
+        btn: document.getElementById("play-listen-btn"),
+        feedbackEl: document.getElementById("play-feedback"),
+        onReading: onPlayReading,
+      });
+    });
+
+    document.getElementById("play-hint-btn").addEventListener("click", showPlayHint);
+    document.getElementById("play-next").addEventListener("click", nextPlay);
+
+    // --- Learn › Quiz › Rhythm: hear a bar and pick it, or read one and tap it ---
+    // A bar is a list of beat patterns: "h" is a half note (2 beats), "r" a quarter rest.
+    const RHYTHM_PATTERNS = { q: [1], ee: [0.5, 0.5], ssss: [0.25, 0.25, 0.25, 0.25], ess: [0.5, 0.25, 0.25], sse: [0.25, 0.25, 0.5] };
+    const RHYTHM_LEVELS = { easy: ["q", "ee"], hard: ["q", "ee", "ssss", "ess", "sse"] };
+    const PICK_BPM = 76;
+    const TAP_BPM = 66;
+    const rhythmQuiz = { kind: "pick", level: "easy", options: [], answer: 0, heard: false, missed: false, done: false, timer: null };
+    const tapQuiz = { notes: [], phase: "idle", taps: [], barStartMs: 0, beatMs: 0, finishedAt: 0, missed: false, done: false };
+
+    // Starts on a note, with at most one rest.
+    function randomBar(level) {
+      const kinds = RHYTHM_LEVELS[level];
+      const keys = [];
+      for (let beat = 0; beat < 4;) {
+        const r = Math.random();
+        if (beat % 2 === 0 && r < 0.15) {
+          keys.push("h");
+          beat += 2;
+        } else if (beat > 0 && r < 0.27 && !keys.includes("r")) {
+          keys.push("r");
+          beat += 1;
+        } else {
+          keys.push(pickOne(kinds));
+          beat += 1;
+        }
+      }
+      return keys;
+    }
+
+    // The same bar with one beat changed (a half note splits into two beats).
+    function mutateBar(keys, level) {
+      const kinds = RHYTHM_LEVELS[level];
+      const out = [...keys];
+      const i = Math.floor(Math.random() * out.length);
+      const restOk = i > 0 && !out.includes("r");
+      if (out[i] === "h") {
+        out.splice(i, 1, pickOne(kinds), pickOne(kinds));
+      } else {
+        out[i] = pickOne([...kinds, ...(restOk ? ["r"] : [])].filter((k) => k !== out[i]));
+      }
+      return out;
+    }
+
+    function barNotes(keys) {
+      const notes = [];
+      let t = 0;
+      keys.forEach((key) => {
+        if (key === "r") {
+          notes.push({ t, beats: 1, rest: true });
+          t += 1;
+          return;
+        }
+        (key === "h" ? [2] : RHYTHM_PATTERNS[key]).forEach((beats) => {
+          notes.push({ t, beats });
+          t += beats;
+        });
+      });
+      return notes;
+    }
+
+    // One bar of count-in clicks, then the bar: with its notes, or with only the beat to tap along to.
+    function playRhythm(notes, bpm, { tones = true, autoStop = true, onStop } = {}) {
+      const sound = startLearnSound(onStop);
+      const beatDur = 60 / bpm;
+      const start = getCtx().currentTime + 0.1;
+      const barStart = start + 4 * beatDur;
+      scheduleBar(sound, start, beatDur, []);
+      scheduleBar(sound, barStart, beatDur, notes, { tones });
+      if (autoStop) {
+        sound.at(barStart + 4 * beatDur + 0.3, () => {
+          if (learnSound === sound) stopLearnSound();
+        });
+      }
+      return { sound, start, barStart, beatDur };
+    }
+
+    function nextRhythmPick() {
+      clearTimeout(rhythmQuiz.timer);
+      stopLearnSound();
+      const { level } = rhythmQuiz;
+      const base = randomBar(level);
+      const options = [base];
+      for (let n = 0; options.length < 3 && n < 60; n++) {
+        const candidate = mutateBar(n % 3 === 2 ? mutateBar(base, level) : base, level);
+        if (!options.some((o) => o.join() === candidate.join())) options.push(candidate);
+      }
+      rhythmQuiz.options = shuffle(options);
+      rhythmQuiz.answer = rhythmQuiz.options.indexOf(base);
+      Object.assign(rhythmQuiz, { heard: false, missed: false, done: false });
+      document.getElementById("rhythm-options").innerHTML = rhythmQuiz.options.map((keys, i) => `
+        <button type="button" class="rhythm-option" data-i="${i}" aria-label="Rhythm ${i + 1}">
+          <div class="value-bar">${rhythmBarSvg(barNotes(keys))}</div>
+        </button>`).join("");
+      setFeedback("rhythm-feedback", "", "Press <strong>Play</strong> and listen.");
+    }
+
+    function answerRhythm(btn) {
+      if (rhythmQuiz.done || btn.classList.contains("wrong")) return;
+      if (!rhythmQuiz.heard) {
+        setFeedback("rhythm-feedback", "", "Press <strong>Play</strong> first, then pick the rhythm you heard.");
+        return;
+      }
+      if (parseInt(btn.dataset.i, 10) === rhythmQuiz.answer) {
+        rhythmQuiz.done = true;
+        btn.classList.add("right");
+        setFeedback("rhythm-feedback", "right", "<strong>Yes, that’s the one!</strong>");
+        scoreAnswer("rhythm", !rhythmQuiz.missed);
+        rhythmQuiz.timer = setTimeout(nextRhythmPick, 1800);
+      } else {
+        rhythmQuiz.missed = true;
+        btn.classList.add("wrong");
+        setFeedback("rhythm-feedback", "wrong", "<strong>Not that one.</strong> Play it again and follow the notes as you listen.");
+      }
+    }
+
+    document.getElementById("rhythm-options").addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".rhythm-option");
+      if (btn) answerRhythm(btn);
+    });
+
+    document.getElementById("rhythm-play").addEventListener("click", () => {
+      rhythmQuiz.heard = true;
+      playRhythm(barNotes(rhythmQuiz.options[rhythmQuiz.answer]), PICK_BPM);
+    });
+
+    document.getElementById("rhythm-next").addEventListener("click", nextRhythmPick);
+
+    // Tap along: taps are timed against the bar as you hear it, so the speaker delay counts too.
+    function renderTapBar(states = []) {
+      document.getElementById("tap-bar").innerHTML = rhythmBarSvg(tapQuiz.notes, { counts: true, states });
+    }
+
+    function setTapPad(label, armed = false) {
+      const pad = document.getElementById("tap-pad");
+      pad.textContent = label;
+      pad.classList.toggle("armed", armed);
+    }
+
+    function newTapRhythm() {
+      stopLearnSound();
+      tapQuiz.notes = barNotes(randomBar(rhythmQuiz.level));
+      Object.assign(tapQuiz, { phase: "idle", taps: [], missed: false, done: false });
+      renderTapBar();
+      setTapPad("Start");
+      setFeedback("tap-feedback", "", "Press <strong>Start</strong>. Four clicks count you in, then tap each note.");
+    }
+
+    function startTapping() {
+      document.activeElement?.blur?.();
+      renderTapBar();
+      const { sound, start, barStart, beatDur } = playRhythm(tapQuiz.notes, TAP_BPM, {
+        tones: false,
+        autoStop: false,
+        onStop: () => {
+          if (tapQuiz.phase !== "tapping") return;
+          tapQuiz.phase = "idle";
+          setTapPad("Start");
+        },
+      });
+      const audio = getCtx();
+      const latencyMs = ((audio.outputLatency || 0) + (audio.baseLatency || 0)) * 1000;
+      tapQuiz.barStartMs = performance.now() + (barStart - audio.currentTime) * 1000 + latencyMs;
+      tapQuiz.beatMs = beatDur * 1000;
+      tapQuiz.taps = [];
+      tapQuiz.phase = "tapping";
+      setTapPad("…", true);
+      const bar = document.getElementById("tap-bar");
+      for (let b = 0; b < 4; b++) {
+        sound.at(start + b * beatDur, () => setTapPad(String(b + 1), true));
+        sound.at(barStart + b * beatDur, () => {
+          if (b === 0) setTapPad("Tap!", true);
+          bar.querySelectorAll(".rv-count").forEach((el) => el.classList.toggle("hit", parseFloat(el.dataset.at) === b));
+        });
+      }
+      sound.at(barStart + 4 * beatDur + 0.4, finishTapping);
+    }
+
+    // Each tap goes to the nearest note not yet tapped, if close enough; the others are extra.
+    // On time means within 40% of the gap to the note before (at most 140 ms). Taps during the
+    // count-in are ignored.
+    function gradeTaps(notes, taps, beatMs) {
+      const onsets = [];
+      notes.forEach((n, i) => {
+        if (n.rest) return;
+        const prev = onsets[onsets.length - 1];
+        const gapMs = Math.min(n.beats, prev ? n.t - prev.t : n.beats) * beatMs;
+        const tol = Math.min(140, 0.4 * gapMs);
+        onsets.push({ i, t: n.t, at: n.t * beatMs, tol, err: null });
+      });
+      let extra = 0;
+      taps.filter((ms) => ms > -300 && ms < 4 * beatMs + 300).sort((a, b) => a - b).forEach((ms) => {
+        let best = null;
+        onsets.forEach((o) => {
+          if (o.err !== null || Math.abs(ms - o.at) > 2 * o.tol) return;
+          if (!best || Math.abs(ms - o.at) < Math.abs(ms - best.at)) best = o;
+        });
+        if (best) best.err = ms - best.at;
+        else extra++;
+      });
+      const states = [];
+      const count = { good: 0, early: 0, late: 0, miss: 0 };
+      onsets.forEach((o) => {
+        const state = o.err === null ? "miss" : Math.abs(o.err) <= o.tol ? "good" : o.err < 0 ? "early" : "late";
+        states[o.i] = state;
+        count[state]++;
+      });
+      return { states, count, total: onsets.length, extra };
+    }
+
+    function finishTapping() {
+      tapQuiz.phase = "done";
+      tapQuiz.finishedAt = performance.now();
+      stopLearnSound();
+      const { states, count, total, extra } = gradeTaps(tapQuiz.notes, tapQuiz.taps, tapQuiz.beatMs);
+      renderTapBar(states);
+      if (count.good === total && extra === 0) {
+        if (!tapQuiz.done) scoreAnswer("rhythm", !tapQuiz.missed);
+        tapQuiz.done = true;
+        setFeedback("tap-feedback", "right", "<strong>Every note on time — well done!</strong>");
+        setTapPad("Again");
+        return;
+      }
+      tapQuiz.missed = true;
+      const parts = [`${count.good} of ${total} on time`];
+      if (count.early) parts.push(`${count.early} early`);
+      if (count.late) parts.push(`${count.late} late`);
+      if (count.miss) parts.push(`${count.miss} missed`);
+      if (extra) parts.push(`${extra} extra ${extra === 1 ? "tap" : "taps"}`);
+      setFeedback("tap-feedback", "wrong", `<strong>${parts.join(" · ")}.</strong> Orange notes were early or late, red ones missed. Press <em>Hear it</em>, then try again.`);
+      setTapPad("Try again");
+    }
+
+    function onTapPad(time) {
+      if (tapQuiz.phase === "tapping") {
+        tapQuiz.taps.push(time - tapQuiz.barStartMs);
+        const pad = document.getElementById("tap-pad");
+        pad.classList.add("hit");
+        setTimeout(() => pad.classList.remove("hit"), 90);
+        return;
+      }
+      startTapping();
+    }
+
+    // Taps are taken on pointerdown (quicker than click); starting stays on click, which also
+    // unlocks audio on phones. The click that ends the last tap mustn't restart right away.
+    const tapPad = document.getElementById("tap-pad");
+    tapPad.addEventListener("pointerdown", (ev) => {
+      if (tapQuiz.phase !== "tapping") return;
+      ev.preventDefault();
+      onTapPad(ev.timeStamp);
+    });
+    tapPad.addEventListener("click", () => {
+      if (tapQuiz.phase === "tapping" || performance.now() - tapQuiz.finishedAt < 600) return;
+      startTapping();
+    });
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.code !== "Space" || ev.repeat) return;
+      if (document.getElementById("rhythm-tap").offsetParent === null) return; // not on screen
+      ev.preventDefault();
+      onTapPad(ev.timeStamp);
+    });
+
+    document.getElementById("tap-hear").addEventListener("click", () => {
+      const bar = document.getElementById("tap-bar");
+      tapQuiz.phase = "idle";
+      renderTapBar();
+      setTapPad("Start");
+      const { sound, barStart, beatDur } = playRhythm(tapQuiz.notes, TAP_BPM, { onStop: () => clearRhythmMarks(bar) });
+      const steps = [...bar.querySelectorAll(".rv-count")].map((el) => parseFloat(el.dataset.at));
+      steps.forEach((t) => sound.at(barStart + t * beatDur, () => markRhythmStep(bar, t)));
+    });
+
+    document.getElementById("tap-new").addEventListener("click", newTapRhythm);
+
+    // --- Learn › Quiz › Signs: name the sign; ones not named yet come up first ---
+    const signName = (sign) => sign.name.replace(/ [♯♮]$/, "");
+    const signQuiz = { sign: null, missed: false, done: false, timer: null };
+
+    function nextSign() {
+      clearTimeout(signQuiz.timer);
+      const others = ALL_SIGNS.filter((s) => s !== signQuiz.sign);
+      const fresh = others.filter((s) => !progress.signs.includes(s.name));
+      const sign = pickOne(fresh.length ? fresh : others);
+      Object.assign(signQuiz, { sign, missed: false, done: false });
+      document.getElementById("sign-quiz-glyph").innerHTML = sign.glyph(LEARN_INK);
+      // Signs from the same group make the closest wrong answers.
+      const near = shuffle(sign.group.signs.filter((s) => s.name !== sign.name)).slice(0, 2);
+      const far = shuffle(ALL_SIGNS.filter((s) => s.name !== sign.name && !near.some((n) => n.name === s.name)));
+      const answers = shuffle([sign, ...near, ...far.slice(0, 3 - near.length)]);
+      document.getElementById("sign-answers").innerHTML = answers.map((s) =>
+        `<button type="button" class="quiz-answer" data-sign="${s.name}">${signName(s)}</button>`).join("");
+      setFeedback("sign-feedback", "", "Tap its name.");
+    }
+
+    function answerSign(btn) {
+      if (signQuiz.done || btn.classList.contains("wrong")) return;
+      const { sign } = signQuiz;
+      if (btn.dataset.sign === sign.name) {
+        signQuiz.done = true;
+        btn.classList.add("right");
+        setFeedback("sign-feedback", "right", `<strong>Yes — ${signName(sign)}.</strong> ${sign.facts[0]}`);
+        scoreAnswer("signs", !signQuiz.missed);
+        if (!signQuiz.missed) markProgress("signs", sign.name);
+        signQuiz.timer = setTimeout(nextSign, 3000);
+      } else {
+        signQuiz.missed = true;
+        btn.classList.add("wrong");
+        setFeedback("sign-feedback", "wrong", `<strong>Not ${btn.textContent}.</strong> Look again, or read about it under Signs.`);
+      }
+    }
+
+    document.getElementById("sign-answers").addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".quiz-answer");
+      if (btn) answerSign(btn);
+    });
+
+    document.getElementById("sign-next").addEventListener("click", nextSign);
+
+    // --- Learn › Quiz: modes and settings ---
+    function chipGroup(selector, onPick) {
+      const chips = document.querySelectorAll(selector);
+      chips.forEach((chip) => chip.addEventListener("click", () => {
+        chips.forEach((c) => c.classList.toggle("active", c === chip));
+        onPick(chip.dataset);
+      }));
+    }
+
+    chipGroup("#quiz-modes .seg", ({ mode }) => {
+      stopLearnSound();
+      stopPitchListener();
+      document.querySelectorAll(".quiz-mode").forEach((m) => m.classList.toggle("active", m.id === `quiz-mode-${mode}`));
+      document.getElementById("read-settings").hidden = mode !== "name" && mode !== "play";
+    });
+
+    chipGroup("[data-read-range]", ({ readRange }) => {
+      readSettings.range = readRange;
+      nextQuiz();
+      nextPlay();
+    });
+
+    chipGroup("[data-read-key]", ({ readKey }) => {
+      readSettings.key = readKey;
+      nextQuiz();
+      nextPlay();
+    });
+
+    chipGroup("[data-play-length]", ({ playLength }) => {
+      playQuiz.length = parseInt(playLength, 10);
+      nextPlay();
+    });
+
+    chipGroup("[data-rhythm-kind]", ({ rhythmKind }) => {
+      stopLearnSound();
+      rhythmQuiz.kind = rhythmKind;
+      document.getElementById("rhythm-pick").hidden = rhythmKind !== "pick";
+      document.getElementById("rhythm-tap").hidden = rhythmKind !== "tap";
+    });
+
+    chipGroup("[data-rhythm-level]", ({ rhythmLevel }) => {
+      rhythmQuiz.level = rhythmLevel;
+      nextRhythmPick();
+      newTapRhythm();
+    });
+
+    document.querySelectorAll("#panel-learn .subtab").forEach((sub) => {
+      sub.dataset.label = sub.textContent;
+      sub.addEventListener("click", () => {
+        stopLearnSound();
+        stopPitchListener();
+        document.querySelectorAll("#panel-learn .subtab").forEach((s) => s.classList.toggle("active", s === sub));
+        document.querySelectorAll(".learn-section").forEach((s) => s.classList.toggle("active", s.id === "learn-" + sub.dataset.group));
+      });
+    });
+
+    renderLadder();
+    renderFingerboard(null, null, document.getElementById("ladder-fingerboard"));
+    nextQuiz();
+    nextPlay();
+    nextRhythmPick();
+    newTapRhythm();
+    nextSign();
+    renderProgress();
+
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (activePieceId && document.getElementById("panel-notes").classList.contains("active")) {
+          renderSheet(activePieceId, sheetHighlight);
+          reserveNotePanelHeights();
+        }
+      }, 120);
+    });
+  </script>
+</body>
+</html>

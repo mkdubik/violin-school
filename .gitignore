@@ -1,0 +1,6 @@
+# Kept on this computer only: copyrighted songbooks and personal files.
+local/
+
+# Local tooling
+.claude/
+.DS_Store
