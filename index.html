@@ -849,6 +849,198 @@
     }
 
     .link-btn:hover { color: #8a8278; }
+
+    .sign-group-chips { display: none; }
+
+    /* --- Laptops and desktops: one screen, no page scroll ---
+       Phones keep the single scrolling column above. On a wide and tall enough screen the
+       title, tabs and volume share a header row, each tab lays its parts out side by side in
+       the height left below it, and the sheet music scales to fit (WIDE_LAYOUT in the script
+       matches this query). A panel that still doesn't fit scrolls inside itself. */
+    @media (min-width: 960px) and (min-height: 560px) {
+      body { align-items: stretch; padding: 0.75rem 1.5rem; }
+
+      .app, .app.wide {
+        max-width: 1180px;
+        height: calc(100dvh - 1.5rem);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) 220px;
+        grid-template-rows: auto minmax(0, 1fr);
+        column-gap: 1.5rem;
+        row-gap: 0.9rem;
+        align-items: center;
+      }
+
+      h1 { grid-row: 1; grid-column: 1; margin: 0; text-align: left; }
+      .tabs { grid-row: 1; grid-column: 2; margin: 0; width: 100%; max-width: 560px; justify-self: center; }
+      .app > .slider-row { grid-row: 1; grid-column: 3; margin: 0; }
+      .app > .panel { grid-row: 2; grid-column: 1 / -1; align-self: stretch; min-height: 0; overflow: auto; }
+
+      .subtitle { margin-bottom: 1rem; }
+
+      /* Tuner: strings and their buttons on the left, listen mode on the right. */
+      #panel-tuner.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "sub sub" "list listen" "ctrl hint";
+        align-content: start;
+        column-gap: 2rem;
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      #panel-tuner .subtitle { grid-area: sub; }
+      #panel-tuner .btn-list { grid-area: list; }
+      #panel-tuner .controls { grid-area: ctrl; }
+      #panel-tuner .listen-block { grid-area: listen; margin-top: 0; align-self: start; }
+      #panel-tuner .hint { grid-area: hint; }
+
+      /* Rhythms: the list on the left, the beat pattern and its controls on the right. */
+      #panel-rhythms.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "sub sub" "tabs display" "list display" "list ctrl" "list slider" "list hint";
+        grid-template-rows: auto auto auto auto auto 1fr;
+        align-content: start;
+        column-gap: 2rem;
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      #panel-rhythms .subtitle { grid-area: sub; }
+      #panel-rhythms .subtabs { grid-area: tabs; }
+      #panel-rhythms .rhythm-group { grid-area: list; align-self: start; }
+      #panel-rhythms .rhythm-display { grid-area: display; margin-top: 0; }
+      #panel-rhythms .controls { grid-area: ctrl; }
+      #panel-rhythms .slider-row { grid-area: slider; }
+      #panel-rhythms .hint { grid-area: hint; }
+
+      /* Notes: the songbook lists stay a readable width. A piece fills the screen: the title
+         with the playback controls beside it, the sheet taking whatever height is left, and
+         the symbol, the current note and listen mode side by side below it, kept compact. */
+      #panel-notes.active { display: flex; flex-direction: column; }
+      #notes-catalog { width: 100%; max-width: 560px; margin: 0 auto; }
+      .piece-view.active {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        /* Below 200px the music gets too small to read; on a very short window the piece
+           scrolls inside its panel instead. */
+        grid-template-rows: auto auto auto minmax(200px, 1fr) auto;
+        column-gap: 1.5rem;
+      }
+      .piece-view > .back { grid-column: 1; grid-row: 1; justify-self: start; margin-bottom: 0.25rem; }
+      .piece-view > .piece-title { grid-column: 1; grid-row: 2; }
+      .piece-view > .piece-meta { grid-column: 1; grid-row: 3; margin-bottom: 0.6rem; }
+      .piece-controls {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        align-self: start;
+        display: grid;
+        grid-template-columns: auto 250px;
+        column-gap: 1rem;
+        row-gap: 0.4rem;
+        align-items: center;
+      }
+      .piece-controls .controls { grid-column: 1; grid-row: 1; margin: 0; }
+      .piece-controls .controls button { padding: 0.5rem 1.25rem; }
+      .piece-controls #piece-sound { grid-column: 1; grid-row: 2; margin: 0; }
+      .piece-controls .slider-row { grid-column: 2; margin: 0; }
+      .piece-controls .slider-row label { white-space: nowrap; }
+      .piece-controls .slider-row input { min-width: 0; }
+      .piece-view > .sheet-wrap { grid-column: 1 / -1; grid-row: 4; min-height: 0; }
+      .piece-view > .sheet-wrap svg { height: 100%; }
+      .piece-panels {
+        grid-column: 1 / -1;
+        grid-row: 5;
+        margin-top: 0.6rem;
+        display: grid;
+        /* The symbol's explanation is the longest text; a wider column keeps it short. */
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.75rem;
+        align-items: start;
+      }
+      .piece-panels .symbol-glyph { width: 60px; }
+      .piece-panels .symbol-facts { font-size: 0.8rem; line-height: 1.35; }
+      .piece-panels .piece-status { display: contents; }
+      .piece-panels .symbol-card,
+      .piece-panels .now-playing,
+      .piece-panels .listen-block { margin-top: 0; padding: 0.7rem 0.9rem; }
+      .piece-panels .fingerboard { width: 64px; }
+
+      /* Learn: the subtitle and lesson tabs share a line, then each lesson in columns. On Staff
+         the chart spans two rows, so the right column's two cards stack beside it. */
+      #panel-learn.active {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-content: start;
+        align-items: center;
+        column-gap: 1.5rem;
+        row-gap: 0.9rem;
+      }
+      #panel-learn > .subtitle { margin: 0; text-align: left; }
+      #panel-learn > .subtabs { margin: 0; }
+      #panel-learn > .learn-section { grid-column: 1 / -1; }
+      .sign-quiz-glyph { width: 110px; }
+      #quiz-mode-rhythm > .chip-row { display: inline-flex; margin: 0 1.25rem 0.75rem 0; }
+
+      #learn-staff.active {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        grid-template-rows: repeat(4, auto);
+        column-gap: 2rem;
+        align-content: start;
+      }
+      #learn-staff > .lesson-text { grid-column: 1; grid-row: 1; }
+      #learn-staff > .sheet-wrap { grid-column: 1; grid-row: 2 / span 2; }
+      #learn-staff > .chip-row { grid-column: 1; grid-row: 4; }
+      #learn-staff > .now-playing { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; align-self: start; }
+      #learn-staff > .symbol-card { grid-column: 2; grid-row: 3 / span 2; align-self: start; }
+
+      /* Staffs drawn at a column's full width would be very tall; cap them by the window height.
+         The drawing keeps its shape and centres in the card. */
+      #ladder-wrap svg { max-height: calc(100dvh - 430px); }
+      #quiz-wrap svg, #play-wrap svg { max-height: calc(100dvh - 590px); min-height: 120px; }
+      #tap-bar svg { max-height: 120px; }
+      #rhythm-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+      #rhythm-options .rhythm-option { margin-top: 0; }
+
+      #value-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+      }
+      #value-list .value-card { margin-top: 0; }
+      .tap-pad { height: 4.5rem; }
+      .quiz-feedback { min-height: 3em; margin-top: 0.75rem; }
+
+      /* Signs: one group at a time, picked with the chips. */
+      .sign-group-chips { display: flex; }
+      .sign-group { display: none; }
+      .sign-group.active {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: start;
+      }
+      .sign-group .learn-group { display: none; }
+      .sign-group .symbol-card { margin-top: 0; }
+
+      #learn-quiz.active {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        grid-template-rows: auto auto 1fr auto;
+        column-gap: 2rem;
+        align-content: start;
+      }
+      #quiz-modes { grid-column: 1; grid-row: 1; }
+      #read-settings { grid-column: 1; grid-row: 2; }
+      #learn-quiz .quiz-mode { grid-column: 2; grid-row: 1 / -1; }
+      #progress-reset { grid-column: 1; grid-row: 4; justify-self: start; }
+    }
   </style>
 </head>
 <body>
@@ -1052,53 +1244,57 @@
         <div class="piece-title" id="piece-title"></div>
         <div class="piece-meta" id="piece-meta"></div>
         <div class="sheet-wrap" id="sheet-wrap"></div>
-        <div class="symbol-card" id="symbol-card">
-          <div class="symbol-glyph" id="symbol-glyph" aria-hidden="true"></div>
-          <div class="symbol-text">
-            <div class="label">What the symbol means</div>
-            <div class="symbol-name" id="symbol-name">&mdash;</div>
-            <ul class="symbol-facts" id="symbol-facts"></ul>
-          </div>
-        </div>
-        <div class="piece-status">
-          <div class="now-playing with-fingerboard" id="now-playing">
-            <div class="np-text">
-              <div class="label">Current note</div>
-              <div class="note-name" id="np-name">&mdash;</div>
-              <div class="note-hint" id="np-hint">Press Play to follow the melody</div>
+        <div class="piece-panels">
+          <div class="symbol-card" id="symbol-card">
+            <div class="symbol-glyph" id="symbol-glyph" aria-hidden="true"></div>
+            <div class="symbol-text">
+              <div class="label">What the symbol means</div>
+              <div class="symbol-name" id="symbol-name">&mdash;</div>
+              <ul class="symbol-facts" id="symbol-facts"></ul>
             </div>
-            <div class="fingerboard idle" id="np-fingerboard" role="img" aria-label="Violin fingerboard"></div>
           </div>
-          <div class="listen-block" id="note-listen-block">
-            <div class="listen-row">
-              <button type="button" class="listen-btn" id="note-listen-btn" title="Listen and check pitch" aria-pressed="false" aria-label="Microphone: check this note">&#127908;</button>
-              <div class="listen-target">
-                <div class="label">Listen mode</div>
-                <div class="target-name" id="note-listen-target">No note selected</div>
+          <div class="piece-status">
+            <div class="now-playing with-fingerboard" id="now-playing">
+              <div class="np-text">
+                <div class="label">Current note</div>
+                <div class="note-name" id="np-name">&mdash;</div>
+                <div class="note-hint" id="np-hint">Press Play to follow the melody</div>
               </div>
+              <div class="fingerboard idle" id="np-fingerboard" role="img" aria-label="Violin fingerboard"></div>
             </div>
-            <div class="listen-feedback" id="note-listen-feedback">Tap a note on the staff, then tap the mic and play it. You&rsquo;ll see whether the pitch is good and which way to move your finger. While listening, tapping another note switches the target silently.</div>
+            <div class="listen-block" id="note-listen-block">
+              <div class="listen-row">
+                <button type="button" class="listen-btn" id="note-listen-btn" title="Listen and check pitch" aria-pressed="false" aria-label="Microphone: check this note">&#127908;</button>
+                <div class="listen-target">
+                  <div class="label">Listen mode</div>
+                  <div class="target-name" id="note-listen-target">No note selected</div>
+                </div>
+              </div>
+              <div class="listen-feedback" id="note-listen-feedback">Tap a note on the staff, then tap the mic and play it. You&rsquo;ll see whether the pitch is good and which way to move your finger. While listening, tapping another note switches the target silently.</div>
+            </div>
           </div>
         </div>
-        <div class="chip-row" id="piece-sound" hidden>
-          <span class="chip-label">Sound</span>
-          <button type="button" class="chip active" data-piece-sound="melody">Melody</button>
-          <button type="button" class="chip" data-piece-sound="both">With piano</button>
-          <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
-        </div>
-        <div class="controls">
-          <button type="button" id="piece-play">Play</button>
-          <button type="button" id="piece-stop">Stop</button>
-        </div>
-        <div class="slider-row">
-          <label for="piece-bpm">Tempo</label>
-          <input type="range" id="piece-bpm" min="40" max="120" value="72" step="1">
-          <span class="value" id="piece-bpm-val">72</span>
-        </div>
-        <div class="slider-row">
-          <label for="piece-delay">Start delay</label>
-          <input type="range" id="piece-delay" min="0" max="10" value="0" step="1">
-          <span class="value" id="piece-delay-val">0 s</span>
+        <div class="piece-controls">
+          <div class="chip-row" id="piece-sound" hidden>
+            <span class="chip-label">Sound</span>
+            <button type="button" class="chip active" data-piece-sound="melody">Melody</button>
+            <button type="button" class="chip" data-piece-sound="both">With piano</button>
+            <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
+          </div>
+          <div class="controls">
+            <button type="button" id="piece-play">Play</button>
+            <button type="button" id="piece-stop">Stop</button>
+          </div>
+          <div class="slider-row">
+            <label for="piece-bpm">Tempo</label>
+            <input type="range" id="piece-bpm" min="40" max="120" value="72" step="1">
+            <span class="value" id="piece-bpm-val">72</span>
+          </div>
+          <div class="slider-row">
+            <label for="piece-delay">Start delay</label>
+            <input type="range" id="piece-delay" min="0" max="10" value="0" step="1">
+            <span class="value" id="piece-delay-val">0 s</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1151,6 +1347,7 @@
       <div class="learn-section" id="learn-signs">
         <p class="lesson-text">Besides the notes, the page is full of small signs that tell you how to play them. Test yourself under Quiz &rsaquo; Signs.</p>
         <p class="learn-progress" id="signs-progress"></p>
+        <div class="chip-row sign-group-chips" id="sign-group-chips"></div>
         <div id="signs-list"></div>
       </div>
 
@@ -2275,7 +2472,7 @@
           ...russakeisariPass(),
           ...russakeisariPass(),
           [e("A5"), e("F5"), e("F#5"), e("G#5")],
-          [e("A4"), e("A5"), "A5"],
+          [e("A5"), e("A5"), "A5"],
         ],
       },
     };
@@ -2551,12 +2748,62 @@
       return { systems, natural, contentRight, width: contentRight + layout.padR };
     }
 
+    // Where each line's staff starts, and the sheet's total height. A line whose notes climb
+    // high above the staff (ledger lines, plus room for a tie) moves down so they don't run
+    // into the line above; one whose notes hang far below it pushes the next line down the
+    // same way.
+    function sheetVerticals(piece, natural, layout) {
+      const { staffTop, staffH, systemGap, noteRy } = layout;
+      const systemYs = (si) => natural[si].notes.map((n) => pitchToStaffY(n.pitch, 0));
+      const lowest = (si) => Math.max(staffH, ...systemYs(si));
+      // Tempo marks sit above the first line, so it starts lower.
+      const markRoom = piece.tempo?.length ? 16 : 0;
+      const systemTops = [];
+      natural.forEach((_, si) => {
+        const highest = Math.min(0, ...systemYs(si));
+        const extra = Math.max(0, -highest + noteRy + 8 - 22);
+        const below = si === 0 ? 0 : Math.max(0, lowest(si - 1) + noteRy + 8 - staffH - 22);
+        systemTops.push((si === 0 ? staffTop + markRoom : systemTops[si - 1] + systemGap + below) + extra);
+      });
+      const last = natural.length - 1;
+      return { systemTops, height: systemTops[last] + Math.max(staffH + 14, lowest(last) + noteRy + 4) };
+    }
+
+    // Line breaks with every `k` lines of `counts` (as layoutSystems reads it) joined into one.
+    function joinLines(counts, totalMeasures, k) {
+      const lines = [];
+      for (let i = 0, line = 0; i < totalMeasures; line++) {
+        const n = Math.min(counts[Math.min(line, counts.length - 1)], totalMeasures - i);
+        lines.push(n);
+        i += n;
+      }
+      const joined = [];
+      for (let i = 0; i < lines.length; i += k) joined.push(lines.slice(i, i + k).reduce((a, b) => a + b, 0));
+      return joined;
+    }
+
+    // Matches the large-screen media query in the stylesheet.
+    const WIDE_LAYOUT = matchMedia("(min-width: 960px) and (min-height: 560px)");
+
     // Prefer the piece's line breaks (4 bars per line, as in print, unless it sets
     // `systems`); drop to 2 when the screen is too narrow for the staff to stay readable,
     // since the SVG is scaled to the card width. Never zoom past `maxScale`.
-    function chooseSystems(piece, layout, availablePx) {
+    // Given `availableH` too (a large screen, where the sheet has a fixed box), it also tries
+    // two or three of the piece's lines joined into one and keeps whichever shows the music
+    // biggest, the piece's own breaks unless another is clearly bigger.
+    function chooseSystems(piece, layout, availablePx, availableH = 0) {
       const candidates = [layout.systems || [layout.measuresPerSystem], [2]];
       const minRight = availablePx ? availablePx / layout.maxScale - layout.padR : 0;
+      if (availableH && availablePx) {
+        const total = piece.measures.length;
+        let best = null;
+        for (const counts of [candidates[0], joinLines(candidates[0], total, 2), joinLines(candidates[0], total, 3)]) {
+          const option = layoutSystems(piece, layout, counts, minRight);
+          const scale = Math.min(availablePx / option.width, availableH / sheetVerticals(piece, option.natural, layout).height);
+          if (!best || scale > best.scale * 1.05) best = { ...option, scale };
+        }
+        return best;
+      }
       let chosen = null;
       for (const counts of candidates) {
         chosen = layoutSystems(piece, layout, counts, minRight);
@@ -2594,14 +2841,19 @@
       const piece = PIECES[pieceId];
       const wrap = document.getElementById("sheet-wrap");
       const layout = sheetLayoutFor(piece);
-      const { padL, padR, staffTop, staffH, systemGap, noteRx, noteRy, stemLen, beamW, clefSize } = layout;
+      const { padL, padR, staffH, noteRx, noteRy, stemLen, beamW, clefSize } = layout;
       const ink = "#2a2724";
       const noteInk = "#1c1a18";
       sheetHighlight = highlightIndex;
 
       const wrapStyle = getComputedStyle(wrap);
       const availablePx = wrap.clientWidth - parseFloat(wrapStyle.paddingLeft) - parseFloat(wrapStyle.paddingRight);
-      const { systems, natural, contentRight } = chooseSystems(piece, layout, availablePx);
+      // On a large screen the sheet fills the box the layout gives it instead of growing with
+      // the music, so it has a height to fit as well.
+      const availableH = WIDE_LAYOUT.matches
+        ? Math.max(0, wrap.clientHeight - parseFloat(wrapStyle.paddingTop) - parseFloat(wrapStyle.paddingBottom))
+        : 0;
+      const { systems, natural, contentRight } = chooseSystems(piece, layout, availablePx, availableH);
 
       // Stretch each system so every line ends at the same right edge.
       const notePositions = [];
@@ -2615,21 +2867,7 @@
       });
 
       const maxWidth = contentRight + padR;
-      // A line whose notes climb high above the staff (ledger lines, plus room for a tie)
-      // moves down so they don't run into the line above; one whose notes hang far below it
-      // pushes the next line down the same way.
-      const systemYs = (si) => notePositions.filter((p) => p.systemIndex === si).map((p) => pitchToStaffY(p.pitch, 0));
-      const lowest = (si) => Math.max(staffH, ...systemYs(si));
-      // Tempo marks sit above the first line, so it starts lower.
-      const markRoom = piece.tempo?.length ? 16 : 0;
-      const systemTops = [];
-      systems.forEach((_, si) => {
-        const highest = Math.min(0, ...systemYs(si));
-        const extra = Math.max(0, -highest + noteRy + 8 - 22);
-        const below = si === 0 ? 0 : Math.max(0, lowest(si - 1) + noteRy + 8 - staffH - 22);
-        systemTops.push((si === 0 ? staffTop + markRoom : systemTops[si - 1] + systemGap + below) + extra);
-      });
-      const height = systemTops[systemTops.length - 1] + Math.max(staffH + 14, lowest(systems.length - 1) + noteRy + 4);
+      const { systemTops, height } = sheetVerticals(piece, natural, layout);
       const staffRight = contentRight + 1;
 
       let lines = "";
@@ -3879,15 +4117,25 @@
     ];
     const ALL_SIGNS = SIGN_GROUPS.flatMap((group) => group.signs.map((sign) => ({ ...sign, group })));
 
-    document.getElementById("signs-list").innerHTML = SIGN_GROUPS.map((group) => `
-      <div class="learn-group">${group.title}</div>
-      ${group.signs.map((sign) => `<div class="symbol-card" style="--accent:${group.accent}">
-        <div class="symbol-glyph" aria-hidden="true">${sign.glyph(group.accent)}</div>
-        <div class="symbol-text">
-          <div class="symbol-name">${sign.name}</div>
-          <ul class="symbol-facts">${sign.facts.map((f) => `<li>${f}</li>`).join("")}</ul>
-        </div>
-      </div>`).join("")}`).join("");
+    // One section per group: a phone lists them all; a large screen shows the one picked with
+    // the chips, so the lesson fits without scrolling.
+    document.getElementById("signs-list").innerHTML = SIGN_GROUPS.map((group, gi) => `
+      <section class="sign-group${gi === 0 ? " active" : ""}" data-group="${gi}">
+        <div class="learn-group">${group.title}</div>
+        ${group.signs.map((sign) => `<div class="symbol-card" style="--accent:${group.accent}">
+          <div class="symbol-glyph" aria-hidden="true">${sign.glyph(group.accent)}</div>
+          <div class="symbol-text">
+            <div class="symbol-name">${sign.name}</div>
+            <ul class="symbol-facts">${sign.facts.map((f) => `<li>${f}</li>`).join("")}</ul>
+          </div>
+        </div>`).join("")}
+      </section>`).join("");
+    document.getElementById("sign-group-chips").innerHTML = SIGN_GROUPS.map((group, gi) =>
+      `<button type="button" class="chip${gi === 0 ? " active" : ""}" data-sign-group="${gi}">${group.title}</button>`
+    ).join("");
+    chipGroup("[data-sign-group]", ({ signGroup }) => {
+      document.querySelectorAll(".sign-group").forEach((s) => s.classList.toggle("active", s.dataset.group === signGroup));
+    });
 
     // --- Progress: stars and finished lessons, kept in this browser only ---
     // A star is an answer right on the first try. A lesson is finished when every note has been
