@@ -1809,11 +1809,14 @@
     }
 
     // --- Tabs ---
+    // Leaving a tab silences whatever it was playing (a rhythm loop, a reference tone, a piece,
+    // a Learn sound) and turns the mic off, since its Stop button is no longer on screen. A piece
+    // only pauses, so Resume picks it up again back in Notes.
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
+        if (tab.classList.contains("active")) return;
         stopPitchListener();
-        stopLearnSound();
-        if (tab.dataset.panel !== "notes") pausePiecePlayback();
+        silenceApp();
         document.querySelector(".app").classList.toggle("wide", tab.dataset.panel === "notes" && !!activePieceId);
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
         document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
