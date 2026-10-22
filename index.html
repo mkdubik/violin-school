@@ -1442,9 +1442,9 @@
             <button type="button" id="piece-play">Play</button>
             <button type="button" id="piece-stop">Stop</button>
           </div>
-          <div class="slider-row">
+          <div class="slider-row" title="Speed / full tempo (♩ per minute)">
             <label for="piece-bpm">Tempo</label>
-            <input type="range" id="piece-bpm" min="40" max="120" value="72" step="1">
+            <input type="range" id="piece-bpm" min="40" max="144" value="72" step="1">
             <span class="value" id="piece-bpm-val">72</span>
           </div>
           <div class="slider-row">
@@ -2725,6 +2725,7 @@
       detail: `No. 1 · ${rhythm} · A major · 4/4`,
       meta: `No. 1 · Variation ${letter} · ${rhythm} · A major · 4/4`,
       accent,
+      tempo: [{ bar: 1, bpm: 100 }],
       measures: TWINKLE_CELLS.map((pitches) => pitches.flatMap(cell)),
       piano: TWINKLE_PIANO,
       sheetLayout: { measuresPerSystem: 4 },
@@ -2741,6 +2742,7 @@
         detail: "No. 1 · Theme · A major · 4/4",
         meta: "No. 1 · Theme · Folk Song · A major · 4/4",
         accent: "#d4a574",
+        tempo: [{ bar: 1, bpm: 100 }],
         measures: [
           ["A4", "A4", "E5", "E5"],
           ["F#5", "F#5", h("E5")],
@@ -2763,6 +2765,7 @@
         detail: "No. 2 · A major · 2/2",
         meta: "No. 2 · Folk Song · A major · 2/2 (counted in quarters)",
         accent: "#6a9e8a",
+        tempo: [{ bar: 1, bpm: 120 }],
         measures: [
           ["E5", "C#5", h("C#5")],
           ["D5", "B4", h("B4")],
@@ -2789,6 +2792,7 @@
         detail: "No. 3 · A major · 2/4",
         meta: "No. 3 · Folk Song · A major · 2/4 · staccato, played twice",
         accent: "#9a86c4",
+        tempo: [{ bar: 1, bpm: 104 }],
         repeat: true,
         staccato: true,
         measures: [
@@ -2816,6 +2820,7 @@
         detail: "No. 4 · A major · 4/4",
         meta: "No. 4 · Folk Song · A major · 4/4 · Andantino",
         accent: "#8a9e5a",
+        tempo: [{ bar: 1, bpm: 96 }],
         measures: [
           ["C#5", e("C#5"), e("B4"), "A4", "A4"],
           ["B4", "B4", e("C#5"), e("B4"), "A4"],
@@ -2838,6 +2843,7 @@
         detail: "No. 5 · A major · 2/4",
         meta: "No. 5 · Folk Song · A major · 2/4 · starts on a pickup, played twice",
         accent: "#6a8ec4",
+        tempo: [{ bar: 1, bpm: 104 }],
         repeat: true,
         pickup: true,
         measures: [
@@ -2867,6 +2873,7 @@
         detail: "No. 6 · A major · 4/4",
         meta: "No. 6 · Folk Song · A major · 4/4 · dotted rhythm",
         accent: "#c4a04a",
+        tempo: [{ bar: 1, bpm: 100 }],
         measures: [
           [dotted("A4"), e("C#5"), "E5", "A5"],
           ["F#5", e("A5"), e("F#5"), h("E5")],
@@ -2889,6 +2896,7 @@
         detail: "No. 7 · A major · 4/4",
         meta: "No. 7 · T. H. Bayly · A major · 4/4",
         accent: "#a07ab0",
+        tempo: [{ bar: 1, bpm: 80 }],
         measures: [
           ["A4", e("A4"), e("B4"), "C#5", e("C#5"), e("D5")],
           ["E5", e("F#5"), e("E5"), h("C#5")],
@@ -2915,6 +2923,7 @@
         detail: "No. 13 · G major · 3/4",
         meta: "No. 13 · J. S. Bach · G major · 3/4 · each half played twice",
         accent: "#7a8ec4",
+        tempo: [{ bar: 1, bpm: 120 }],
         beamBeats: 3,
         sections: [{ from: 1, to: 8, repeat: true }, { from: 9, to: 24, repeat: true }],
         measures: [
@@ -2950,6 +2959,7 @@
         detail: "No. 14 · G major · 3/4",
         meta: "No. 14 · J. S. Bach · G major · 3/4 · each half played twice",
         accent: "#5a9e9e",
+        tempo: [{ bar: 1, bpm: 112 }],
         beamBeats: 3,
         sections: [{ from: 1, to: 16, repeat: true }, { from: 17, to: 40, repeat: true }],
         measures: [
@@ -3001,6 +3011,7 @@
         detail: "No. 15 · G major · 3/4",
         meta: "No. 15 · J. S. Bach · G major · 3/4 · each half played twice",
         accent: "#c47a8a",
+        tempo: [{ bar: 1, bpm: 120 }],
         beamBeats: 3,
         sections: [{ from: 1, to: 16, repeat: true }, { from: 17, to: 32, repeat: true }],
         measures: [
@@ -3044,6 +3055,7 @@
         detail: "No. 16 · G major · 4/4",
         meta: "No. 16 · R. Schumann · G major · 4/4 · starts on a pickup",
         accent: "#c4826a",
+        tempo: [{ bar: 1, bpm: 112 }],
         pickup: true,
         measures: [
           [e("D4")],
@@ -3079,6 +3091,7 @@
         detail: "No. 17 · G major · 4/4",
         meta: "No. 17 · F. J. Gossec · G major · 4/4 · Allegretto · D.C. al Fine: after the last section, from the top to Fine",
         accent: "#9a86c4",
+        tempo: [{ bar: 1, bpm: 116 }],
         sections: [
           { from: 1, to: 8, repeat: true },
           { from: 9, to: 16 },
@@ -4286,12 +4299,12 @@
       document.getElementById("piece-meta").textContent = piece.meta;
       document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
       document.getElementById("piece-sound").hidden = !piece.piano;
-      // A piece with its own tempo marks starts the slider at its first one.
+      // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
       if (piece.tempo?.length) {
         const slider = document.getElementById("piece-bpm");
         slider.value = Math.min(Math.max(piece.tempo[0].bpm, slider.min), slider.max);
-        document.getElementById("piece-bpm-val").textContent = pieceBpm();
       }
+      showPieceBpm();
       setNowPlaying(-1, false);
       renderSheet(pieceId, -1);
       reserveNotePanelHeights();
@@ -4354,9 +4367,13 @@
       document.getElementById("piece-delay-val").textContent = pieceDelay() + " s";
     });
 
-    document.getElementById("piece-bpm").addEventListener("input", () => {
-      document.getElementById("piece-bpm-val").textContent = pieceBpm();
-    });
+    // The speed, and the full tempo it is working up to ("72 / 104").
+    function showPieceBpm() {
+      const full = PIECES[activePieceId]?.tempo?.[0].bpm;
+      document.getElementById("piece-bpm-val").textContent = full ? `${pieceBpm()} / ${full}` : pieceBpm();
+    }
+
+    document.getElementById("piece-bpm").addEventListener("input", showPieceBpm);
 
     // Melody alone, melody with the piano, or the piano alone to play along with.
     chipGroup("[data-piece-sound]", (data) => {
