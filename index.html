@@ -857,6 +857,91 @@
 
     .link-btn:hover { color: #8a8278; }
 
+    .metro-display {
+      padding: 1.25rem 1rem;
+      background: #1c1a18;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .metro-beats {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+    }
+
+    .metro-beat {
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 50%;
+      background: #2a2724;
+      transition: background 0.06s, transform 0.06s, box-shadow 0.06s;
+    }
+
+    .metro-beat.first { border: 2px solid #3a3632; }
+
+    .metro-beat.hit {
+      background: #d4a574;
+      transform: scale(1.25);
+      box-shadow: 0 0 10px #d4a574;
+    }
+
+    .metro-beat.first.hit { background: #c47a3a; box-shadow: 0 0 12px #c47a3a; border-color: #c47a3a; }
+
+    .metro-tempo {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .metro-bpm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 3.2rem;
+      font-weight: 600;
+      line-height: 1;
+      min-width: 6rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metro-bpm small {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: #5a5650;
+      margin-top: 0.3rem;
+    }
+
+    .metro-step {
+      width: 2.75rem;
+      height: 2.75rem;
+      border: 1px solid #3a3632;
+      border-radius: 50%;
+      background: transparent;
+      color: #c8c0b4;
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .metro-step:hover { background: #262320; }
+
+    .metro-marking {
+      font-size: 0.85rem;
+      font-style: italic;
+      color: #8a8278;
+    }
+
+    #metro-toggle.running {
+      border-color: #c47a3a;
+      color: #f5f0e8;
+      background: color-mix(in srgb, #c47a3a 18%, #1c1a18);
+    }
+
     .sign-group-chips { display: none; }
 
     /* --- Laptops and desktops: one screen, no page scroll ---
@@ -919,6 +1004,25 @@
       #panel-rhythms .controls { grid-area: ctrl; }
       #panel-rhythms .slider-row { grid-area: slider; }
       #panel-rhythms .hint { grid-area: hint; }
+
+      /* Metronome: the beat and tempo on the left, its settings on the right. */
+      #panel-metronome.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "sub sub" "display slider" "display meter" "display subdiv" "display ctrl" "display hint";
+        grid-template-rows: auto auto auto auto auto 1fr;
+        align-content: start;
+        column-gap: 2rem;
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      #panel-metronome .subtitle { grid-area: sub; }
+      #panel-metronome .metro-display { grid-area: display; align-self: start; padding: 2rem 1rem; }
+      #panel-metronome .slider-row { grid-area: slider; margin-top: 0; }
+      #panel-metronome #metro-meter { grid-area: meter; }
+      #panel-metronome #metro-subdiv { grid-area: subdiv; }
+      #panel-metronome .controls { grid-area: ctrl; margin-top: 0.5rem; }
+      #panel-metronome .hint { grid-area: hint; }
 
       /* Notes: the songbook lists stay a readable width. A piece fills the screen: the title
          with the playback controls beside it, the sheet taking whatever height is left, and
@@ -1057,6 +1161,7 @@
     <div class="tabs">
       <button class="tab active" data-panel="tuner">Tuner</button>
       <button class="tab" data-panel="rhythms">Rhythms</button>
+      <button class="tab" data-panel="metronome">Metronome</button>
       <button class="tab" data-panel="notes">Notes</button>
       <button class="tab" data-panel="learn">Learn</button>
     </div>
@@ -1229,6 +1334,50 @@
       </div>
 
       <p class="hint">Bow on each highlighted syllable. Rests are silent — don&rsquo;t bow. Tap again to stop.</p>
+    </div>
+
+    <!-- Metronome -->
+    <div class="panel" id="panel-metronome">
+      <p class="subtitle">A steady beat to practise with</p>
+
+      <div class="metro-display">
+        <div class="metro-beats" id="metro-beats"></div>
+        <div class="metro-tempo">
+          <button type="button" class="metro-step" data-bpm-step="-1" aria-label="Slower">&minus;</button>
+          <div class="metro-bpm"><span id="metro-bpm-val">80</span><small>BPM</small></div>
+          <button type="button" class="metro-step" data-bpm-step="1" aria-label="Faster">+</button>
+        </div>
+        <div class="metro-marking" id="metro-marking">Andante</div>
+      </div>
+
+      <div class="slider-row">
+        <label for="metro-bpm">Tempo</label>
+        <input type="range" id="metro-bpm" min="30" max="208" value="80" step="1">
+      </div>
+
+      <div class="chip-row" id="metro-meter">
+        <span class="chip-label">Beats</span>
+        <button type="button" class="chip" data-beats="1">1</button>
+        <button type="button" class="chip" data-beats="2">2</button>
+        <button type="button" class="chip" data-beats="3">3</button>
+        <button type="button" class="chip active" data-beats="4">4</button>
+        <button type="button" class="chip" data-beats="6">6</button>
+      </div>
+
+      <div class="chip-row" id="metro-subdiv">
+        <span class="chip-label">Clicks</span>
+        <button type="button" class="chip active" data-subdiv="1">&#9833; Beats</button>
+        <button type="button" class="chip" data-subdiv="2">&#9835; Eighths</button>
+        <button type="button" class="chip" data-subdiv="3">Triplets</button>
+        <button type="button" class="chip" data-subdiv="4">&#9836; Sixteenths</button>
+      </div>
+
+      <div class="controls">
+        <button id="metro-toggle">Start</button>
+        <button id="metro-tap">Tap tempo</button>
+      </div>
+
+      <p class="hint">The first beat of each bar is accented. Tap &ldquo;Tap tempo&rdquo; in time to set the speed. Space starts and stops.</p>
     </div>
 
     <!-- Notes -->
@@ -1736,6 +1885,7 @@
     // silences everything (play-along pauses), and starting any sound turns the mic off.
     function silenceApp() {
       stopTone();
+      stopMetronome();
       stopRhythm();
       pausePiecePlayback();
       stopLearnSound();
@@ -2325,6 +2475,156 @@
     document.getElementById("vol").addEventListener("input", () => {
       if (activeTone) activeTone.gain.gain.value = volume() * 0.4;
     });
+
+    // --- Metronome ---
+    // Clicks are scheduled a little ahead on the audio clock (a timer checks every 25 ms), so
+    // the beat stays steady even when the page is busy. Tempo and settings changes apply from
+    // the next click without restarting.
+    const METRO_MARKINGS = [
+      [40, "Grave"], [60, "Largo"], [66, "Larghetto"], [76, "Adagio"], [108, "Andante"],
+      [120, "Moderato"], [156, "Allegro"], [176, "Vivace"], [200, "Presto"], [Infinity, "Prestissimo"],
+    ];
+    const metro = { beats: 4, subdiv: 1, running: null, taps: [] };
+
+    function metroBpm() {
+      return parseInt(document.getElementById("metro-bpm").value, 10);
+    }
+
+    function setMetroBpm(value) {
+      const slider = document.getElementById("metro-bpm");
+      slider.value = Math.min(Math.max(Math.round(value), slider.min), slider.max);
+      const v = metroBpm();
+      document.getElementById("metro-bpm-val").textContent = v;
+      document.getElementById("metro-marking").textContent = METRO_MARKINGS.find(([max]) => v < max)[1];
+    }
+
+    function renderMetroBeats(hit) {
+      const el = document.getElementById("metro-beats");
+      if (el.children.length !== metro.beats) {
+        el.innerHTML = Array.from({ length: metro.beats }, (_, i) =>
+          `<span class="metro-beat${i === 0 && metro.beats > 1 ? " first" : ""}"></span>`).join("");
+      }
+      [...el.children].forEach((dot, i) => dot.classList.toggle("hit", i === hit));
+    }
+
+    // A woodblock-like tick: a short high sine. The bar's first beat is higher and louder;
+    // subdivisions are quieter and lower.
+    function playMetroClick(time, kind, out) {
+      const audio = getCtx();
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      const [freq, level] = { bar: [1760, 0.55], beat: [1320, 0.4], sub: [990, 0.18] }[kind];
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume() * level, time + 0.002);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+      osc.connect(gain);
+      gain.connect(out);
+      osc.start(time);
+      osc.stop(time + 0.07);
+    }
+
+    function startMetronome() {
+      stopMetronome();
+      const audio = getCtx();
+      const out = audio.createGain();
+      out.connect(output());
+      const run = { out, next: audio.currentTime + 0.06, tick: 0, timers: [] };
+
+      function schedule() {
+        while (run.next < getCtx().currentTime + 0.12) {
+          const beat = Math.floor(run.tick / metro.subdiv) % metro.beats;
+          const onBeat = run.tick % metro.subdiv === 0;
+          const kind = !onBeat ? "sub" : beat === 0 && metro.beats > 1 ? "bar" : "beat";
+          playMetroClick(run.next, kind, out);
+          if (onBeat) {
+            const delayMs = Math.max(0, (run.next - getCtx().currentTime) * 1000);
+            run.timers.push(setTimeout(() => {
+              if (metro.running === run) renderMetroBeats(beat);
+            }, delayMs));
+          }
+          run.next += 60 / metroBpm() / metro.subdiv;
+          run.tick = (run.tick + 1) % (metro.beats * metro.subdiv);
+        }
+        if (run.timers.length > 32) run.timers.splice(0, 16);
+      }
+
+      run.interval = setInterval(schedule, 25);
+      metro.running = run;
+      schedule();
+      const btn = document.getElementById("metro-toggle");
+      btn.textContent = "Stop";
+      btn.classList.add("running");
+    }
+
+    function stopMetronome() {
+      const run = metro.running;
+      if (!run) return;
+      metro.running = null;
+      clearInterval(run.interval);
+      run.timers.forEach(clearTimeout);
+      fadeOutBus(run.out, 0.02);
+      renderMetroBeats(-1);
+      const btn = document.getElementById("metro-toggle");
+      btn.textContent = "Start";
+      btn.classList.remove("running");
+    }
+
+    // Restarts the bar from beat one when the meter or subdivision changes mid-play.
+    function restartMetroBar() {
+      if (!metro.running) return;
+      metro.running.tick = 0;
+    }
+
+    document.getElementById("metro-toggle").addEventListener("click", () => {
+      if (metro.running) stopMetronome();
+      else startMetronome();
+    });
+
+    document.getElementById("metro-bpm").addEventListener("input", (ev) => setMetroBpm(ev.target.value));
+
+    document.querySelectorAll("[data-bpm-step]").forEach((btn) => {
+      btn.addEventListener("click", () => setMetroBpm(metroBpm() + parseInt(btn.dataset.bpmStep, 10)));
+    });
+
+    document.querySelectorAll("[data-beats]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        metro.beats = parseInt(chip.dataset.beats, 10);
+        document.querySelectorAll("[data-beats]").forEach((c) => c.classList.toggle("active", c === chip));
+        restartMetroBar();
+        renderMetroBeats(-1);
+      });
+    });
+
+    document.querySelectorAll("[data-subdiv]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        metro.subdiv = parseInt(chip.dataset.subdiv, 10);
+        document.querySelectorAll("[data-subdiv]").forEach((c) => c.classList.toggle("active", c === chip));
+        restartMetroBar();
+      });
+    });
+
+    // Tap tempo averages the gaps between the last few taps; a pause of 2 s starts over.
+    document.getElementById("metro-tap").addEventListener("click", () => {
+      const now = performance.now();
+      if (metro.taps.length && now - metro.taps[metro.taps.length - 1] > 2000) metro.taps = [];
+      metro.taps = [...metro.taps, now].slice(-5);
+      if (metro.taps.length < 2) return;
+      const gaps = metro.taps.slice(1).map((t, i) => t - metro.taps[i]);
+      setMetroBpm(60000 / (gaps.reduce((a, b) => a + b, 0) / gaps.length));
+    });
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.code !== "Space" || !document.getElementById("panel-metronome").classList.contains("active")) return;
+      if (ev.target.closest("input, textarea, select")) return;
+      ev.preventDefault();
+      if (metro.running) stopMetronome();
+      else startMetronome();
+    });
+
+    setMetroBpm(metroBpm());
+    renderMetroBeats(-1);
 
     // --- Notes / sheet music ---
     const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
