@@ -678,6 +678,13 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    .quiz-answer .is-name {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
     .quiz-answer:hover { background: #262320; }
     .quiz-answer:active { transform: scale(0.96); }
 
@@ -1311,10 +1318,11 @@
       </div>
 
       <div class="learn-section active" id="learn-staff">
-        <p class="lesson-text">Music is written on a <strong>staff</strong> of five lines. Every line and every space between them is a note, and the higher it sits, the higher it sounds. Going up, the letters run C D E F G A H, then start again.</p>
+        <p class="lesson-text">Music is written on a <strong>staff</strong> of five lines. Every line and every space between them is a note, and the higher it sits, the higher it sounds. Going up, the letters run C D E F G A H, then start again. A <strong>sharp &#9839;</strong> raises a note a half step to the one in between: F&#9839; is Fís in Icelandic.</p>
         <div class="sheet-wrap" id="ladder-wrap"></div>
         <div class="chip-row">
           <button type="button" class="chip active" id="ladder-names" aria-pressed="true">Show names</button>
+          <button type="button" class="chip" id="ladder-sharps" aria-pressed="false">Sharps &#9839;</button>
           <span class="learn-progress" id="staff-progress"></span>
         </div>
         <div class="now-playing with-fingerboard" id="ladder-info">
@@ -1972,7 +1980,7 @@
         return;
       }
       const pitch = flatNotes[focusedNoteIndex].pitch;
-      el.textContent = `${noteName(pitch)} · ${hintForPitch(pitch)}`;
+      el.textContent = `${noteLabel(pitch)} · ${hintForPitch(pitch)}`;
     }
 
     function getTunerListenTarget({ quiet = false } = {}) {
@@ -2539,6 +2547,20 @@
       return p ? NOTE_NAMES[p.idx].replace("#", "\u266F") : pitch;
     }
 
+    // Icelandic name: H for B, and -\u00EDs for a sharp, e.g. "H", "F\u00EDs". Takes "F#4" or just "F#".
+    function icelandicName(pitch) {
+      const m = pitch.match(/^([A-G])(#?)/);
+      if (!m) return pitch;
+      return (m[1] === "B" ? "H" : m[1]) + (m[2] ? "\u00EDs" : "");
+    }
+
+    // English name with the Icelandic one in parentheses where they differ, e.g. "B (H)", "F\u266F (F\u00EDs)", "A".
+    function noteLabel(pitch) {
+      const en = noteName(pitch);
+      const is = icelandicName(pitch);
+      return en === is ? en : `${en} (${is})`;
+    }
+
     function hintForPitch(pitch) {
       if (OPEN_STRING[pitch]) return OPEN_STRING[pitch].label;
       const piece = activePieceId ? PIECES[activePieceId] : null;
@@ -3101,7 +3123,7 @@
       const pitch = flatNotes[index].pitch;
       const accent = accentForPitch(pitch);
       box.style.setProperty("--accent", accent);
-      nameEl.innerHTML = noteName(pitch);
+      nameEl.innerHTML = noteLabel(pitch);
       hintEl.textContent = hintForPitch(pitch);
       box.classList.toggle("live", live);
       renderFingerboard(pitch, accent);
@@ -3167,7 +3189,7 @@
         const letters = "CDEFGAB";
         const letter = note.pitch[0];
         const above = letters[(letters.indexOf(letter) + 1) % 7];
-        fact("Sharp ♯", `raises the note a half step: ${noteName(note.pitch)} sits between ${letter} and ${above}, so the finger goes a little closer to the bridge.`);
+        fact("Sharp ♯", `raises the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(letter)} and ${noteLabel(above)}, so the finger goes a little closer to the bridge.`);
       }
       const y = pitchToStaffY(note.pitch, 0);
       const ledgers = y < 0 ? Math.floor(-y / 10) : y > 40 ? Math.floor((y - 40) / 10) : 0;
@@ -3652,58 +3674,84 @@
       el.innerHTML = html;
     }
 
+    // English name with the Icelandic one in small type underneath where they differ.
+    function quizAnswerLabel(pitch) {
+      const is = icelandicName(pitch);
+      return noteName(pitch) + (is === noteName(pitch) ? "" : `<span class="is-name">(${is})</span>`);
+    }
+
     // --- Learn › Staff: every line and space from the open G string up to H (B) on the E string ---
     const LADDER = ["G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5", "A5", "B5"];
-    let ladderPick = -1;
+    // The same range with the sharps in between (no sharp between E–F and H–C).
+    const LADDER_SHARPS = LADDER.flatMap((p) => (p === "B5" || "EB".includes(p[0]) ? [p] : [p, `${p[0]}#${p[1]}`]));
+    let ladderPick = null; // the picked pitch
     let ladderNames = true;
+    let ladderSharps = false;
+
+    const ladderNotes = () => (ladderSharps ? LADDER_SHARPS : LADDER);
 
     // Two lines so the notes stay big on a phone: the G and D strings, then the A and E strings.
     // The first line leaves room below for ledger lines, the second above.
+    // Under each note: the English name, and the Icelandic one beneath where it differs.
     const LADDER_ROWS = [
-      { first: 0, top: 14, labelY: 97, y0: 0, y1: 104 },
-      { first: 8, top: 128, labelY: 185, y0: 104, y1: 190 },
+      { top: 14, labelY: 97, y0: 0, y1: 112 },
+      { top: 136, labelY: 193, y0: 112, y1: 208 },
     ];
 
     function renderLadder() {
-      const colW = 24;
+      const notesList = ladderNotes();
+      const split = notesList.indexOf("A4");
+      const colW = ladderSharps ? 26 : 24;
       const left = 44;
-      const width = left + 9 * colW + 6;
-      const height = 190;
+      const width = left + (notesList.length - split) * colW + 6;
+      const height = 208;
       let staves = "";
       let picked = "";
       let notes = "";
       let hits = "";
       LADDER_ROWS.forEach(({ top }) => { staves += staffLinesSvg(top, 2, width - 4) + trebleClefSvg(6, top); });
-      LADDER.forEach((pitch, i) => {
-        const row = LADDER_ROWS[i < LADDER_ROWS[1].first ? 0 : 1];
-        const x = left + (i - row.first + 0.5) * colW;
+      notesList.forEach((pitch, i) => {
+        const row = LADDER_ROWS[i < split ? 0 : 1];
+        const x = left + (i - (i < split ? 0 : split) + 0.5) * colW;
         const open = OPEN_STRING[pitch];
         const color = open ? STRING_ACCENT[open.string] : LEARN_INK;
-        const isPicked = i === ladderPick;
+        const isPicked = pitch === ladderPick;
         const box = `x="${x - colW / 2}" y="${row.y0}" width="${colW}" height="${row.y1 - row.y0}"`;
         if (isPicked) picked = `<rect ${box} rx="5" fill="#d4a574" opacity="0.3"/>`;
-        notes += noteSvg(x, pitch, row.top, { stem: false, color }).svg;
+        const note = noteSvg(x, pitch, row.top, { stem: false, color });
+        notes += note.svg;
+        if (pitch.includes("#")) notes += `<text x="${x - 16}" y="${note.y + 4}" font-size="13" fill="${color}" font-family="serif">♯</text>`;
         if (ladderNames || isPicked) {
-          notes += `<text x="${x}" y="${row.labelY}" font-size="10" font-weight="${isPicked ? 700 : 500}" fill="${open ? color : "#5a5650"}" text-anchor="middle" font-family="-apple-system, sans-serif">${noteName(pitch)}</text>`;
+          const font = `text-anchor="middle" font-family="-apple-system, sans-serif"`;
+          notes += `<text x="${x}" y="${row.labelY}" font-size="10" font-weight="${isPicked ? 700 : 500}" fill="${open ? color : "#5a5650"}" ${font}>${noteName(pitch)}</text>`;
+          const is = icelandicName(pitch);
+          if (is !== noteName(pitch)) notes += `<text x="${x}" y="${row.labelY + 10}" font-size="8.5" font-weight="${isPicked ? 700 : 400}" fill="#8a8278" ${font}>(${is})</text>`;
         }
         hits += `<rect class="ladder-note" data-idx="${i}" ${box} fill="transparent" style="cursor:pointer"/>`;
       });
-      document.getElementById("ladder-wrap").innerHTML = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff with every note from G under the staff to H (B) above it">
+      document.getElementById("ladder-wrap").innerHTML = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staff with every note${ladderSharps ? ", sharps included," : ""} from G under the staff to H (B) above it">
         ${picked}${staves}${notes}${hits}
       </svg>`;
     }
 
-    function pickLadderNote(i) {
-      ladderPick = i;
-      const pitch = LADDER[i];
+    function pickLadderNote(pitch) {
+      ladderPick = pitch;
       const open = OPEN_STRING[pitch];
       const accent = open ? STRING_ACCENT[open.string] : "#d4a574";
       const box = document.getElementById("ladder-info");
       box.style.setProperty("--accent", accent);
       box.classList.add("live");
-      document.getElementById("ladder-name").innerHTML = noteName(pitch);
-      const lines = [capitalize(staffPlace(pitch)), capitalize(fingeringText(pitch))];
-      if (SHARP_IN_KEYS[pitch[0]]) lines.push(`${noteName(inKey(pitch, "A"))} in ${SHARP_IN_KEYS[pitch[0]]}`);
+      document.getElementById("ladder-name").innerHTML = noteLabel(pitch);
+      const letter = pitch[0];
+      const sharp = pitch.includes("#");
+      const lines = [capitalize(staffPlace(pitch)) + (sharp ? ", with a sharp ♯" : "")];
+      if (sharp) lines.push(`Half a step above ${noteLabel(letter)}, between ${noteLabel(letter)} and ${noteLabel("CDEFGABC"["CDEFGAB".indexOf(letter) + 1])}`);
+      lines.push(capitalize(fingeringText(pitch)));
+      if (SHARP_IN_KEYS[letter]) {
+        lines.push(sharp
+          ? `Sharp in the key signature of ${SHARP_IN_KEYS[letter]}`
+          : `${noteLabel(inKey(pitch, "A"))} in ${SHARP_IN_KEYS[letter]}`);
+      }
       document.getElementById("ladder-hint").innerHTML = lines.join("<br>");
       renderFingerboard(pitch, accent, document.getElementById("ladder-fingerboard"));
       renderLadder();
@@ -3713,13 +3761,21 @@
 
     document.getElementById("ladder-wrap").addEventListener("click", (ev) => {
       const col = ev.target.closest(".ladder-note");
-      if (col) pickLadderNote(parseInt(col.dataset.idx, 10));
+      if (col) pickLadderNote(ladderNotes()[parseInt(col.dataset.idx, 10)]);
     });
 
     document.getElementById("ladder-names").addEventListener("click", (ev) => {
       ladderNames = !ladderNames;
       ev.currentTarget.classList.toggle("active", ladderNames);
       ev.currentTarget.setAttribute("aria-pressed", String(ladderNames));
+      renderLadder();
+    });
+
+    document.getElementById("ladder-sharps").addEventListener("click", (ev) => {
+      ladderSharps = !ladderSharps;
+      ev.currentTarget.classList.toggle("active", ladderSharps);
+      ev.currentTarget.setAttribute("aria-pressed", String(ladderSharps));
+      if (!ladderSharps && ladderPick?.includes("#")) ladderPick = null;
       renderLadder();
     });
 
@@ -4265,7 +4321,7 @@
     // C D E F G A B; with a key signature, the buttons name its sharps (F♯, C♯, G♯).
     function renderNameAnswers() {
       document.getElementById("quiz-answers").innerHTML = [..."CDEFGAB"].map((letter) =>
-        `<button type="button" class="quiz-answer" data-letter="${letter}">${noteName(sounding(`${letter}4`))}</button>`
+        `<button type="button" class="quiz-answer" data-letter="${letter}">${quizAnswerLabel(sounding(`${letter}4`))}</button>`
       ).join("");
     }
 
@@ -4290,7 +4346,7 @@
         renderNameStaff(RIGHT_INK);
         playNoteTone(heard, 0.7);
         const key = heard !== pitch ? " The key signature makes it sharp." : "";
-        setFeedback("quiz-feedback", "right", `<strong>Yes — ${noteName(heard)}.</strong> ${capitalize(staffPlace(pitch))}.${key}`);
+        setFeedback("quiz-feedback", "right", `<strong>Yes — ${noteLabel(heard)}.</strong> ${capitalize(staffPlace(pitch))}.${key}`);
         scoreAnswer("name", !nameQuiz.missed);
         nameQuiz.timer = setTimeout(nextQuiz, 1600);
       } else {
@@ -4382,14 +4438,14 @@
       playQuiz.index++;
       const phrase = playQuiz.pitches.length > 1;
       if (playQuiz.index < playQuiz.pitches.length) {
-        playQuiz.flash = { state: "good", html: `<strong>Yes — ${noteName(pitch)}!</strong> Now the next note.`, until: now + 900 };
+        playQuiz.flash = { state: "good", html: `<strong>Yes — ${noteLabel(pitch)}!</strong> Now the next note.`, until: now + 900 };
       } else {
         playQuiz.done = true;
         playQuiz.flash = {
           state: "good",
           html: phrase
             ? "<strong>The whole phrase — well done!</strong> Here comes a new one…"
-            : `<strong>Yes — ${noteName(pitch)}!</strong> ${capitalize(fingeringText(pitch))}.`,
+            : `<strong>Yes — ${noteLabel(pitch)}!</strong> ${capitalize(fingeringText(pitch))}.`,
         };
         playQuiz.timer = setTimeout(nextPlay, 1800);
       }
@@ -4405,7 +4461,7 @@
       const box = document.getElementById("play-hint");
       box.hidden = false;
       box.style.setProperty("--accent", "#d4a574");
-      document.getElementById("play-hint-name").innerHTML = noteName(pitch);
+      document.getElementById("play-hint-name").innerHTML = noteLabel(pitch);
       document.getElementById("play-hint-text").textContent = capitalize(fingeringText(pitch));
       renderFingerboard(pitch, "#d4a574", document.getElementById("play-fingerboard"));
     }
