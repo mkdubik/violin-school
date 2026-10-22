@@ -1482,12 +1482,18 @@
   <!-- Local-only songbooks (not published); see local/songbooks.js. -->
   <script src="local/songbooks.js"></script>
   <script>
-    // Piano chords in A major, voiced under the violin: a low bass note, then the chord.
+    // Piano chords voiced under the violin: a low bass note, then the chord. A, D, E and E7
+    // carry the A major pieces; G, C, D7, A7 and Am the G major ones.
     const PIANO_CHORDS = {
       A: { bass: "A2", chord: ["A3", "C#4", "E4"] },
       D: { bass: "D3", chord: ["F#3", "A3", "D4"] },
       E: { bass: "E2", chord: ["G#3", "B3", "E4"] },
       E7: { bass: "E2", chord: ["G#3", "B3", "D4"] },
+      G: { bass: "G2", chord: ["G3", "B3", "D4"] },
+      C: { bass: "C3", chord: ["E3", "G3", "C4"] },
+      D7: { bass: "D3", chord: ["F#3", "A3", "C4"] },
+      A7: { bass: "A2", chord: ["G3", "C#4", "E4"] },
+      Am: { bass: "A2", chord: ["A3", "C4", "E4"] },
     };
 
     const RHYTHMS = {
@@ -2338,32 +2344,52 @@
 
     const STRING_ACCENT = { g: "#c47a3a", d: "#5a9e6f", a: "#4a8fc4", e: "#b85c8a" };
 
-    // First-position fingering in A major (the beginner pieces).
+    // First-position fingering: the A major notes with the 2nd finger high, and the notes the
+    // G major pieces add ("low" is the finger a half step back, next to the one below it).
     const DEFAULT_FINGER_HINTS = {
       B4: "1st finger (A string)",
+      C5: "Low 2nd finger (A string)",
       "C#5": "2nd finger (A string)",
       D5: "3rd finger (A string)",
+      "D#5": "High 3rd finger (A string)",
+      F5: "Low 1st finger (E string)",
       "F#5": "1st finger (E string)",
+      G5: "Low 2nd finger (E string)",
       "G#5": "2nd finger (E string)",
       A5: "3rd finger (E string)",
+      B5: "4th finger (E string)",
       E4: "1st finger (D string)",
+      F4: "Low 2nd finger (D string)",
       "F#4": "2nd finger (D string)",
       G4: "3rd finger (D string)",
+      A3: "1st finger (G string)",
+      B3: "2nd finger (G string)",
+      C4: "3rd finger (G string)",
+      "C#4": "High 3rd finger (G string)",
     };
 
     // A measure is a list of notes: "A4" = quarter note, h("A4") = half note, w("A4") = whole
-    // note, e("A4") = eighth note, s("A4") = sixteenth note, REST = quarter rest, rest(beats) =
-    // any other rest (4 whole, 2 half, ½ eighth, ¼ sixteenth), dotted("A4") / dotted(h("A4")) =
-    // dotted, tied(...) = held on into the next note (same pitch, not played again).
+    // note, e("A4") = eighth note, s("A4") = sixteenth note, t("A4") = one of a triplet (three
+    // to a beat), REST = quarter rest, rest(beats) = any other rest (4 whole, 2 half, ½ eighth,
+    // ¼ sixteenth), dotted("A4") / dotted(h("A4")) = dotted, tied(...) = held on into the next
+    // note (same pitch, not played again). A measure can be any length: a pickup bar is just
+    // a short first measure (`pickup: true` numbers the bars from the next one).
     // `detail` is the songbook card line; `meta` shows under the title on the sheet.
     // `piano` is the accompaniment, one entry per measure naming its PIANO_CHORDS ("D A"
-    // splits the measure in half); the chord sounds on every beat.
+    // splits the measure in half, "-" is silence); the chord sounds on every beat.
+    // `repeat` plays the whole piece twice; `sections` gives the playing order in bar numbers,
+    // [{ from: 1, to: 8, repeat: true }, { from: 9, to: 16 }], a repeated section twice and a
+    // range listed again (da capo) again. `labels` puts words over the end of a bar, e.g.
+    // [{ bar: 16, text: "Fine" }].
     // Eighth notes are beamed per `beamBeats` beats (default 2, one beam per 2/4 bar); where
-    // that span holds sixteenths, the beams break at every beat.
+    // that span holds sixteenths or triplets, the beams break at every beat.
     const h = (pitch) => ({ pitch, beats: 2 });
     const w = (pitch) => ({ pitch, beats: 4 });
     const e = (pitch) => ({ pitch, beats: 0.5 });
     const s = (pitch) => ({ pitch, beats: 0.25 });
+    const t = (pitch) => ({ pitch, beats: 1 / 3, triplet: true });
+    // Beat positions snapped to 48ths, so triplets add up exactly.
+    const snapBeat = (beat) => Math.round(beat * 48) / 48;
     const dotted = (item) => {
       const note = noteSpec(item);
       return { ...note, beats: note.beats * 1.5, dotted: true };
@@ -2385,11 +2411,34 @@
       ["E5", "E5"],
     ];
 
+    // Twinkle's melody as two-beat cells, one per note of the theme; each variation puts one of
+    // the Rhythms tab's patterns on every cell, as in the book.
+    const TWINKLE_CELLS = [
+      ["A4", "E5"], ["F#5", "E5"], ["D5", "C#5"], ["B4", "A4"],
+      ["E5", "D5"], ["C#5", "B4"], ["E5", "D5"], ["C#5", "B4"],
+      ["A4", "E5"], ["F#5", "E5"], ["D5", "C#5"], ["B4", "A4"],
+    ];
+    const TWINKLE_PIANO = ["A", "D A", "D A", "E A", "A D", "A E", "A D", "A E", "A", "D A", "D A", "E A"];
+    const twinkleVariation = (letter, rhythm, accent, cell) => ({
+      title: `Twinkle Variation ${letter}`,
+      detail: `No. 1 · ${rhythm} · A major · 4/4`,
+      meta: `No. 1 · Variation ${letter} · ${rhythm} · A major · 4/4`,
+      accent,
+      measures: TWINKLE_CELLS.map((pitches) => pitches.flatMap(cell)),
+      piano: TWINKLE_PIANO,
+      sheetLayout: { measuresPerSystem: 4 },
+    });
+
     const PIECES = {
+      twinkleA: twinkleVariation("A", "Kópavogur hoppstopp", "#c47a3a", (p) => [s(p), s(p), s(p), s(p), e(p), e(p)]),
+      twinkleB: twinkleVariation("B", "Hann fer — Hún fer", "#5a9e6f", (p) => [e(p), e(p), rest(0.5), e(p)]),
+      twinkleC: twinkleVariation("C", "Fá epli fá epli", "#4a8fc4", (p) => [e(p), s(p), s(p), e(p), s(p), s(p)]),
+      twinkleC2: twinkleVariation("C2", "Banani banani", "#6a7ec4", (p) => [t(p), t(p), t(p), t(p), t(p), t(p)]),
+      twinkleD: twinkleVariation("D", "Apríkósa apríkósa", "#b85c8a", (p) => Array.from({ length: 8 }, () => s(p))),
       twinkle: {
         title: "Twinkle, Twinkle, Little Star",
-        detail: "Theme · A major · 4/4",
-        meta: "Theme · Folk Song · A major · 4/4",
+        detail: "No. 1 · Theme · A major · 4/4",
+        meta: "No. 1 · Theme · Folk Song · A major · 4/4",
         accent: "#d4a574",
         measures: [
           ["A4", "A4", "E5", "E5"],
@@ -2461,6 +2510,318 @@
         // One line per phrase: A, B, B'.
         sheetLayout: { systems: [6, 4, 4] },
       },
+      goTellAuntRhody: {
+        title: "Go Tell Aunt Rhody",
+        detail: "No. 4 · A major · 4/4",
+        meta: "No. 4 · Folk Song · A major · 4/4 · Andantino",
+        accent: "#8a9e5a",
+        measures: [
+          ["C#5", e("C#5"), e("B4"), "A4", "A4"],
+          ["B4", "B4", e("C#5"), e("B4"), "A4"],
+          ["E5", e("E5"), e("D5"), "C#5", "C#5"],
+          [e("B4"), e("A4"), e("B4"), e("C#5"), h("A4")],
+          ["C#5", e("C#5"), e("D5"), "E5", "E5"],
+          ["F#5", "F#5", e("E5"), e("D5"), "C#5"],
+          ["C#5", e("C#5"), e("D5"), "E5", "E5"],
+          ["F#5", "F#5", h("E5")],
+          ["C#5", e("C#5"), e("B4"), "A4", "A4"],
+          ["B4", "B4", e("C#5"), e("B4"), "A4"],
+          ["E5", e("E5"), e("D5"), "C#5", "C#5"],
+          [e("B4"), e("A4"), e("B4"), e("C#5"), h("A4")],
+        ],
+        piano: ["A", "E7 A", "A", "E7 A", "A", "D A", "A", "D E7", "A", "E7 A", "A", "E7 A"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      oComeLittleChildren: {
+        title: "O Come, Little Children",
+        detail: "No. 5 · A major · 2/4",
+        meta: "No. 5 · Folk Song · A major · 2/4 · starts on a pickup, played twice",
+        accent: "#6a8ec4",
+        repeat: true,
+        pickup: true,
+        measures: [
+          [e("E5")],
+          ["E5", e("C#5"), e("E5")],
+          ["E5", e("C#5"), e("E5")],
+          ["D5", e("B4"), e("B4")],
+          ["C#5", rest(0.5), e("E5")],
+          ["E5", e("C#5"), e("E5")],
+          ["E5", e("C#5"), e("E5")],
+          ["D5", e("B4"), e("B4")],
+          ["C#5", rest(0.5), e("C#5")],
+          ["B4", e("B4"), e("B4")],
+          ["D5", e("D5"), e("D5")],
+          ["C#5", e("C#5"), e("C#5")],
+          ["F#5", rest(0.5), e("F#5")],
+          ["E5", e("E5"), e("E5")],
+          ["A5", e("E5"), e("C#5")],
+          ["D5", e("B4"), e("B4")],
+          [dotted("A4")],
+        ],
+        piano: ["-", "A", "A", "E7", "A", "A", "A", "E7", "A", "E7", "E7", "A", "D", "A", "A", "E7", "A"],
+        sheetLayout: { systems: [5, 4, 4, 4] },
+      },
+      maySong: {
+        title: "May Song",
+        detail: "No. 6 · A major · 4/4",
+        meta: "No. 6 · Folk Song · A major · 4/4 · dotted rhythm",
+        accent: "#c4a04a",
+        measures: [
+          [dotted("A4"), e("C#5"), "E5", "A5"],
+          ["F#5", e("A5"), e("F#5"), h("E5")],
+          [dotted("D5"), e("E5"), "C#5", "A4"],
+          [h("B4"), h("A4")],
+          ["E5", "E5", "D5", "D5"],
+          ["C#5", e("E5"), e("C#5"), h("B4")],
+          ["E5", "E5", "D5", "D5"],
+          ["C#5", e("E5"), e("C#5"), h("B4")],
+          [dotted("A4"), e("C#5"), "E5", "A5"],
+          ["F#5", e("A5"), e("F#5"), h("E5")],
+          [dotted("D5"), e("E5"), "C#5", "A4"],
+          [h("B4"), h("A4")],
+        ],
+        piano: ["A", "D A", "E7 A", "E7 A", "A E7", "A E7", "A E7", "A E7", "A", "D A", "E7 A", "E7 A"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      longLongAgo: {
+        title: "Long, Long Ago",
+        detail: "No. 7 · A major · 4/4",
+        meta: "No. 7 · T. H. Bayly · A major · 4/4",
+        accent: "#a07ab0",
+        measures: [
+          ["A4", e("A4"), e("B4"), "C#5", e("C#5"), e("D5")],
+          ["E5", e("F#5"), e("E5"), h("C#5")],
+          ["E5", e("D5"), e("C#5"), h("B4")],
+          ["D5", e("C#5"), e("B4"), h("A4")],
+          ["A4", e("A4"), e("B4"), "C#5", e("C#5"), e("D5")],
+          ["E5", e("F#5"), e("E5"), h("C#5")],
+          ["E5", e("D5"), e("C#5"), "B4", e("C#5"), e("B4")],
+          [h("A4"), rest(2)],
+          ["E5", e("D5"), e("C#5"), "B4", e("E4"), e("E4")],
+          ["D5", e("C#5"), e("B4"), h("A4")],
+          ["E5", e("D5"), e("C#5"), "B4", e("E4"), e("E4")],
+          ["D5", e("C#5"), e("B4"), h("A4")],
+          ["A4", e("A4"), e("B4"), "C#5", e("C#5"), e("D5")],
+          ["E5", e("F#5"), e("E5"), h("C#5")],
+          ["E5", e("D5"), e("C#5"), "B4", e("C#5"), e("B4")],
+          [h("A4"), rest(2)],
+        ],
+        piano: ["A", "A", "E7", "E7 A", "A", "A", "E7", "A -", "E7", "E7 A", "E7", "E7 A", "A", "A", "E7", "A -"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      minuet1: {
+        title: "Minuet 1",
+        detail: "No. 13 · G major · 3/4",
+        meta: "No. 13 · J. S. Bach · G major · 3/4 · each half played twice",
+        accent: "#7a8ec4",
+        beamBeats: 3,
+        sections: [{ from: 1, to: 8, repeat: true }, { from: 9, to: 24, repeat: true }],
+        measures: [
+          ["D5", "D5", "D5"],
+          ["B4", e("A4"), e("B4"), "G4"],
+          ["A4", "D5", "C5"],
+          [h("B4"), "A4"],
+          ["D5", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["E5", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["F#4", e("E4"), e("D4"), "F#4"],
+          [dotted(h("G4"))],
+          ["B4", h("E5")],
+          ["C#5", e("B4"), e("C#5"), "A4"],
+          ["D5", "E5", "F#5"],
+          [e("E5"), e("D5"), e("C#5"), e("B4"), "A4"],
+          ["A5", e("G5"), e("F#5"), e("E5"), e("D5")],
+          ["B5", e("G5"), e("F#5"), e("E5"), e("D5")],
+          ["C#5", "A4", "C#5"],
+          [dotted(h("D5"))],
+          ["D5", e("C5"), e("B4"), "A4"],
+          ["B4", e("A4"), e("B4"), "G4"],
+          [h("C5"), e("C5"), e("B4")],
+          [dotted(h("A4"))],
+          ["D5", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["E5", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["F#4", e("E4"), e("D4"), "F#4"],
+          [dotted(h("G4"))],
+        ],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      minuet2: {
+        title: "Minuet 2",
+        detail: "No. 14 · G major · 3/4",
+        meta: "No. 14 · J. S. Bach · G major · 3/4 · each half played twice",
+        accent: "#5a9e9e",
+        beamBeats: 3,
+        sections: [{ from: 1, to: 16, repeat: true }, { from: 17, to: 40, repeat: true }],
+        measures: [
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          ["E5", "E5", e("E5"), e("G5")],
+          ["D5", "D5", e("D5"), e("G5")],
+          ["C5", e("D5"), e("C5"), e("B4"), e("C5")],
+          [dotted(h("A4"))],
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          ["E5", e("D5"), e("C5"), e("B4"), e("A4")],
+          ["D5", e("C5"), e("B4"), e("A4"), e("G4")],
+          [t("A4"), t("B4"), t("C5"), "D4", "F#4"],
+          [dotted(h("G4"))],
+          [e("G4"), e("A4"), e("B4"), e("A4"), e("G4"), e("F#4")],
+          ["G4", "E4", "E4"],
+          [e("G5"), e("F#5"), e("E5"), e("G5"), e("F#5"), e("E5")],
+          ["F#5", "B4", "B4"],
+          [e("G5"), e("F#5"), e("E5"), e("G5"), e("F#5"), e("E5")],
+          ["F#5", "B4", "E5"],
+          [t("F#5"), t("G5"), t("A5"), "B4", "D#5"],
+          ["E5", e("D#5"), e("E5"), "F#5"],
+          ["G5", e("G5"), e("F#5"), e("E5"), e("D5")],
+          ["E5", e("E5"), e("D5"), e("C5"), e("B4")],
+          ["C5", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["F#4", e("E4"), e("F#4"), "D4"],
+          ["A4", "D4", "D4"],
+          ["B4", "D4", "D4"],
+          ["C5", e("D5"), e("C5"), e("B4"), e("C5")],
+          [dotted(h("A4"))],
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          [e("G4"), e("B4"), e("D5"), e("G5"), e("A4"), e("F#5")],
+          ["G5", "G4", "G4"],
+          ["E5", e("D5"), e("C5"), e("B4"), e("A4")],
+          ["D5", e("C5"), e("B4"), e("A4"), e("G4")],
+          [t("A4"), t("B4"), t("C5"), "D4", "F#4"],
+          [dotted(h("G4"))],
+        ],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      minuet3: {
+        title: "Minuet 3",
+        detail: "No. 15 · G major · 3/4",
+        meta: "No. 15 · J. S. Bach · G major · 3/4 · each half played twice",
+        accent: "#c47a8a",
+        beamBeats: 3,
+        sections: [{ from: 1, to: 16, repeat: true }, { from: 17, to: 32, repeat: true }],
+        measures: [
+          ["D5", e("G4"), e("A4"), e("B4"), e("C5")],
+          ["D5", "G4", "G4"],
+          ["E5", e("C5"), e("D5"), e("E5"), e("F#5")],
+          ["G5", "G4", "G4"],
+          ["C5", e("D5"), e("C5"), e("B4"), e("A4")],
+          ["B4", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["F#4", e("G4"), e("A4"), e("B4"), e("G4")],
+          [dotted(h("A4"))],
+          ["D5", e("G4"), e("A4"), e("B4"), e("C5")],
+          ["D5", "G4", "G4"],
+          ["E5", e("C5"), e("D5"), e("E5"), e("F#5")],
+          ["G5", "G4", "G4"],
+          ["C5", e("D5"), e("C5"), e("B4"), e("A4")],
+          ["B4", e("C5"), e("B4"), e("A4"), e("G4")],
+          ["A4", e("B4"), e("A4"), e("G4"), e("F#4")],
+          [dotted(h("G4"))],
+          ["B5", e("G5"), e("A5"), e("B5"), e("G5")],
+          ["A5", e("D5"), e("E5"), e("F#5"), e("D5")],
+          ["G5", e("E5"), e("F#5"), e("G5"), e("D5")],
+          ["C#5", e("B4"), e("C#5"), "A4"],
+          [e("A4"), e("B4"), e("C#5"), e("D5"), e("E5"), e("F#5")],
+          ["G5", "F#5", "E5"],
+          ["F#5", "A4", "C#5"],
+          [dotted(h("D5"))],
+          ["D5", e("G4"), e("F#4"), "G4"],
+          ["E5", e("G4"), e("F#4"), "G4"],
+          ["D5", "C5", "B4"],
+          [e("A4"), e("G4"), e("F#4"), e("G4"), "A4"],
+          [e("D4"), e("E4"), e("F#4"), e("G4"), e("A4"), e("B4")],
+          ["C5", "B4", "A4"],
+          [e("B4"), e("D5"), "G4", "F#4"],
+          [dotted(h("G4"))],
+        ],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      happyFarmer: {
+        title: "The Happy Farmer",
+        detail: "No. 16 · G major · 4/4",
+        meta: "No. 16 · R. Schumann · G major · 4/4 · starts on a pickup",
+        accent: "#c4826a",
+        pickup: true,
+        measures: [
+          [e("D4")],
+          [dotted("G4"), e("B4"), dotted("D5"), e("G4")],
+          [e("C5"), e("E5"), e("G5"), e("E5"), dotted("D5"), e("B4")],
+          [e("C5"), e("A4"), e("D4"), e("C5"), e("B4"), e("G4"), e("D4"), e("B4")],
+          ["F#4", "E4", "D4", rest(0.5), e("D4")],
+          [dotted("G4"), e("B4"), dotted("D5"), e("G4")],
+          [e("C5"), e("E5"), e("G5"), e("E5"), dotted("D5"), e("B4")],
+          [e("C5"), e("A4"), e("D4"), e("C5"), e("B4"), e("G4"), e("D4"), e("B4")],
+          ["F#4", "E4", "D4", rest(0.5), e("D4")],
+          [dotted("C5"), e("B4"), dotted("A4"), e("D4")],
+          [e("C5"), e("B4"), e("A4"), e("G4"), dotted("A4"), e("D4")],
+          [dotted("G4"), e("B4"), dotted("D5"), e("G4")],
+          [e("C5"), e("E5"), e("G5"), e("E5"), dotted("D5"), e("B4")],
+          [e("C5"), e("A4"), e("D4"), e("C5"), e("B4"), e("G4"), e("D4"), e("B4")],
+          ["A4", "F#4", "G4", rest(0.5), e("D4")],
+          [dotted("C5"), e("B4"), dotted("A4"), e("D4")],
+          [e("C5"), e("B4"), e("A4"), e("G4"), dotted("A4"), e("D4")],
+          [dotted("G4"), e("B4"), dotted("D5"), e("G4")],
+          [e("C5"), e("E5"), e("G5"), e("E5"), dotted("D5"), e("B4")],
+          [e("C5"), e("A4"), e("D4"), e("C5"), e("B4"), e("G4"), e("D4"), e("B4")],
+          ["A4", "F#4", "G4", rest(0.5)],
+        ],
+        piano: [
+          "-", "G", "C G", "D7 G", "D A7 D D", "G", "C G", "D7 G", "D A7 D D", "D7", "D7 D D D",
+          "G", "C G", "D7 G", "Am D7 G G", "D7", "D7 D D D", "G", "C G", "D7 G", "Am D7 G -",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4, 4] },
+      },
+      gavotte: {
+        title: "Gavotte",
+        detail: "No. 17 · G major · 4/4",
+        meta: "No. 17 · F. J. Gossec · G major · 4/4 · Allegretto · D.C. al Fine: after the last section, from the top to Fine",
+        accent: "#9a86c4",
+        sections: [
+          { from: 1, to: 8, repeat: true },
+          { from: 9, to: 16 },
+          { from: 17, to: 24, repeat: true },
+          { from: 25, to: 32, repeat: true },
+          { from: 1, to: 16 },
+        ],
+        labels: [{ bar: 16, text: "Fine" }, { bar: 32, text: "D.C. al Fine" }],
+        measures: [
+          [e("D5"), e("E5"), e("D5"), e("B4"), e("C5"), e("D5"), e("C5"), e("A4")],
+          ["G4", "G5", "G4", REST],
+          [e("C5"), e("D5"), e("C5"), e("A4"), e("B4"), e("C5"), e("B4"), e("G4")],
+          ["A4", "D5", "D4", REST],
+          [e("D5"), e("E5"), e("D5"), e("B4"), e("C5"), e("D5"), e("C5"), e("A4")],
+          ["G4", "G5", "G4", REST],
+          ["B4", e("G4"), e("E4"), "G4", e("E4"), e("C#4")],
+          ["D4", "D5", "D4", REST],
+          [e("A4"), e("C5"), e("B4"), e("D5"), e("C5"), e("B4"), e("A4"), e("G4")],
+          ["F#4", "A4", "C5", REST],
+          [e("B4"), e("D5"), e("C5"), e("E5"), e("D5"), e("C5"), e("B4"), e("A4")],
+          ["G4", "B4", "D5", REST],
+          [e("E5"), e("D5"), e("D5"), e("C5"), e("C5"), e("B4"), e("B4"), e("A4")],
+          ["A4", "C5", "E5", REST],
+          [e("D5"), e("B4"), e("F#4"), e("G4"), e("C5"), e("A4"), e("E4"), e("F#4")],
+          ["G4", "G5", "G4", REST],
+          ["B4", "B4", "C5", "C5"],
+          [e("D5"), e("G5"), e("F#5"), e("G5"), "D5", REST],
+          ["G4", "G4", "A4", "A4"],
+          [s("B4"), s("D5"), s("C#5"), s("D5"), s("E5"), s("D5"), s("C5"), s("B4"), e("A4"), e("D4"), e("F#4"), e("D4")],
+          ["E4", e("G4"), e("E4"), "E5", "E4"],
+          ["D4", e("G4"), e("D4"), "D5", "D4"],
+          ["C5", "D4", "B4", "D4"],
+          ["A4", s("A4"), s("B4"), s("C5"), s("B4"), "A4", REST],
+          ["C5", s("C5"), s("B4"), s("A4"), s("G4"), "F#4", "F#5"],
+          ["G5", "D4", "G4", REST],
+          ["C5", s("C5"), s("B4"), s("A4"), s("G4"), "F#4", "F#5"],
+          ["G5", "G4", "B4", REST],
+          ["E4", s("G4"), s("F#4"), s("E4"), s("D4"), "C4", "E5"],
+          ["D4", s("D4"), s("E4"), s("D4"), s("C4"), "B3", "D5"],
+          ["C5", s("E5"), s("D5"), s("C5"), s("B4"), "A4", "F#5"],
+          ["G5", "G4", "G3", REST],
+        ],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
       // Written out from a recording of a violin group, following the lead violin: steady at
       // about ♩=80, speeding up through the second pass to about 145 for the third, then a run
       // up the E string to A. The open-A eighths heard between the Cs and Fs are a second violin.
@@ -2488,11 +2849,22 @@
     // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here.
     const COLLECTIONS = [
       {
-        id: "beginner",
-        title: "Beginner Pieces",
-        detail: "Folk songs · A major and A minor · first position",
+        id: "vol1",
+        title: "Vol 1",
+        detail: "Suzuki Violin School · A and G major · first position",
         accent: "#d4a574",
-        pieces: ["twinkle", "lightlyRow", "songOfTheWind", "russakeisari"],
+        pieces: [
+          "twinkleA", "twinkleB", "twinkleC", "twinkleC2", "twinkleD", "twinkle",
+          "lightlyRow", "songOfTheWind", "goTellAuntRhody", "oComeLittleChildren", "maySong", "longLongAgo",
+          "minuet1", "minuet2", "minuet3", "happyFarmer", "gavotte",
+        ],
+      },
+      {
+        id: "other",
+        title: "Other pieces",
+        detail: "From lessons · A minor · first position",
+        accent: "#c4826a",
+        pieces: ["russakeisari"],
       },
     ];
 
@@ -2506,7 +2878,7 @@
 
     let activePieceId = null;
     let piecePlayback = null;
-    let pausedPlayback = null; // { pass } while paused; resume starts at the highlighted note
+    let pausedPlayback = null; // { pass, slot } while paused; resume starts at the highlighted note
     let pieceSound = "melody"; // "melody", "both" or "piano", for pieces with a piano part
     let flatNotes = [];
 
@@ -2578,11 +2950,50 @@
 
     function noteSpec(item) {
       if (typeof item === "string") return { pitch: item, beats: 1 };
-      return { pitch: item.pitch, beats: item.beats || 1, rest: !!item.rest, dotted: !!item.dotted, tie: !!item.tie };
+      return { pitch: item.pitch, beats: item.beats || 1, rest: !!item.rest, dotted: !!item.dotted, tie: !!item.tie, triplet: !!item.triplet };
     }
 
     function pieceBeats(piece) {
-      return piece.measures.flat().reduce((sum, item) => sum + noteSpec(item).beats, 0);
+      return snapBeat(piece.measures.flat().reduce((sum, item) => sum + noteSpec(item).beats, 0));
+    }
+
+    // Each bar's start and length in beats, as written.
+    function measureSpans(piece) {
+      let at = 0;
+      return piece.measures.map((measure) => {
+        const length = snapBeat(measure.reduce((sum, item) => sum + noteSpec(item).beats, 0));
+        const span = { start: at, length };
+        at = snapBeat(at + length);
+        return span;
+      });
+    }
+
+    // The bars (as indexes) in the order one pass plays them: straight through, or as the
+    // piece's `sections` list them. `beats` is the length of one pass.
+    function playOrder(piece) {
+      const spans = measureSpans(piece);
+      const order = [];
+      (piece.sections || [{ from: 1, to: piece.measures.length }]).forEach(({ from, to, repeat }) => {
+        for (let k = 0; k < (repeat ? 2 : 1); k++) {
+          for (let m = from - 1; m < to; m++) order.push(m);
+        }
+      });
+      return { order, spans, beats: snapBeat(order.reduce((sum, mi) => sum + spans[mi].length, 0)) };
+    }
+
+    // Every note of one pass in playing order with the beat it starts on and its `slot` in the
+    // order (a bar played twice lists its notes twice, in two slots).
+    function playSequence(piece) {
+      const { order, spans, beats } = playOrder(piece);
+      const seq = [];
+      let at = 0;
+      order.forEach((mi, slot) => {
+        flatNotes.forEach((note) => {
+          if (note.measure === mi) seq.push({ index: note.globalIndex, beat: snapBeat(at + note.start - spans[mi].start), slot });
+        });
+        at = snapBeat(at + spans[mi].length);
+      });
+      return { seq, beats };
     }
 
     // Where a piece changes speed, `tempo` lists { bar, bpm } marks (bar 1 is the first) and
@@ -2591,12 +3002,13 @@
     // Returns the seconds from the start to any beat, and the beat length at any beat; a piece
     // without `tempo` plays at the slider's speed throughout.
     function pieceTiming(piece, sliderBpm, passes = 1) {
-      const passBeats = pieceBeats(piece);
+      const { order, spans, beats: passBeats } = playOrder(piece);
+      // Where each bar first comes in the pass.
       const starts = [];
       let at = 0;
-      piece.measures.forEach((measure) => {
-        starts.push(at);
-        at += measure.reduce((sum, item) => sum + noteSpec(item).beats, 0);
+      order.forEach((mi) => {
+        if (starts[mi] === undefined) starts[mi] = at;
+        at = snapBeat(at + spans[mi].length);
       });
       const points = piece.tempo?.length ? piece.tempo : [{ bar: 1, bpm: sliderBpm }];
       const scale = sliderBpm / points[0].bpm;
@@ -2628,20 +3040,24 @@
     }
 
     // The piano part's chord strikes in one pass: one per beat, with the bass where a chord
-    // comes in and an accent on the first beat of each measure.
+    // comes in and an accent on the first beat of each measure. The chords of a bar divide a
+    // full bar (the longest one), so a pickup or a short last bar keeps the same beat grid.
     function pianoStrikes(piece) {
       const strikes = [];
+      const { order, spans } = playOrder(piece);
+      const barBeats = Math.max(...spans.map((span) => span.length));
       let at = 0;
-      piece.piano.forEach((names, mi) => {
-        const length = piece.measures[mi].reduce((sum, item) => sum + noteSpec(item).beats, 0);
-        const chords = names.split(" ");
-        const span = length / chords.length;
+      order.forEach((mi) => {
+        const { length } = spans[mi];
+        const chords = piece.piano[mi].split(" ");
+        const span = barBeats / chords.length;
         chords.forEach((name, ci) => {
-          for (let b = 0; b < span; b++) {
-            strikes.push({ beat: at + ci * span + b, chord: PIANO_CHORDS[name], bass: b === 0, accent: ci === 0 && b === 0 });
+          if (name === "-") return;
+          for (let b = 0; b < span && ci * span + b < length; b++) {
+            strikes.push({ beat: snapBeat(at + ci * span + b), chord: PIANO_CHORDS[name], bass: b === 0, accent: ci === 0 && b === 0 });
           }
         });
-        at += length;
+        at = snapBeat(at + length);
       });
       return strikes;
     }
@@ -2667,11 +3083,11 @@
         const sixteenthSpans = new Set();
         measure.reduce((at, item) => {
           const spec = noteSpec(item);
-          if (!spec.rest && spec.beats === 0.25) sixteenthSpans.add(Math.floor(at / beamBeats));
-          return at + spec.beats;
+          if (!spec.rest && (spec.beats === 0.25 || spec.triplet)) sixteenthSpans.add(Math.floor(at / beamBeats));
+          return snapBeat(at + spec.beats);
         }, 0);
         measure.forEach((item, ni) => {
-          const { pitch, beats, rest, dotted, tie } = noteSpec(item);
+          const { pitch, beats, rest, dotted, tie, triplet } = noteSpec(item);
           const wide = Math.floor(beat / beamBeats);
           const span = sixteenthSpans.has(wide) ? `${wide}:${Math.floor(beat)}` : wide;
           if (!rest && !dotted && beats <= 0.5) {
@@ -2685,10 +3101,10 @@
           if (rest) {
             out[out.length - 1]?.restsAfter.push(beats);
           } else {
-            out.push({ pitch, beats, dotted, tie, start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
+            out.push({ pitch, beats, dotted, tie, triplet, start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
           }
-          start += beats;
-          beat += beats;
+          start = snapBeat(start + beats);
+          beat = snapBeat(beat + beats);
         });
       });
       return out;
@@ -2744,12 +3160,17 @@
         systems.push(piece.measures.slice(i, i + n));
         i += n;
       }
+      // A repeated section that starts mid-line gets room for its dots after the barline; one
+      // that starts a line gets it after the clef.
+      const startsRepeat = (m) => m > 0 && !!piece.sections?.some((sec) => sec.repeat && sec.from === m + 1);
+      let mi = 0;
       const natural = systems.map((sysMeasures) => {
-        let x = layout.padL;
+        let x = layout.padL + (startsRepeat(mi) ? 14 : 0);
         const notes = [];
         const rests = [];
         const bars = [];
-        sysMeasures.forEach((measure) => {
+        sysMeasures.forEach((measure, k) => {
+          mi++;
           measure.forEach((item) => {
             const spec = noteSpec(item);
             if (spec.rest) {
@@ -2762,7 +3183,7 @@
           });
           const barX = x - layout.gap + 6;
           bars.push(barX);
-          x = barX + 8;
+          x = barX + 8 + (k < sysMeasures.length - 1 && startsRepeat(mi) ? 10 : 0);
         });
         return { notes, rests, bars, end: bars[bars.length - 1] };
       });
@@ -2779,7 +3200,7 @@
       const systemYs = (si) => natural[si].notes.map((n) => pitchToStaffY(n.pitch, 0));
       const lowest = (si) => Math.max(staffH, ...systemYs(si));
       // Tempo marks sit above the first line, so it starts lower.
-      const markRoom = piece.tempo?.length ? 16 : 0;
+      const markRoom = piece.tempo?.length || piece.labels?.length ? 16 : 0;
       const systemTops = [];
       natural.forEach((_, si) => {
         const highest = Math.min(0, ...systemYs(si));
@@ -2902,22 +3323,40 @@
         });
         clefs += `<text x="6" y="${top + 31}" font-size="${clefSize}" fill="${ink}" font-family="serif">\u{1D11E}</text>`;
       });
+      // Barlines: a thick-and-thin pair closes the piece and each repeated section, with the
+      // two dots on the side of the music they repeat. A section that starts a line opens
+      // with its sign after the clef.
+      const sections = piece.sections || [];
+      const barLine = (bx, top, width) => `<line x1="${bx}" y1="${top}" x2="${bx}" y2="${top + 40}" stroke="${ink}" stroke-width="${width}"/>`;
+      const dots = (cx, top) => `<circle cx="${cx}" cy="${top + 15}" r="1.8" fill="${ink}"/><circle cx="${cx}" cy="${top + 25}" r="1.8" fill="${ink}"/>`;
       barXs.forEach(({ x, systemIndex }, i) => {
         const top = systemTops[systemIndex];
         const last = i === barXs.length - 1;
-        bars += `<line x1="${x}" y1="${top}" x2="${x}" y2="${top + 40}" stroke="${ink}" stroke-width="${last ? 2.4 : 1.4}"/>`;
-        if (last) {
-          bars += `<line x1="${x - 4}" y1="${top}" x2="${x - 4}" y2="${top + 40}" stroke="${ink}" stroke-width="1.2"/>`;
-          if (piece.repeat) {
-            bars += `<circle cx="${x - 9}" cy="${top + 15}" r="1.8" fill="${ink}"/><circle cx="${x - 9}" cy="${top + 25}" r="1.8" fill="${ink}"/>`;
-          }
+        const endsRepeat = (last && piece.repeat) || sections.some((sec) => sec.repeat && sec.to === i + 1);
+        const startsRepeat = sections.some((sec) => sec.repeat && sec.from === i + 2);
+        const nextLine = barXs[i + 1] && barXs[i + 1].systemIndex !== systemIndex;
+        const heavy = last || endsRepeat || (startsRepeat && !nextLine);
+        bars += barLine(x, top, heavy ? 2.4 : 1.4);
+        if (last || endsRepeat) bars += barLine(x - 4, top, 1.2);
+        if (endsRepeat) bars += dots(x - 9, top);
+        if (startsRepeat && !nextLine) bars += barLine(x + 4, top, 1.2) + dots(x + 9, top);
+        if (startsRepeat && nextLine) {
+          const nextTop = systemTops[systemIndex + 1];
+          bars += barLine(padL + 1, nextTop, 2.4) + barLine(padL + 5, nextTop, 1.2) + dots(padL + 10, nextTop);
         }
+      });
+
+      // Words over the end of a bar, such as "Fine".
+      let labelEls = "";
+      (piece.labels || []).forEach(({ bar, text }) => {
+        const at = barXs[Math.min(Math.max(bar, 1), barXs.length) - 1];
+        labelEls += `<text x="${at.x - 2}" y="${systemTops[at.systemIndex] - 9}" font-size="10.5" font-style="italic" font-weight="700" fill="${ink}" text-anchor="end" font-family="serif">${text}</text>`;
       });
 
       // Tempo marks, as in print: a metronome mark (♩ = 80) above the first bar and wherever the
       // speed settles anew; a gradual change is "accel." or "rit." (or the mark's own `text`)
       // at the bar it starts in, trailed by a dashed line to the next mark, across line breaks.
-      let tempoEls = "";
+      let tempoEls = labelEls;
       if (piece.tempo?.length) {
         const barStart = (m) => (barXs[m].systemIndex !== barXs[m - 1]?.systemIndex ? padL : barXs[m - 1].x + 5);
         const markY = (m) => systemTops[barXs[m].systemIndex] - 9;
@@ -2962,7 +3401,7 @@
         const whole = base >= 4;
         // A sixteenth's stem is longer, to fit two flags if it ends up alone.
         const len = base === 0.25 ? stemLen + 5 : stemLen;
-        return { x: pos.x, y, top, up, stemEnd: whole ? y : up ? y - len : y + len, flag: false, whole, sixteenth: base === 0.25 };
+        return { x: pos.x, y, top, up, stemEnd: whole ? y : up ? y - len : y + len, flag: false, whole, sixteenth: base === 0.25, triplet: note.triplet };
       });
       const stemXFor = (hd) => (hd.up ? hd.x + noteRx - 0.8 : hd.x - noteRx + 0.8);
 
@@ -3002,6 +3441,11 @@
           return `<polygon points="${from - 0.75},${ya} ${to + 0.75},${yb} ${to + 0.75},${yb + t} ${from - 0.75},${ya + t}" fill="${ink}"/>`;
         };
         beams += beamAt(x0, x1, 0);
+        if (group.some((hd) => hd.triplet)) {
+          const mx = (x0 + x1) / 2;
+          const my = base + slope * (mx - x0) + (up ? -4 : 12);
+          beams += `<text x="${mx}" y="${my}" font-size="9" font-style="italic" font-weight="700" fill="${ink}" text-anchor="middle" font-family="serif">3</text>`;
+        }
         const inset = t + (up ? 2.5 : -2.5);
         group.forEach((hd, i) => {
           if (!hd.sixteenth) return;
@@ -3155,7 +3599,9 @@
     const beatsText = (beats) => BEAT_WORDS[beats] || `${BEAT_FRACTIONS[beats % 1] ? Math.floor(beats) + BEAT_FRACTIONS[beats % 1] : beats} beats`;
     // Counting eighths as "1 & 2 &" and sixteenths as "1 e & a": a note on the second half of
     // a beat starts on "&".
-    const countText = (beatInBar) => `${Math.floor(beatInBar) + 1}${["", " e", " &", " a"][(beatInBar % 1) * 4] ?? " &"}`;
+    const countText = (beatInBar, triplet = false) => (triplet
+      ? `${Math.floor(beatInBar) + 1}${["", " trip", " let"][Math.round((beatInBar % 1) * 3)]}`
+      : `${Math.floor(beatInBar) + 1}${["", " e", " &", " a"][(beatInBar % 1) * 4] ?? " &"}`);
 
     // One short line for each part of the symbol (and the marks around it) on the sheet.
     function noteSymbolFacts(index) {
@@ -3168,7 +3614,9 @@
       const fact = (term, text) => facts.push(`<strong>${term}</strong> — ${text}`);
 
       const beamed = note.beam >= 0 && (prev?.beam === note.beam || next?.beam === note.beam);
-      if (base === 0.25) {
+      if (note.triplet) {
+        fact("Triplet", "the 3 over the beam: three notes share one beat, ⅓ beat each (count “1 trip let”).");
+      } else if (base === 0.25) {
         if (beamed) fact("Double beam", "two thick bars join sixteenth notes. Each lasts ¼ beat, so four fit in one beat (count “1 e & a”).");
         else fact("Double flag", "a lone sixteenth note has two flags instead of beams: ¼ beat.");
       } else if (base === 0.5) {
@@ -3184,7 +3632,8 @@
       if (note.dotted) {
         fact("Dot", `adds half the note's length: ${beatsText(base)} + ${beatsText(base / 2)} = ${beatsText(note.beats)}.`);
       }
-      fact("Count", `bar ${note.measure + 1}, starting on “${countText(note.beatInBar)}”.`);
+      const barNo = note.measure + (piece.pickup ? 0 : 1);
+      fact("Count", `${barNo ? `bar ${barNo}` : "the pickup bar"}, starting on “${countText(note.beatInBar, note.triplet)}”.`);
       if (note.pitch.includes("#")) {
         const letters = "CDEFGAB";
         const letter = note.pitch[0];
@@ -3205,6 +3654,10 @@
         fact("Rest", `the ${sign} after it means ${beatsText(restBeats)} of silence: stop the bow and wait.`);
       }
       if (piece.staccato) fact("Staccato", "this piece is played short and separated: stop the bow briefly after each note.");
+      const section = piece.sections?.find((sec) => sec.repeat && sec.to === note.measure + 1);
+      if (section && next?.measure !== note.measure) {
+        fact("Repeat sign", `the two dots before the double bar mean: play bars ${section.from}–${section.to} again${section.from > 1 ? ", from the dots after bar " + (section.from - 1) : ", from the start"}.`);
+      }
       if (!next) {
         if (piece.repeat) fact("Repeat sign", "the two dots before the double bar mean: play the whole piece again from the start.");
         else fact("Final double bar", "the thick double line marks the end of the piece.");
@@ -3414,9 +3867,9 @@
     function pausePiecePlayback() {
       silenceNoteTones();
       if (!piecePlayback) return;
-      const { pass, index } = piecePlayback;
+      const { pass, index, slot } = piecePlayback;
       cancelPlaybackTimers();
-      pausedPlayback = { pass };
+      pausedPlayback = { pass, slot };
       updatePlayButton();
       setNowPlaying(index, false);
       renderSheet(activePieceId, index);
@@ -3424,11 +3877,11 @@
 
     function togglePiecePlayback() {
       if (piecePlayback) pausePiecePlayback();
-      else if (pausedPlayback) startPiecePlayback({ fromIndex: Math.max(focusedNoteIndex, 0), fromPass: pausedPlayback.pass });
+      else if (pausedPlayback) startPiecePlayback({ fromIndex: Math.max(focusedNoteIndex, 0), fromPass: pausedPlayback.pass, fromSlot: pausedPlayback.slot });
       else startPiecePlayback();
     }
 
-    function startPiecePlayback({ fromIndex = 0, fromPass = 0 } = {}) {
+    function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1 } = {}) {
       if (!activePieceId) return;
       stopPitchListener();
       stopPiecePlayback();
@@ -3439,7 +3892,7 @@
       // Piano chords ring on past their beat, so they share one output that Pause and Stop fade.
       const pianoOut = getCtx().createGain();
       pianoOut.connect(output());
-      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, pianoOut };
+      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, slot: fromSlot, pianoOut };
       piecePlayback = playback;
       updatePlayButton();
 
@@ -3454,26 +3907,32 @@
         schedule(() => showCountdown(s), (delaySec - s) * 1000);
       }
 
-      // Rests keep the previous note highlighted; a repeated piece plays through twice.
-      // Times count in beats from the start of the first pass, then shift to the resume point.
+      // Rests keep the previous note highlighted; a repeated piece plays through twice, and a
+      // piece with sections plays its bars in their order (a repeated section twice).
+      // Times count in beats from the start of the first pass, then shift to the resume point,
+      // which is the note's turn in the slot it was paused in, or else its first turn.
       const piece = PIECES[activePieceId];
-      const passBeats = pieceBeats(piece);
+      const { seq, beats: passBeats } = playSequence(piece);
       const passes = piece.repeat ? 2 : 1;
       const { timeAt, beatDurAt } = pieceTiming(piece, pieceBpm(), passes);
-      const fromBeat = fromPass * passBeats + flatNotes[fromIndex].start;
+      const fromEntry = seq.find((en) => en.index === fromIndex && en.slot === fromSlot) || seq.find((en) => en.index === fromIndex) || seq[0];
+      playback.slot = fromEntry.slot;
+      const fromBeat = fromPass * passBeats + fromEntry.beat;
       const msAt = (beat) => 50 + delaySec * 1000 + (timeAt(beat) - timeAt(fromBeat)) * 1000;
       const soundFraction = piece.staccato ? 0.55 : 0.9;
       // A tied note sounds once for its whole held length; the notes it ties into only move
       // the highlight (unless playback resumes on one of them).
       for (let pass = fromPass; pass < passes; pass++) {
-        flatNotes.forEach((note, i) => {
-          const beat = pass * passBeats + note.start;
+        seq.forEach(({ index: i, beat: inPass, slot }) => {
+          const note = flatNotes[i];
+          const beat = pass * passBeats + inPass;
           if (beat < fromBeat) return;
-          const resumesHere = pass === fromPass && i === fromIndex;
+          const resumesHere = beat === fromBeat;
           const sounds = resumesHere || !flatNotes[i - 1]?.tie;
           schedule(() => {
             playback.pass = pass;
             playback.index = i;
+            playback.slot = slot;
             setNowPlaying(i, true);
             renderSheet(activePieceId, i);
             if (sounds && pieceSounds(piece).melody) playNoteTone(note.pitch, (timeAt(beat + heldBeats(i)) - timeAt(beat)) * soundFraction);
@@ -4041,7 +4500,7 @@
             glyph: keyGlyph("A"),
             facts: [
               "Three sharps, F, C and G: every F is F♯, every C is C♯ and every G is G♯.",
-              "2nd finger: <strong>high</strong> on every string. The beginner pieces in this app are in A major, written with the ♯ on each note instead.",
+              "2nd finger: <strong>high</strong> on every string. The pieces in this app are written with the ♯ on each note instead of a key signature.",
             ],
           },
         ],
