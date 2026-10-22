@@ -172,6 +172,22 @@
     .card-btn:is([data-rhythm="c2"], [data-rhythm="c2Piano"]) { --accent: #6a7ec4; }
     .card-btn:is([data-rhythm="d"], [data-rhythm="dPiano"]) { --accent: #b85c8a; }
 
+    .card-btn .chevron {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid #8a8278;
+      border-bottom: 2px solid #8a8278;
+      transform: rotate(45deg);
+      flex-shrink: 0;
+      margin-right: 2px;
+      transition: transform 0.15s;
+    }
+
+    .card-btn[aria-expanded="true"] .chevron { transform: rotate(225deg); }
+
+    .group-pieces { margin: 0.75rem 0 0 1.5rem; }
+    .group-pieces[hidden] { display: none; }
+
     .collection-view { display: none; text-align: left; }
     .collection-view.active { display: block; }
     .collection-view .piece-title { margin-bottom: 1rem; }
@@ -3160,7 +3176,8 @@
       },
     };
 
-    // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here.
+    // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here;
+    // a { title, detail, accent, pieces } entry lists its pieces under one row that opens and closes.
     const COLLECTIONS = [
       {
         id: "vol1",
@@ -3168,7 +3185,13 @@
         detail: "Suzuki Violin School · A and G major · first position",
         accent: "#d4a574",
         pieces: [
-          "twinkleA", "twinkleB", "twinkleC", "twinkleC2", "twinkleD", "twinkle",
+          {
+            title: "Twinkle Variations",
+            detail: "No. 1 · Variations A, B, C, C2 and D · A major · 4/4",
+            accent: "#c47a3a",
+            pieces: ["twinkleA", "twinkleB", "twinkleC", "twinkleC2", "twinkleD"],
+          },
+          "twinkle",
           "lightlyRow", "songOfTheWind", "goTellAuntRhody", "oComeLittleChildren", "maySong", "longLongAgo",
           "minuet1", "minuet2", "minuet3", "happyFarmer", "gavotte",
         ],
@@ -4336,13 +4359,36 @@
       return btn;
     }
 
+    function pieceCard(id) {
+      const piece = PIECES[id];
+      return catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
+    }
+
+    // A group of pieces is one row, closed at first; tapping it shows its pieces under it.
+    function pieceGroup(group) {
+      const box = document.createElement("div");
+      box.className = "piece-group";
+      const pieces = document.createElement("div");
+      pieces.className = "btn-list group-pieces";
+      pieces.hidden = true;
+      pieces.replaceChildren(...group.pieces.map(pieceCard));
+      const head = catalogCard({ icon: "♫", ...group, name: group.title }, () => {
+        pieces.hidden = !pieces.hidden;
+        head.setAttribute("aria-expanded", !pieces.hidden);
+      });
+      head.setAttribute("aria-expanded", false);
+      head.querySelector(".indicator").className = "chevron";
+      box.replaceChildren(head, pieces);
+      return box;
+    }
+
+    const pieceCount = (entries) => entries.reduce((n, entry) => n + (entry.pieces?.length ?? 1), 0);
+
     function openCollection(collection) {
       document.getElementById("collection-title").textContent = collection.title;
       document.getElementById("piece-back").textContent = `← ${collection.title}`;
-      document.getElementById("piece-buttons").replaceChildren(...collection.pieces.map((id) => {
-        const piece = PIECES[id];
-        return catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
-      }));
+      document.getElementById("piece-buttons").replaceChildren(...collection.pieces.map((entry) =>
+        typeof entry === "string" ? pieceCard(entry) : pieceGroup(entry)));
       document.getElementById("collection-list").style.display = "none";
       document.getElementById("collection-view").classList.add("active");
     }
@@ -4353,7 +4399,7 @@
     }
 
     document.getElementById("collection-buttons").replaceChildren(...COLLECTIONS.map((collection) => {
-      const count = collection.pieces.length;
+      const count = pieceCount(collection.pieces);
       const detail = `${count} ${count === 1 ? "piece" : "pieces"} · ${collection.detail}`;
       return catalogCard({ icon: "♫", name: collection.title, detail, accent: collection.accent }, () => openCollection(collection));
     }));
