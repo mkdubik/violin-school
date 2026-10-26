@@ -674,6 +674,19 @@
     .value-bar .rv-count.held { fill: #c8bfb2; }
     .value-bar .rv-count.hit { fill: var(--accent); font-weight: 700; }
 
+    .interval-staff {
+      flex-shrink: 0;
+      width: 96px;
+    }
+
+    .interval-staff svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f5f0e8;
+      border-radius: 6px;
+    }
+
     .quiz-answers {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -1480,6 +1493,7 @@
         <button type="button" class="subtab active" data-group="staff">Staff</button>
         <button type="button" class="subtab" data-group="values">Note values</button>
         <button type="button" class="subtab" data-group="signs">Signs</button>
+        <button type="button" class="subtab" data-group="intervals">Intervals</button>
         <button type="button" class="subtab" data-group="quiz">Quiz</button>
       </div>
 
@@ -1525,12 +1539,20 @@
         <div id="signs-list"></div>
       </div>
 
+      <div class="learn-section" id="learn-intervals">
+        <p class="lesson-text">An <strong>interval</strong> is the distance between two notes, counted in letters: A to C&#9839; is a 3rd (A, H, C). On the violin you feel it as how far your fingers move. Tap a card to hear the two notes one after the other, then together. Test your ear under Quiz &rsaquo; Intervals.</p>
+        <p class="learn-progress" id="intervals-progress"></p>
+        <div id="interval-list"></div>
+        <p class="hint">A <strong>half step</strong> is the smallest step, fingers touching; a <strong>whole step</strong> leaves a finger&rsquo;s width between them. Every bigger interval is made of these.</p>
+      </div>
+
       <div class="learn-section" id="learn-quiz">
         <div class="segmented" id="quiz-modes">
           <button type="button" class="seg active" data-mode="name">Name it</button>
           <button type="button" class="seg" data-mode="play">Play it</button>
           <button type="button" class="seg" data-mode="rhythm">Rhythm</button>
           <button type="button" class="seg" data-mode="signs">Signs</button>
+          <button type="button" class="seg" data-mode="intervals">Intervals</button>
         </div>
 
         <!-- Shared by Name it and Play it -->
@@ -1632,6 +1654,23 @@
           <div class="quiz-score" id="quiz-score-signs"></div>
           <div class="controls">
             <button type="button" id="sign-next">Skip</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-intervals">
+          <div class="chip-row">
+            <span class="chip-label">Intervals</span>
+            <button type="button" class="chip active" data-interval-level="starter">Whole step, 3rd, 5th, octave</button>
+            <button type="button" class="chip" data-interval-level="all">All eight</button>
+          </div>
+          <p class="lesson-text">Press Play and listen to the two notes. How far apart are they?</p>
+          <div class="sheet-wrap" id="interval-quiz-wrap"></div>
+          <div class="sign-answers" id="interval-answers"></div>
+          <div class="quiz-feedback" id="interval-feedback"></div>
+          <div class="quiz-score" id="quiz-score-intervals"></div>
+          <div class="controls">
+            <button type="button" id="interval-play">Play</button>
+            <button type="button" id="interval-next">Skip</button>
           </div>
         </div>
 
@@ -4803,6 +4842,77 @@
       else startValueDemo(card, NOTE_VALUES[card.dataset.value]);
     });
 
+    // --- Learn › Intervals: the distance between two notes, with an A-string example of each ---
+    const INTERVALS = [
+      { name: "Half step", also: "minor 2nd", semis: 1, low: "C#5", high: "D5", accent: "#b85c8a",
+        where: "2nd and 3rd finger touching on the A string", more: "Song of the Wind has one in its first bar: C♯ to D." },
+      { name: "Whole step", also: "major 2nd", semis: 2, low: "A4", high: "B4", accent: "#c47a3a",
+        where: "open A to 1st finger", more: "Song of the Wind opens with whole steps: A, H, C♯." },
+      { name: "Minor 3rd", also: "three half steps", semis: 3, low: "C#5", high: "E5", accent: "#9a86c4",
+        where: "2nd finger on A up to open E", more: "Lightly Row opens with one, going down: E to C♯." },
+      { name: "Major 3rd", also: "four half steps", semis: 4, low: "A4", high: "C#5", accent: "#4a8fc4",
+        where: "open A to 2nd finger", more: "The bottom two notes of an A major chord." },
+      { name: "Perfect 4th", also: "five half steps", semis: 5, low: "A4", high: "D5", accent: "#5a9e6f",
+        where: "open A to 3rd finger", more: "The 3rd finger on any string is a 4th up, and an octave above the open string below." },
+      { name: "Perfect 5th", also: "seven half steps", semis: 7, low: "A4", high: "E5", accent: "#d4a574",
+        where: "two open strings side by side, A and E", more: "The violin is tuned in 5ths. Twinkle’s first leap is one." },
+      { name: "Major 6th", also: "nine half steps", semis: 9, low: "A4", high: "F#5", accent: "#6a7ec4",
+        where: "open A to 1st finger on the E string", more: "" },
+      { name: "Octave", also: "twelve half steps", semis: 12, low: "A4", high: "A5", accent: "#c4826a",
+        where: "open A to 3rd finger on the E string", more: "The same note, higher. In tune, the two ring together." },
+    ];
+
+    const aOrAn = (name) => `${/^[aeiou]/i.test(name) ? "an" : "a"} ${name.toLowerCase()}`;
+    const midiToPitch = (midi) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+
+    // Two notes side by side on a short staff; `notes: false` leaves it empty until the answer.
+    function intervalStaffSvg(low, high, { width = 120, notes = true, color = LEARN_INK } = {}) {
+      const top = 26;
+      let svg = staffLinesSvg(top, 4, width - 4) + trebleClefSvg(8, top);
+      if (notes) {
+        [[low, width * 0.5], [high, width * 0.78]].forEach(([pitch, x]) => {
+          const note = noteSvg(x, pitch, top, { stem: false, color });
+          svg += note.svg;
+          if (pitch.includes("#")) svg += `<text x="${x - 16}" y="${note.y + 4}" font-size="13" fill="${color}" font-family="serif">♯</text>`;
+        });
+      }
+      return `<svg viewBox="0 0 ${width} 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${notes ? `${noteName(low)} and ${noteName(high)}` : "Two notes to hear"}">${svg}</svg>`;
+    }
+
+    // The low note, the high note, then both together.
+    function playInterval(low, high, sound, { together = true } = {}) {
+      const t = getCtx().currentTime + 0.05;
+      playNoteTone(low, 0.75, { time: t, out: sound.out });
+      playNoteTone(high, 0.75, { time: t + 0.85, out: sound.out });
+      if (!together) return t + 1.6;
+      playNoteTone(low, 1.4, { time: t + 1.9, out: sound.out });
+      playNoteTone(high, 1.4, { time: t + 1.9, out: sound.out });
+      return t + 3.3;
+    }
+
+    document.getElementById("interval-list").innerHTML = INTERVALS.map((iv, i) => `
+      <button type="button" class="value-card" data-interval="${i}" style="--accent:${iv.accent}">
+        <div class="value-head">
+          <div class="info">
+            <div class="name">${iv.name} <span class="detail">· ${iv.also}</span></div>
+            <div class="detail">${noteLabel(iv.low)} to ${noteLabel(iv.high)} · ${capitalize(iv.where)}. ${iv.more}</div>
+          </div>
+          <div class="interval-staff">${intervalStaffSvg(iv.low, iv.high)}</div>
+        </div>
+      </button>`).join("");
+
+    document.getElementById("interval-list").addEventListener("click", (ev) => {
+      const card = ev.target.closest(".value-card");
+      if (!card) return;
+      if (learnSound?.card === card) return stopLearnSound();
+      const iv = INTERVALS[card.dataset.interval];
+      const sound = startLearnSound(() => card.classList.remove("active"));
+      sound.card = card;
+      card.classList.add("active");
+      markProgress("intervals", iv.name);
+      sound.at(playInterval(iv.low, iv.high, sound), stopLearnSound);
+    });
+
     // --- Learn › Signs: what the other marks on the page mean ---
     // Each glyph is a short staff with its lines at top…top + 40; `ac` colours the part explained.
     function signGlyph(body, top = 25) {
@@ -5018,9 +5128,10 @@
 
     // --- Progress: stars and finished lessons, kept in this browser only ---
     // A star is an answer right on the first try. A lesson is finished when every note has been
-    // tapped (Staff), every value heard (Note values) or every sign named in the quiz (Signs).
+    // tapped (Staff), every value heard (Note values), every sign named in the quiz (Signs) or
+    // every interval heard (Intervals).
     const PROGRESS_KEY = "fidluaefing-learn-progress";
-    const QUIZ_MODES = ["name", "play", "rhythm", "signs"];
+    const QUIZ_MODES = ["name", "play", "rhythm", "signs", "intervals"];
     const progress = loadProgress();
     const session = Object.fromEntries(QUIZ_MODES.map((mode) => [mode, { asked: 0, firstTry: 0, streak: 0 }]));
 
@@ -5029,6 +5140,7 @@
         staff: [],
         values: [],
         signs: [],
+        intervals: [],
         stars: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
         best: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
       };
@@ -5080,6 +5192,7 @@
         ["staff", LADDER.filter((p) => progress.staff.includes(p)).length, LADDER.length, (n, of) => `Explored ${n} of ${of} notes`, "✓ Every note explored"],
         ["values", NOTE_VALUES.filter((v) => progress.values.includes(v.beats)).length, NOTE_VALUES.length, (n, of) => `Heard ${n} of ${of}`, "✓ All of them heard"],
         ["signs", ALL_SIGNS.filter((s) => progress.signs.includes(s.name)).length, ALL_SIGNS.length, (n, of) => `Named ${n} of ${of} in the quiz`, "✓ All of them named in the quiz"],
+        ["intervals", INTERVALS.filter((iv) => progress.intervals.includes(iv.name)).length, INTERVALS.length, (n, of) => `Heard ${n} of ${of}`, "✓ All of them heard"],
       ];
       lessons.forEach(([lesson, n, of, partly, done]) => {
         document.getElementById(`${lesson}-progress`).textContent = n < of ? partly(n, of) : done;
@@ -5622,6 +5735,63 @@
 
     document.getElementById("sign-next").addEventListener("click", nextSign);
 
+    // --- Learn › Quiz › Intervals: hear two notes going up and name the distance ---
+    // The low note is anywhere from the open G string up, so the high one stays on the violin (to H on E).
+    const INTERVAL_LEVELS = {
+      starter: ["Whole step", "Major 3rd", "Perfect 5th", "Octave"],
+      all: INTERVALS.map((iv) => iv.name),
+    };
+    const intervalQuiz = { level: "starter", interval: null, low: null, high: null, missed: false, done: false, timer: null };
+
+    function hearQuizInterval({ together = false } = {}) {
+      const sound = startLearnSound();
+      sound.at(playInterval(intervalQuiz.low, intervalQuiz.high, sound, { together }), stopLearnSound);
+    }
+
+    function nextInterval() {
+      clearTimeout(intervalQuiz.timer);
+      stopLearnSound();
+      const names = INTERVAL_LEVELS[intervalQuiz.level];
+      const interval = pickOne(INTERVALS.filter((iv) => names.includes(iv.name) && iv !== intervalQuiz.interval));
+      const lowest = pitchToMidi("G3");
+      const low = lowest + Math.floor(Math.random() * (pitchToMidi("B5") - interval.semis - lowest + 1));
+      Object.assign(intervalQuiz, { interval, low: midiToPitch(low), high: midiToPitch(low + interval.semis), missed: false, done: false });
+      document.getElementById("interval-quiz-wrap").innerHTML = intervalStaffSvg(null, null, { width: 200, notes: false });
+      document.getElementById("interval-answers").innerHTML = INTERVALS.filter((iv) => names.includes(iv.name)).map((iv) =>
+        `<button type="button" class="quiz-answer" data-interval="${iv.name}">${iv.name}</button>`).join("");
+      setFeedback("interval-feedback", "", "Press Play to hear it.");
+    }
+
+    // The staff shows the two notes once it's answered; only a first-try answer earns a star.
+    function answerInterval(btn) {
+      if (intervalQuiz.done || btn.classList.contains("wrong")) return;
+      const { interval, low, high } = intervalQuiz;
+      if (btn.dataset.interval === interval.name) {
+        intervalQuiz.done = true;
+        btn.classList.add("right");
+        document.getElementById("interval-quiz-wrap").innerHTML = intervalStaffSvg(low, high, { width: 200, color: RIGHT_INK });
+        setFeedback("interval-feedback", "right", `<strong>Yes — ${aOrAn(interval.name)}</strong>, ${noteLabel(low)} up to ${noteLabel(high)}. The same distance as ${interval.where}.`);
+        hearQuizInterval({ together: true });
+        scoreAnswer("intervals", !intervalQuiz.missed);
+        intervalQuiz.timer = setTimeout(nextInterval, 4500);
+      } else {
+        intervalQuiz.missed = true;
+        btn.classList.add("wrong");
+        const wrong = INTERVALS.find((iv) => iv.name === btn.dataset.interval);
+        const way = wrong.semis > interval.semis ? "closer together" : "further apart";
+        setFeedback("interval-feedback", "wrong", `<strong>Not ${aOrAn(wrong.name)}.</strong> The notes are ${way}. Listen again.`);
+        hearQuizInterval();
+      }
+    }
+
+    document.getElementById("interval-answers").addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".quiz-answer");
+      if (btn) answerInterval(btn);
+    });
+
+    document.getElementById("interval-play").addEventListener("click", () => hearQuizInterval());
+    document.getElementById("interval-next").addEventListener("click", nextInterval);
+
     // --- Learn › Quiz: modes and settings ---
     function chipGroup(selector, onPick) {
       const chips = document.querySelectorAll(selector);
@@ -5662,6 +5832,11 @@
       document.getElementById("rhythm-tap").hidden = rhythmKind !== "tap";
     });
 
+    chipGroup("[data-interval-level]", ({ intervalLevel }) => {
+      intervalQuiz.level = intervalLevel;
+      nextInterval();
+    });
+
     chipGroup("[data-rhythm-level]", ({ rhythmLevel }) => {
       rhythmQuiz.level = rhythmLevel;
       nextRhythmPick();
@@ -5685,6 +5860,7 @@
     nextRhythmPick();
     newTapRhythm();
     nextSign();
+    nextInterval();
     renderProgress();
 
     let resizeTimer = null;
