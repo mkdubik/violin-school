@@ -1688,7 +1688,8 @@
   <script src="local/songbooks.js"></script>
   <script>
     // Piano chords voiced under the violin: a low bass note, then the chord. A, D, E and E7
-    // carry the A major pieces; G, C, D7, A7 and Am the G major ones.
+    // carry the A major pieces; G, C, D7, A7 and Am the G major ones, with Em for
+    // Danny Boy.
     const PIANO_CHORDS = {
       A: { bass: "A2", chord: ["A3", "C#4", "E4"] },
       D: { bass: "D3", chord: ["F#3", "A3", "D4"] },
@@ -1699,6 +1700,7 @@
       D7: { bass: "D3", chord: ["F#3", "A3", "C4"] },
       A7: { bass: "A2", chord: ["G3", "C#4", "E4"] },
       Am: { bass: "A2", chord: ["A3", "C4", "E4"] },
+      Em: { bass: "E2", chord: ["G3", "B3", "E4"] },
     };
 
     const RHYTHMS = {
@@ -3213,6 +3215,40 @@
           [e("A5"), e("A5"), "A5"],
         ],
       },
+      // The Londonderry Air as sung to Danny Boy, checked against Petrie's 1855 printing and two
+      // song versions; where they differ it follows the songs. The last line slows down.
+      dannyBoy: {
+        title: "Danny Boy",
+        detail: "Londonderry Air · G major · 4/4",
+        meta: "Londonderry Air · Irish traditional · G major · 4/4 · starts on a pickup · slows down at the end",
+        accent: "#6a7e9a",
+        tempo: [{ bar: 1, bpm: 66 }, { bar: 16, bpm: 66 }, { bar: 17, bpm: 44 }],
+        pickup: true,
+        measures: [
+          [e("F#4"), e("G4"), e("A4")],
+          [dotted("B4"), e("A4"), e("B4"), e("E5"), e("D5"), e("B4")],
+          [e("A4"), e("G4"), "E4", rest(0.5), e("G4"), e("B4"), e("C5")],
+          [dotted("D5"), e("E5"), e("D5"), e("B4"), e("G4"), e("B4")],
+          [h("A4"), rest(0.5), e("F#4"), e("G4"), e("A4")],
+          [dotted("B4"), e("A4"), e("B4"), e("E5"), e("D5"), e("B4")],
+          [e("A4"), e("G4"), "E4", rest(0.5), e("F#4"), e("G4"), e("A4")],
+          [dotted("B4"), e("C5"), e("B4"), e("A4"), e("G4"), e("A4")],
+          [h("G4"), rest(0.5), e("D5"), e("E5"), e("F#5")],
+          [dotted("G5"), e("F#5"), e("F#5"), e("E5"), e("D5"), e("E5")],
+          [e("D5"), e("B4"), "G4", rest(0.5), e("D5"), e("E5"), e("F#5")],
+          [dotted("G5"), e("F#5"), e("F#5"), e("E5"), e("D5"), e("B4")],
+          [h("A4"), rest(0.5), e("D5"), e("D5"), e("D5")],
+          [dotted("B5"), e("A5"), e("A5"), e("G5"), e("E5"), e("G5")],
+          [e("D5"), e("B4"), "G4", rest(0.5), e("F#4"), e("G4"), e("A4")],
+          [e("B4"), e("E5"), e("D5"), e("B4"), e("A4"), e("G4"), e("E4"), e("F#4")],
+          [w("G4")],
+        ],
+        piano: [
+          "-", "G", "C", "G", "A7 D7", "G", "C D7", "G D7", "G D7",
+          "G G C D7", "G C D7 D7", "G G C E7", "A7 D7", "G C", "G Em Am D7", "G D7", "G",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4] },
+      },
     };
 
     // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here;
@@ -3238,9 +3274,9 @@
       {
         id: "other",
         title: "Other pieces",
-        detail: "From lessons · A minor · first position",
+        detail: "A minor and G major · first position",
         accent: "#c4826a",
-        pieces: ["russakeisari"],
+        pieces: ["russakeisari", "dannyBoy"],
       },
     ];
 
