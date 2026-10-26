@@ -1688,8 +1688,9 @@
   <script src="local/songbooks.js"></script>
   <script>
     // Piano chords voiced under the violin: a low bass note, then the chord. A, D, E and E7
-    // carry the A major pieces; G, C, D7, A7 and Am the G major ones, with Em for
-    // Danny Boy.
+    // carry the A major pieces; G, C, D7, A7 and Am the G major ones. The Heartstrings pieces
+    // add the rest below; a slash names the bass ("A/E" is A over E), and a note the app can
+    // only spell with sharps is written as its neighbour (E♯ as F, B♯ as C).
     const PIANO_CHORDS = {
       A: { bass: "A2", chord: ["A3", "C#4", "E4"] },
       D: { bass: "D3", chord: ["F#3", "A3", "D4"] },
@@ -1701,6 +1702,24 @@
       A7: { bass: "A2", chord: ["G3", "C#4", "E4"] },
       Am: { bass: "A2", chord: ["A3", "C4", "E4"] },
       Em: { bass: "E2", chord: ["G3", "B3", "E4"] },
+      Bm: { bass: "B2", chord: ["F#3", "B3", "D4"] },
+      "F#m": { bass: "F#2", chord: ["F#3", "A3", "C#4"] },
+      "F#": { bass: "F#2", chord: ["F#3", "A#3", "C#4"] },
+      "F#7": { bass: "F#2", chord: ["A#3", "C#4", "E4"] },
+      B7: { bass: "B2", chord: ["A3", "D#4", "F#4"] },
+      "C#": { bass: "C#3", chord: ["F3", "G#3", "C#4"] },
+      "C#7": { bass: "C#3", chord: ["F3", "G#3", "B3"] },
+      "G#7": { bass: "G#2", chord: ["F#3", "C4", "D#4"] },
+      "F#m6": { bass: "F#2", chord: ["A3", "C#4", "D#4"] },
+      "F#dim7": { bass: "F#2", chord: ["A3", "C4", "D#4"] },
+      Fdim7: { bass: "F2", chord: ["G#3", "B3", "D4"] },
+      "A+": { bass: "A2", chord: ["A3", "C#4", "F4"] },
+      "A/E": { bass: "E2", chord: ["A3", "C#4", "E4"] },
+      "Bm/D": { bass: "D3", chord: ["F#3", "B3", "D4"] },
+      "F#m/A": { bass: "A2", chord: ["F#3", "A3", "C#4"] },
+      "E/G#": { bass: "G#2", chord: ["G#3", "B3", "E4"] },
+      "E/B": { bass: "B2", chord: ["G#3", "B3", "E4"] },
+      "F#7/C#": { bass: "C#3", chord: ["F#3", "A#3", "E4"] },
     };
 
     const RHYTHMS = {
@@ -3249,6 +3268,257 @@
         ],
         sheetLayout: { systems: [5, 4, 4, 4] },
       },
+      // From the Wikipedia score of the Ninth Symphony's theme, in G major. The last line
+      // comes in a beat early, tied over the bar, as Beethoven wrote it.
+      odeToJoy: {
+        title: "Ode to Joy",
+        detail: "Beethoven · G major · 4/4",
+        meta: "From the Ninth Symphony · L. van Beethoven · G major · 4/4",
+        accent: "#d4a54a",
+        tempo: [{ bar: 1, bpm: 108 }],
+        measures: [
+          ["B4", "B4", "C5", "D5"],
+          ["D5", "C5", "B4", "A4"],
+          ["G4", "G4", "A4", "B4"],
+          [dotted("B4"), e("A4"), h("A4")],
+          ["B4", "B4", "C5", "D5"],
+          ["D5", "C5", "B4", "A4"],
+          ["G4", "G4", "A4", "B4"],
+          [dotted("A4"), e("G4"), h("G4")],
+          ["A4", "A4", "B4", "G4"],
+          ["A4", e("B4"), e("C5"), "B4", "G4"],
+          ["A4", e("B4"), e("C5"), "B4", "A4"],
+          ["G4", "A4", "D4", tied("B4")],
+          ["B4", "B4", "C5", "D5"],
+          ["D5", "C5", "B4", "A4"],
+          ["G4", "G4", "A4", "B4"],
+          [dotted("A4"), e("G4"), h("G4")],
+        ],
+        piano: ["G", "G D", "G", "G D", "G", "G D", "G", "D G", "D G", "D7 G", "D7 G", "A7 A7 D G", "G", "G D", "G", "D G"],
+        sheetLayout: { measuresPerSystem: 4 },
+      },
+      // The sea shanty as session players write it (Paul Hardy's tunebook, checked against
+      // a sung version), in G major.
+      shenandoah: {
+        title: "Shenandoah",
+        detail: "American folk song · G major · 4/4",
+        meta: "Folk song · G major · 4/4 · starts on a pickup, played twice",
+        accent: "#5a9ec4",
+        tempo: [{ bar: 1, bpm: 72 }],
+        repeat: true,
+        pickup: true,
+        measures: [
+          ["D4"],
+          [e("G4"), e("G4"), dotted("G4"), e("A4"), e("B4"), e("C5")],
+          [h("E5"), "D5", e("G5"), e("F#5")],
+          [tied(h("E5")), e("E5"), e("D5"), e("E5"), e("D5")],
+          [s("B4"), tied(s("D5")), h("D5"), REST, e("D5")],
+          [e("E5"), e("E5"), dotted("E5"), e("B4"), e("D5"), e("B4")],
+          ["A4", dotted("G4"), rest(0.5), e("G4"), e("A4")],
+          [tied(h("B4")), e("B4"), e("G4"), e("B4"), e("E5")],
+          ["D5", e("G4"), e("A4"), dotted("B4"), e("G4")],
+          ["A4", h("G4")],
+        ],
+        piano: ["-", "G Am", "C G", "C", "G", "Em", "C", "G", "D G C C", "D7 G"],
+        sheetLayout: { systems: [5, 5] },
+      },
+      // Pachelbel's first violin from its entry: the cello's two bars, then the first four
+      // variations over the bass that never changes (D A B F♯ G D G A).
+      canon: {
+        title: "Canon in D",
+        detail: "Pachelbel · D major · 4/4",
+        meta: "J. Pachelbel · D major · 4/4 · the first violin's opening, after two bars of cello",
+        accent: "#8a7ec4",
+        tempo: [{ bar: 1, bpm: 56 }],
+        measures: [
+          [rest(4)],
+          [rest(4)],
+          ["F#5", "E5", "D5", "C#5"],
+          ["B4", "A4", "B4", "C#5"],
+          ["D5", "C#5", "B4", "A4"],
+          ["G4", "F#4", "G4", "E4"],
+          [e("D4"), e("F#4"), e("A4"), e("G4"), e("F#4"), e("D4"), e("F#4"), e("E4")],
+          [e("D4"), e("B3"), e("D4"), e("A4"), e("G4"), e("B4"), e("A4"), e("G4")],
+          [e("F#4"), e("D4"), e("E4"), e("C#5"), e("D5"), e("F#5"), e("A5"), e("A4")],
+          [e("B4"), e("G4"), e("A4"), e("F#4"), e("D4"), e("D5"), dotted(e("D5")), s("C#5")],
+          [w("D5")],
+        ],
+        piano: [
+          "D A Bm F#m", "G D G A", "D A Bm F#m", "G D G A", "D A Bm F#m",
+          "G D G A", "D A Bm F#m", "G D G A", "D A Bm F#m", "G D G A", "D",
+        ],
+        sheetLayout: { systems: [4, 4, 3] },
+      },
+      // Holst's hymn tune Thaxted (from Jupiter) as in the Methodist Hymnbook of 1933, a tone
+      // up in D major to sit near the original E♭. Each line ends on a half bar that shares a
+      // bar with the next line's pickup.
+      iVowToThee: {
+        title: "I Vow to Thee, My Country",
+        detail: "Holst · D major · 3/4",
+        meta: "Thaxted · G. Holst, from Jupiter · D major · 3/4 · starts on a pickup · slows down at the end",
+        accent: "#c45a5a",
+        tempo: [{ bar: 1, bpm: 84 }, { bar: 24, bpm: 84 }, { bar: 25, bpm: 60 }],
+        pickup: true,
+        measures: [
+          [e("F#4"), e("A4")],
+          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
+          [e("D5"), e("E5"), "D5", "C#5"],
+          [e("B4"), e("C#5"), "B4", "A4"],
+          [h("F#4"), e("F#4"), e("A4")],
+          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
+          [e("D5"), e("E5"), "F#5", "F#5"],
+          [e("F#5"), e("E5"), "D5", "E5"],
+          [h("D5"), e("A4"), e("F#4")],
+          [dotted("E4"), e("E4"), e("D4"), e("F#4")],
+          ["E4", "A4", e("A4"), e("F#4")],
+          [dotted("E4"), e("E4"), e("F#4"), e("A4")],
+          [h("B4"), e("B4"), e("C#5")],
+          [dotted(e("D5")), s("D5"), "C#5", "B4"],
+          ["A4", "D5", "F#4"],
+          [e("E4"), e("D4"), "E4", "F#4"],
+          [h("A4"), e("F#4"), e("A4")],
+          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
+          [e("D5"), e("E5"), "D5", "C#5"],
+          [e("B4"), e("C#5"), "B4", "A4"],
+          [h("F#4"), e("F#4"), e("A4")],
+          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
+          [e("D5"), e("E5"), "F#5", "F#5"],
+          [e("F#5"), e("E5"), "D5", "E5"],
+          [h("D5")],
+        ],
+        piano: [
+          "D", "G G Em", "D", "G G A", "Bm Bm A", "G G Em", "D", "G", "D",
+          "A A Bm", "A A D", "A A D", "G G Em", "Bm D G", "D Em D", "G Em Bm", "A Bm A",
+          "G G A7", "D D F#m", "G G A", "Bm Bm A", "G G A7", "D", "G G Em", "D",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4, 4, 4] },
+      },
+      // Iceland's national anthem (1874), the soprano line of the SATB setting on Wikimedia
+      // Commons, a half step down in D major. The piano chords are simpler than the choir's,
+      // following it where it changes key.
+      lofsongur: {
+        title: "Lofsöngur",
+        detail: "Sveinbjörn Sveinbjörnsson · D major · 4/4",
+        meta: "Ó, guð vors lands · Sveinbjörn Sveinbjörnsson · D major · 4/4 · starts on a pickup · slows down at the end",
+        accent: "#4a6fb4",
+        fingerHints: {
+          "G#3": "Low 1st finger (G string)",
+          "G#4": "High 3rd finger (D string)",
+        },
+        tempo: [{ bar: 1, bpm: 66 }, { bar: 22, bpm: 66 }, { bar: 23, bpm: 46 }],
+        pickup: true,
+        measures: [
+          ["A3"],
+          ["D4", "E4", "F#4", rest(0.5), e("E4")],
+          ["D4", "E4", "C#4", rest(0.5), e("A4")],
+          [e("B4"), e("C#5"), e("D5"), e("A4"), "G4", e("F#4"), e("D4")],
+          [e("F#4"), e("E4"), e("D4"), e("E4"), "F#4", rest(0.5), e("A4")],
+          ["A4", e("G4"), e("F#4"), "F#4", e("E4"), e("D4")],
+          [e("C#4"), e("D4"), e("E4"), e("F#4"), "G4", e("E5"), e("D5")],
+          ["C#5", e("B4"), e("A4"), "E4", e("A4"), e("G#4")],
+          [h("A4"), REST, e("A3"), e("A3")],
+          ["B3", e("A3"), e("G#3"), "A3", e("D4"), e("F#4")],
+          ["A4", e("B4"), e("C#5"), "D5", rest(0.5), e("D5")],
+          ["C#5", e("F#4"), e("B4"), "A4", e("A4"), e("G#4")],
+          ["F#4", REST, REST, rest(0.5), e("A4")],
+          ["F#5", e("F#5"), e("E5"), "D5", e("F#4"), e("F#4")],
+          ["G4", e("G4"), e("F#4"), "E4", rest(0.5), e("B4")],
+          ["A4", e("D4"), e("E4"), "F#4", e("F#4"), e("E4")],
+          [h("D4"), REST, e("A4"), e("G4")],
+          ["F#4", "A4", e("E4"), rest(0.5), e("C#5"), e("A4")],
+          ["A4", "D5", "E5", rest(0.5), e("A4")],
+          ["F#5", e("F#5"), e("E5"), "D5", e("F#4"), e("F#4")],
+          ["G4", e("G4"), e("F#4"), "E4", rest(0.5), e("B4")],
+          ["A4", e("D4"), e("E4"), "F#4", e("F#4"), e("E4")],
+          [h("D4"), REST],
+        ],
+        piano: [
+          "A", "D A D A", "Bm E A A", "G D Em D", "D A D A7", "D G D A7", "A D G E7", "A B7 E E",
+          "A A - B7", "Em A A D", "D G D Bm", "F# Bm F#m C#7", "F# - - A7", "D D G Bm", "Em Em A G",
+          "D D Bm A", "D D - A7", "D F#m A A", "D Bm A A7", "D D G Bm", "Em Em A G", "D D Bm A", "D",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4, 3, 3] },
+      },
+      // Schumann's Kinderszenen No. 7 from the Mutopia piano score (Leichte Stücke, 1900): the
+      // top line, a minor third down in D major so it stays in first position. The first eight
+      // bars repeat; the piano chords follow Schumann's harmony, one per beat at most.
+      traumerei: {
+        title: "Träumerei",
+        detail: "Schumann · D major · 4/4",
+        meta: "Kinderszenen No. 7 · R. Schumann · D major · 4/4 · starts on a pickup · slows down at the end",
+        accent: "#a48ab8",
+        tempo: [{ bar: 1, bpm: 60 }, { bar: 23, bpm: 60 }, { bar: 25, bpm: 40 }],
+        pickup: true,
+        sections: [{ from: 1, to: 1 }, { from: 2, to: 9, repeat: true }, { from: 10, to: 25 }],
+        measures: [
+          ["A3"],
+          [tied(h("D4")), e("D4"), e("C#4"), e("D4"), e("F#4")],
+          [e("A4"), e("D5"), h("D5"), e("C#5"), e("B4")],
+          [e("A4"), e("D5"), e("E4"), e("F#4"), e("G4"), e("B4"), e("D4"), e("E4")],
+          [e("F#4"), e("A4"), h("E4"), "A3"],
+          [tied(h("D4")), e("D4"), e("C#4"), e("D4"), e("F#4")],
+          [e("A4"), e("F#5"), dotted("F#5"), e("E5"), e("D5"), e("C#5")],
+          [e("D5"), e("F#5"), e("B4"), e("D5"), dotted("C#5"), e("C5")],
+          ["B4", "C#5", "A4", rest(0.5), e("A3")],
+          [tied(h("D4")), e("D4"), e("C#4"), e("D4"), e("F#4")],
+          [e("A4"), e("C5"), h("C5"), e("B4"), e("A4")],
+          [e("G4"), e("B4"), e("E4"), e("F#4"), dotted("G4"), e("F#4")],
+          [dotted("E4"), tied(e("B3")), "B3", rest(0.5), e("D4")],
+          [tied(h("G4")), e("G4"), e("F#4"), e("G4"), e("B4")],
+          [e("D5"), e("G5"), h("G5"), e("F#5"), e("E5")],
+          [e("D5"), e("F#5"), e("B4"), e("C#5"), dotted("D5"), e("C#5")],
+          [dotted("B4"), tied(e("F#4")), "F#4", "E4"],
+          [tied(h("D4")), e("D4"), e("C#4"), e("D4"), e("F#4")],
+          [e("A4"), e("D5"), h("D5"), e("C#5"), e("B4")],
+          [e("A4"), e("D5"), e("E4"), e("F#4"), e("G4"), e("B4"), e("D4"), e("E4")],
+          [e("F#4"), e("A4"), h("E4"), "A3"],
+          [tied(h("D4")), e("D4"), e("C#4"), e("D4"), e("F#4")],
+          [e("A4"), e("F#5"), dotted("F#5"), e("E5"), e("D5"), e("B4")],
+          [e("A4"), e("D5"), e("E4"), e("F#4"), e("G4"), e("B4"), e("E4"), e("F#4")],
+          [e("G4"), e("B4"), e("B3"), e("C#4"), h("D4")],
+        ],
+        piano: [
+          "-", "D", "D G G G", "D A7 A7 D", "D A A7 A7", "D", "D F#7 F#7 F#7", "Bm Bm A B7", "E7 E7 A A7",
+          "D", "Am B7 B7 B7", "Em B7 Em Em", "Em B7 Em D", "G", "Em F#7 F#7 F#7", "Bm F#7 Bm Bm", "Bm Bm Em A7",
+          "D", "D G G G", "D A7 A7 D", "D A A7 A7", "D", "D E7 E7 E7", "D A7 A7 B7", "Em A7 D D",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4, 4, 4] },
+      },
+      // Schubert's Ellens dritter Gesang (D. 839), the voice from the Mutopia score, a half step
+      // down in A major. Its 32nd notes and sixteenth-note triplets are written at double length
+      // (a quarter here is Schubert's eighth), so every rhythm stays exact; grace notes are left
+      // out. The piano chords follow Schubert's accompaniment beat by beat.
+      aveMaria: {
+        title: "Ave Maria",
+        detail: "Schubert · A major · written at double length",
+        meta: "Ellens dritter Gesang · F. Schubert · A major · 8 beats a bar: ♩ here is Schubert's ♪",
+        accent: "#c4a46a",
+        fingerHints: {
+          "A#4": "Low 1st finger (A string)",
+          "G#4": "High 3rd finger (D string)",
+        },
+        tempo: [{ bar: 1, bpm: 96 }, { bar: 11, bpm: 96 }, { bar: 12, bpm: 72 }],
+        measures: [
+          [dotted(h("A4")), e("G#4"), e("A4"), tied(dotted(h("C#5"))), e("C#5"), e("B4")],
+          [h("A4"), rest(2), h("B4"), e("A4"), e("G#4"), e("F#4"), e("G#4")],
+          [h("A4"), REST, "C#5", dotted("C#5"), s("B4"), s("A4"), e("G#4"), e("F#4"), e("C#5"), e("D#5")],
+          [h("C#5"), dotted("C5"), e("G#4"), dotted("B4"), e("A4"), t("G#4"), t("B4"), t("C#5"), t("D5"), t("B4"), t("G#4")],
+          [dotted(h("A4")), e("C#5"), e("B4"), dotted("B4"), e("G#4"), t("F#4"), t("A#4"), t("C#5"), t("E5"), t("C#5"), t("A#4")],
+          [tied(h("B4")), t("B4"), t("F#4"), t("G#4"), t("A4"), t("G#4"), t("F#4"), h("E4"), REST, "E4"],
+          [dotted("B4"), e("B4"), dotted(e("B4")), s("A#4"), dotted(e("B4")), s("C#5"), dotted(e("B4")), s("C#5"), "A4", REST, "A4"],
+          [dotted("B4"), e("B4"), t("B4"), t("A#4"), t("B4"), t("D5"), t("C#5"), t("B4"), h("A4"), REST, "A4"],
+          [dotted("B4"), e("B4"), dotted(e("C#5")), s("C#5"), t("C#5"), t("B4"), t("C#5"), "D5", "D5", REST, rest(0.5), e("F#4")],
+          [dotted("B4"), e("B4"), t("A4"), t("G#4"), t("A4"), t("C5"), t("B4"), t("A4"), dotted(h("B4")), REST],
+          [dotted(h("A4")), e("G#4"), e("A4"), tied(dotted(h("C#5"))), e("C#5"), e("B4")],
+          [w("A4")],
+        ],
+        piano: [
+          "A F#m6 A/E E7", "F#m F#m Bm/D E7", "A A A+ F#m/A", "G#7 G#7 Fdim7 Fdim7",
+          "F#m F#m6 E/G# F#7/C#", "E/B B7 E E", "E7 E7 A/E A/E", "E7 E7 F#m F#m",
+          "E C# Bm Bm", "Bm/D F#dim7 E E7", "A F#m6 A/E E7", "A",
+        ],
+        sheetLayout: { systems: [2, 2, 2, 2, 2, 2] },
+      },
     };
 
     // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here;
@@ -3274,9 +3544,16 @@
       {
         id: "other",
         title: "Other pieces",
-        detail: "A minor and G major · first position",
+        detail: "From lessons · A minor · first position",
         accent: "#c4826a",
-        pieces: ["russakeisari", "dannyBoy"],
+        pieces: ["russakeisari"],
+      },
+      {
+        id: "heartstrings",
+        title: "Heartstrings",
+        detail: "Pieces that move an audience · first position",
+        accent: "#b86a7a",
+        pieces: ["odeToJoy", "shenandoah", "dannyBoy", "canon", "iVowToThee", "lofsongur", "traumerei", "aveMaria"],
       },
     ];
 
@@ -3482,8 +3759,23 @@
 
     // Rests take time (`start` counts them) but are not notes you can tap or play; each note
     // keeps the lengths of the rests that follow it (`restsAfter`).
-    // Consecutive eighth and sixteenth notes share a beam when they fall in the same
-    // `beamBeats` span of the bar, or the same beat when the span holds sixteenths.
+    // A sharp holds to the end of its bar, so a plain note after the same note was sharpened
+    // earlier in the bar gets a natural sign. Returns the indices in the measure that need one.
+    function naturalsIn(measure) {
+      const sharpened = new Set();
+      const naturals = new Set();
+      measure.forEach((item, i) => {
+        const spec = noteSpec(item);
+        if (spec.rest) return;
+        const plain = spec.pitch.replace("#", "");
+        if (spec.pitch.includes("#")) sharpened.add(plain);
+        else if (sharpened.delete(plain)) naturals.add(i);
+      });
+      return naturals;
+    }
+
+    // Consecutive eighth and sixteenth notes (dotted eighths too) share a beam when they fall
+    // in the same `beamBeats` span of the bar, or the same beat when the span holds sixteenths.
     function flattenMeasures(measures, beamBeats = 2) {
       const out = [];
       let start = 0;
@@ -3493,6 +3785,7 @@
         let beamSpan = -1;
         let beat = 0;
         const sixteenthSpans = new Set();
+        const naturals = naturalsIn(measure);
         measure.reduce((at, item) => {
           const spec = noteSpec(item);
           if (!spec.rest && (spec.beats === 0.25 || spec.triplet)) sixteenthSpans.add(Math.floor(at / beamBeats));
@@ -3502,7 +3795,7 @@
           const { pitch, beats, rest, dotted, tie, triplet } = noteSpec(item);
           const wide = Math.floor(beat / beamBeats);
           const span = sixteenthSpans.has(wide) ? `${wide}:${Math.floor(beat)}` : wide;
-          if (!rest && !dotted && beats <= 0.5) {
+          if (!rest && (dotted ? beats / 1.5 : beats) <= 0.5) {
             if (beam < 0 || span !== beamSpan) {
               beam = beamCount++;
               beamSpan = span;
@@ -3513,7 +3806,7 @@
           if (rest) {
             out[out.length - 1]?.restsAfter.push(beats);
           } else {
-            out.push({ pitch, beats, dotted, tie, triplet, start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
+            out.push({ pitch, beats, dotted, tie, triplet, natural: naturals.has(ni), start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
           }
           start = snapBeat(start + beats);
           beat = snapBeat(beat + beats);
@@ -3562,7 +3855,7 @@
         + (dotted ? layout.dotExtra : 0);
     }
 
-    // Natural left-to-right layout per system (sharps reserve room before the notehead).
+    // Natural left-to-right layout per system (sharps and naturals reserve room before the notehead).
     // `counts` gives the bars on each line; the last count repeats for the remaining lines.
     // Lines are stretched to at least `minRight`, so short pieces don't blow up on wide screens.
     function layoutSystems(piece, layout, counts, minRight = 0) {
@@ -3583,12 +3876,13 @@
         const bars = [];
         sysMeasures.forEach((measure, k) => {
           mi++;
-          measure.forEach((item) => {
+          const naturals = naturalsIn(measure);
+          measure.forEach((item, ni) => {
             const spec = noteSpec(item);
             if (spec.rest) {
               rests.push({ x: x + layout.noteRx, beats: spec.beats, dotted: spec.dotted });
             } else {
-              if (spec.pitch.includes("#")) x += layout.accW;
+              if (spec.pitch.includes("#") || naturals.has(ni)) x += layout.accW;
               notes.push({ x: x + layout.noteRx, pitch: spec.pitch });
             }
             x += noteAdvance(spec, layout);
@@ -3910,8 +4204,9 @@
         const stemX = stemXFor(hd);
         const stemY1 = stemUp ? y - 1 : y + 1;
         const stemY2 = hd.stemEnd;
-        const acc = note.pitch.includes("#")
-          ? `<text x="${pos.x - noteRx - 10}" y="${y + 4}" font-size="13" fill="${color}" font-family="serif">\u266F</text>`
+        const accGlyph = note.pitch.includes("#") ? "\u266F" : note.natural ? "\u266E" : "";
+        const acc = accGlyph
+          ? `<text x="${pos.x - noteRx - 10}" y="${y + 4}" font-size="13" fill="${color}" font-family="serif">${accGlyph}</text>`
           : "";
         // A lone eighth note gets a flag instead of a beam; a lone sixteenth gets two shorter ones.
         const flagDir = stemUp ? 1 : -1;
@@ -4052,6 +4347,9 @@
         const above = letters[(letters.indexOf(letter) + 1) % 7];
         fact("Sharp ♯", `raises the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(letter)} and ${noteLabel(above)}, so the finger goes a little closer to the bridge.`);
       }
+      if (note.natural) {
+        fact("Natural ♮", `cancels the sharp from earlier in the bar: play plain ${noteLabel(note.pitch)}, not ${noteLabel(`${note.pitch[0]}#${note.pitch.slice(1)}`)}.`);
+      }
       const y = pitchToStaffY(note.pitch, 0);
       const ledgers = y < 0 ? Math.floor(-y / 10) : y > 40 ? Math.floor((y - 40) / 10) : 0;
       if (ledgers) {
@@ -4093,7 +4391,7 @@
       const y = pitchToStaffY(note.pitch, top);
       for (let ly = top - 10; ly >= y; ly -= 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
       for (let ly = top + 50; ly <= y; ly += 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
-      if (note.pitch.includes("#")) svg += `<text x="${x - rx - 10}" y="${y + 4}" font-size="13" fill="${ink}" font-family="serif">♯</text>`;
+      if (note.pitch.includes("#") || note.natural) svg += `<text x="${x - rx - 10}" y="${y + 4}" font-size="13" fill="${ink}" font-family="serif">${note.natural ? "♮" : "♯"}</text>`;
       const base = note.dotted ? note.beats / 1.5 : note.beats;
       const hollow = note.beats >= 2;
       svg += base >= 4
