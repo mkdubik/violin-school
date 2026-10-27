@@ -5099,14 +5099,20 @@
       return Math.max(...measureSpans(piece).map((span) => span.length));
     }
 
-    // The looped bars as a piece of their own, played straight through at one speed: the speed
-    // the piece has where they start, with `sliderBpm` on the Tempo slider.
+    // The looped bars as a piece of their own, played straight through at the speeds the piece
+    // has there, with `sliderBpm` on the Tempo slider: a tempo mark at each looped bar for where
+    // it first starts in the piece, and one after the last for where that bar ends, so a slowing
+    // down or speeding up inside the loop is kept. `bpm` and `endBpm` are the speeds at its ends.
     function loopedPiece(piece, sliderBpm) {
-      const { order, spans } = playOrder(piece);
-      const at = order.slice(0, order.indexOf(loopBars.first)).reduce((sum, mi) => snapBeat(sum + spans[mi].length), 0);
-      const bpm = 60 / pieceTiming(piece, sliderBpm).beatDurAt(at);
-      const from = loopBars.first + 1;
-      return { played: { ...piece, sections: [{ from, to: loopBars.last + 1 }], repeat: false, tempo: [{ bar: from, bpm }] }, bpm };
+      const { order, spans, beats } = playOrder(piece);
+      const { beatDurAt } = pieceTiming(piece, sliderBpm);
+      const startOf = (mi) => order.slice(0, order.indexOf(mi)).reduce((sum, m) => snapBeat(sum + spans[m].length), 0);
+      const bpmAt = (beat) => 60 / beatDurAt(Math.min(beat, beats - 0.01));
+      const tempo = [];
+      for (let mi = loopBars.first; mi <= loopBars.last; mi++) tempo.push({ bar: mi + 1, bpm: bpmAt(startOf(mi)) });
+      tempo.push({ bar: loopBars.last + 2, bpm: bpmAt(startOf(loopBars.last) + spans[loopBars.last].length) });
+      const played = { ...piece, sections: [{ from: loopBars.first + 1, to: loopBars.last + 1 }], repeat: false, tempo };
+      return { played, bpm: tempo[0].bpm, endBpm: tempo[tempo.length - 1].bpm };
     }
 
     function updatePlayButton() {
@@ -5147,6 +5153,7 @@
     }
 
     function togglePiecePlayback() {
+      cancelLoopPick();
       if (piecePlayback) pausePiecePlayback();
       else if (pausedPlayback) startPiecePlayback({ fromIndex: Math.max(focusedNoteIndex, 0), fromPass: pausedPlayback.pass, fromSlot: pausedPlayback.slot });
       else startPiecePlayback();
@@ -5156,7 +5163,7 @@
     // the end of a piece, with the tempo when it was played from the start, or a loop goes round.
     const announcePlayed = (id, bpm = 0) => document.dispatchEvent(new CustomEvent("piece-played", { detail: { id, bpm } }));
 
-    function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1 } = {}) {
+    function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1, countdown = true } = {}) {
       if (!activePieceId) return;
       stopPitchListener();
       stopPiecePlayback();
@@ -5185,7 +5192,7 @@
         schedule(() => play(Math.max(startAudio + sec, getCtx().currentTime)), sec - 0.1);
       }
 
-      const delaySec = pieceDelay();
+      const delaySec = countdown ? pieceDelay() : 0;
       for (let s = delaySec; s > 0; s--) {
         schedule(() => showCountdown(s), delaySec - s);
       }
@@ -5229,6 +5236,7 @@
         seq.forEach(({ index: i, beat, slot }) => {
           if (beat < fromBeat) return;
           schedule(() => {
+            playback.started = true;
             playback.pass = pass;
             playback.index = i;
             playback.slot = slot;
@@ -5287,7 +5295,7 @@
           const delay = pieceDelay();
           for (let s = delay; s > 0; s--) schedule(() => showCountdown(s), prevEnd + delay - s);
           const start = delay ? prevEnd + delay : prevEnd + (full - ends) * 60 / prevBpm + lead * 60 / next.bpm;
-          queueLoop(pass + 1, queuePass(pass, next, 0, start), next.bpm);
+          queueLoop(pass + 1, queuePass(pass, next, 0, start), next.endBpm);
         }, prevEnd - 1);
       }
 
@@ -5301,7 +5309,7 @@
       let end = queuePass(fromPass, first, fromEntry.beat, 0.05 + delaySec);
 
       if (loopBars) {
-        queueLoop(fromPass + 1, end, first.bpm);
+        queueLoop(fromPass + 1, end, first.endBpm);
         return;
       }
       for (let pass = fromPass + 1; pass < (piece.repeat ? 2 : 1); pass++) end = queuePass(pass, first, 0, end);
@@ -5432,7 +5440,10 @@
     document.getElementById("collection-back").addEventListener("click", closeCollection);
     document.getElementById("piece-back").addEventListener("click", closePiece);
     document.getElementById("piece-play").addEventListener("click", togglePiecePlayback);
-    document.getElementById("piece-stop").addEventListener("click", stopPiecePlayback);
+    document.getElementById("piece-stop").addEventListener("click", () => {
+      cancelLoopPick();
+      stopPiecePlayback();
+    });
 
     // --- Loop: practising a passage ---
     // Loop asks for the passage's first and last note, then Play repeats their bars until Stop.
@@ -5441,6 +5452,14 @@
       const btn = document.getElementById("piece-loop");
       btn.textContent = loopPick ? "Cancel" : loopBars ? "Clear loop" : "Loop";
       btn.classList.toggle("on", !!(loopPick || loopBars));
+    }
+
+    // Play or Stop while Loop waits for notes leaves the picking, as tapping Cancel does.
+    function cancelLoopPick() {
+      if (!loopPick) return;
+      loopPick = null;
+      updateLoopUi();
+      if (activePieceId) renderSheet(activePieceId, sheetHighlight);
     }
 
     function pickLoopNote(index) {
@@ -5478,6 +5497,14 @@
     }
 
     document.getElementById("piece-bpm").addEventListener("input", showPieceBpm);
+
+    // Letting go of the Tempo slider while a piece plays carries on from the current note at the
+    // new speed, a loop too; before the first note it starts again, countdown and all.
+    document.getElementById("piece-bpm").addEventListener("change", () => {
+      if (!piecePlayback) return;
+      const { index, pass, slot, started } = piecePlayback;
+      startPiecePlayback({ fromIndex: index, fromPass: pass, fromSlot: slot, countdown: !started });
+    });
 
     // The Sound chips show the parts a piece has, and the Sheet chips only when it has a 2nd part.
     function showPartChips(piece) {
