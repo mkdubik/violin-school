@@ -161,6 +161,10 @@
       box-shadow: 0 0 8px var(--accent);
     }
 
+    /* A string the automatic tuner has found in tune. */
+    .card-btn.tuned .indicator { background: #5a9e6f; box-shadow: 0 0 8px #5a9e6f; }
+    .card-btn.tuned .detail::after { content: " · in tune ✓"; color: #7bc492; }
+
     .card-btn[data-string="g"] { --accent: #c47a3a; }
     .card-btn[data-string="d"] { --accent: #5a9e6f; }
     .card-btn[data-string="a"] { --accent: #4a8fc4; }
@@ -1363,7 +1367,10 @@
             <div class="target-name" id="tuner-listen-target">Select a string above</div>
           </div>
         </div>
-        <div class="listen-feedback" id="tuner-listen-feedback">Tap the mic, then play the open string. You&rsquo;ll see whether it&rsquo;s in tune and which way to turn the peg. While listening, tapping another string switches the target silently.</div>
+        <label class="check-row" title="Starts on the G string and moves to the next once a string stays in tune">
+          <input type="checkbox" id="tuner-auto"> Automatic: G, D, A and E in turn
+        </label>
+        <div class="listen-feedback" id="tuner-listen-feedback">Tap the mic, then play the open string. You&rsquo;ll see whether it&rsquo;s in tune and which way to turn the peg. While listening, tapping another string switches the target silently. With Automatic ticked, the mic starts on G and moves on by itself once each string stays in tune.</div>
       </div>
 
       <p class="hint">Tap a string for a sustained tone while you tune.</p>
@@ -2469,13 +2476,65 @@
 
     document.getElementById("stop-tuner").addEventListener("click", stopTone);
 
+    // Automatic tuning: the mic starts on the top string, and once a string has stayed in tune
+    // for a moment it is marked and the next one comes up, until all four are done. Kept on
+    // this device.
+    const AUTO_HOLD_MS = 1500;
+    const AUTO_NEXT_MS = 1500;
+    const autoTune = { box: document.getElementById("tuner-auto"), goodSince: null, doneAt: 0, done: null };
+    try { autoTune.box.checked = localStorage.getItem("fidluaefing-auto-tune") === "1"; } catch {}
+    autoTune.box.addEventListener("change", () => {
+      try { localStorage.setItem("fidluaefing-auto-tune", autoTune.box.checked ? "1" : "0"); } catch {}
+    });
+
+    const stringName = (btn) => btn.querySelector(".name").textContent;
+
+    // Follows the listener's readings: whatever it returns is shown instead of the usual feedback.
+    function autoTuneReading(cents) {
+      if (!autoTune.box.checked || !selectedTunerBtn) return undefined;
+      const now = performance.now();
+      if (autoTune.done && now - autoTune.doneAt < AUTO_NEXT_MS) {
+        return { state: "good", html: `<strong>${autoTune.done} in tune ✓</strong> Next, the open ${stringName(selectedTunerBtn)}.` };
+      }
+      const fb = tuningFeedback(cents, "string", autoTune.goodSince ? GOOD_HOLD_CENTS : GOOD_CENTS);
+      if (fb.state !== "good") {
+        autoTune.goodSince = null;
+        return fb.state === "waiting" ? { state: "waiting", html: `Bow the open <strong>${stringName(selectedTunerBtn)}</strong> and hold it steady.` } : fb;
+      }
+      autoTune.goodSince ??= now;
+      if (now - autoTune.goodSince < AUTO_HOLD_MS) return { state: "good", html: "<strong>Good!</strong> In tune — keep bowing a moment&hellip;" };
+
+      selectedTunerBtn.classList.add("tuned");
+      const strings = [...document.querySelectorAll("[data-string]")];
+      const next = strings[strings.indexOf(selectedTunerBtn) + 1];
+      autoTune.goodSince = null;
+      if (!next) {
+        stopPitchListener();
+        return { state: "good", html: "<strong>All four strings are in tune ✓</strong> Ready to play!" };
+      }
+      autoTune.done = stringName(selectedTunerBtn);
+      autoTune.doneAt = now;
+      selectedTunerBtn = next;
+      updateTunerListenTarget();
+      markListenedString();
+      return autoTuneReading(cents);
+    }
+
     document.getElementById("tuner-listen-btn").addEventListener("click", () => {
+      // Turning the mic on for automatic tuning starts again from the top.
+      if (autoTune.box.checked && !isListening("tuner-listen-btn")) {
+        selectedTunerBtn = document.querySelector("[data-string]");
+        updateTunerListenTarget();
+        document.querySelectorAll("[data-string]").forEach((b) => b.classList.remove("tuned"));
+        Object.assign(autoTune, { goodSince: null, doneAt: 0, done: null });
+      }
       toggleListen({
         getTarget: getTunerListenTarget,
         mode: "string",
         block: document.getElementById("tuner-listen-block"),
         btn: document.getElementById("tuner-listen-btn"),
         feedbackEl: document.getElementById("tuner-listen-feedback"),
+        onReading: autoTuneReading,
       });
     });
 
