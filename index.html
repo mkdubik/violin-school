@@ -440,6 +440,18 @@
       color: #8a8278;
     }
 
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: #8a8278;
+      cursor: pointer;
+    }
+    .check-row[hidden] { display: none; }
+    .check-row input { accent-color: #c47a3a; margin: 0; }
+
     .slider-row input {
       flex: 1;
       accent-color: #c47a3a;
@@ -1085,6 +1097,7 @@
       .piece-controls .controls { grid-column: 1; grid-row: 1; margin: 0; }
       .piece-controls .controls button { padding: 0.5rem 1.25rem; }
       .piece-controls #piece-sound { grid-column: 1; grid-row: 2; margin: 0; }
+      .piece-controls .check-row { grid-column: 1; grid-row: 3; margin: 0; }
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
       .piece-controls .slider-row input { min-width: 0; }
@@ -1467,6 +1480,9 @@
             <button type="button" class="chip" data-piece-sound="both">With piano</button>
             <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
           </div>
+          <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
+            <input type="checkbox" id="fourth-finger"> Show 4th finger
+          </label>
           <div class="controls">
             <button type="button" id="piece-play">Play</button>
             <button type="button" id="piece-stop">Stop</button>
@@ -3622,7 +3638,8 @@
       return en === is ? en : `${en} (${is})`;
     }
 
-    function hintForPitch(pitch) {
+    function hintForPitch(pitch, finger) {
+      if (finger === 4) return `4th finger (${FB_STRINGS[fingerPlacement(pitch, 4).string][0]} string), the same note as the open string`;
       if (OPEN_STRING[pitch]) return OPEN_STRING[pitch].label;
       const piece = activePieceId ? PIECES[activePieceId] : null;
       if (piece?.fingerHints?.[pitch]) return piece.fingerHints[pitch];
@@ -3630,9 +3647,9 @@
       return "See your fingering chart";
     }
 
-    function accentForPitch(pitch) {
+    function accentForPitch(pitch, finger) {
       const open = OPEN_STRING[pitch];
-      if (open) return STRING_ACCENT[open.string];
+      if (open && finger !== 4) return STRING_ACCENT[open.string];
       const piece = activePieceId ? PIECES[activePieceId] : null;
       return piece?.accent || "#d4a574";
     }
@@ -3812,7 +3829,21 @@
           beat = snapBeat(beat + beats);
         });
       });
+      if (showFourthFinger) fourthFingerEs(out).forEach((n) => { n.finger = 4; });
       return out;
+    }
+
+    // The Es between two notes on the A string: played with the 4th finger there, the bow
+    // doesn't cross to the E string for one note. The "4th finger" box marks them with a 4.
+    let showFourthFinger = false;
+    try { showFourthFinger = localStorage.getItem("fidluaefing-fourth-finger") === "1"; } catch {}
+
+    // Fingering numbers sit just above the staff, so tempo marks and words move up over them.
+    const fingeringRoom = () => (flatNotes.some((n) => n.finger !== undefined) ? 9 : 0);
+
+    function fourthFingerEs(notes) {
+      const onA = (n) => n && pitchToMidi(n.pitch) >= pitchToMidi("A4") && pitchToMidi(n.pitch) < pitchToMidi("E5");
+      return notes.filter((n, i) => n.pitch === "E5" && onA(notes[i - 1]) && onA(notes[i + 1]));
     }
 
     // Beats a note is held for, counting the notes it is tied into.
@@ -3906,7 +3937,7 @@
       const systemYs = (si) => natural[si].notes.map((n) => pitchToStaffY(n.pitch, 0));
       const lowest = (si) => Math.max(staffH, ...systemYs(si));
       // Tempo marks sit above the first line, so it starts lower.
-      const markRoom = piece.tempo?.length || piece.labels?.length ? 16 : 0;
+      const markRoom = piece.tempo?.length || piece.labels?.length ? 16 + fingeringRoom() : 0;
       const systemTops = [];
       natural.forEach((_, si) => {
         const highest = Math.min(0, ...systemYs(si));
@@ -4056,7 +4087,7 @@
       let labelEls = "";
       (piece.labels || []).forEach(({ bar, text }) => {
         const at = barXs[Math.min(Math.max(bar, 1), barXs.length) - 1];
-        labelEls += `<text x="${at.x - 2}" y="${systemTops[at.systemIndex] - 9}" font-size="10.5" font-style="italic" font-weight="700" fill="${ink}" text-anchor="end" font-family="serif">${text}</text>`;
+        labelEls += `<text x="${at.x - 2}" y="${systemTops[at.systemIndex] - 9 - fingeringRoom()}" font-size="10.5" font-style="italic" font-weight="700" fill="${ink}" text-anchor="end" font-family="serif">${text}</text>`;
       });
 
       // Tempo marks, as in print: a metronome mark (♩ = 80) above the first bar and wherever the
@@ -4065,7 +4096,7 @@
       let tempoEls = labelEls;
       if (piece.tempo?.length) {
         const barStart = (m) => (barXs[m].systemIndex !== barXs[m - 1]?.systemIndex ? padL : barXs[m - 1].x + 5);
-        const markY = (m) => systemTops[barXs[m].systemIndex] - 9;
+        const markY = (m) => systemTops[barXs[m].systemIndex] - 9 - fingeringRoom();
         const metronome = (m, bpm) => `<text x="${barStart(m)}" y="${markY(m)}" font-size="11" font-weight="700" fill="${ink}" font-family="-apple-system, sans-serif"><tspan font-family="serif" font-weight="400" font-size="13">♩</tspan> = ${Math.round(bpm)}</text>`;
         const marks = piece.tempo.map((t) => ({ ...t, m: Math.min(Math.max(t.bar, 1), piece.measures.length) - 1 }));
         tempoEls += metronome(marks[0].m, marks[0].bpm);
@@ -4081,7 +4112,7 @@
           for (let si = from; si <= to; si++) {
             const x1 = si === from ? x0 + text.length * 5.3 + 4 : padL;
             const x2 = si === to ? barXs[endM].x - 3 : staffRight;
-            const y = systemTops[si] - 12;
+            const y = systemTops[si] - 12 - fingeringRoom();
             if (x2 > x1) tempoEls += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${ink}" stroke-width="1" stroke-dasharray="4 3"/>`;
           }
           tempoEls += metronome(mark.m, mark.bpm);
@@ -4190,7 +4221,7 @@
         const pos = notePositions[gi];
         const { top, y } = hd;
         const hit = gi === highlightIndex;
-        const accent = accentForPitch(note.pitch);
+        const accent = accentForPitch(note.pitch, note.finger);
         const color = hit ? accent : noteInk;
         const isHalf = note.beats >= 2;
         // Half notes are hollow; a highlighted half note gets a translucent accent fill.
@@ -4215,6 +4246,10 @@
         // A dot on a line moves up into the space above.
         const dotY = (y - top) % 10 === 0 ? y - 5 : y;
         const dot = note.dotted ? `<circle cx="${pos.x + noteRx + 4.5}" cy="${dotY}" r="1.7" fill="${color}"/>` : "";
+        // A fingering number sits above the note, clear of the staff and an up stem.
+        const fingerY = Math.min(top, stemUp ? stemY2 : y - noteRy) - 4;
+        const fingering = note.finger === undefined ? ""
+          : `<text x="${pos.x}" y="${fingerY}" font-size="9" font-weight="700" fill="${color}" text-anchor="middle" font-family="-apple-system, sans-serif">${note.finger}</text>`;
         const hitTop = Math.min(stemY2, y - noteRy) - 4;
         const hitBottom = Math.max(stemY2, y + noteRy) + 4;
         // A whole note's head is rounder and wider, with a thicker rim.
@@ -4229,6 +4264,7 @@
           ${stem}
           ${flag}
           ${dot}
+          ${fingering}
         </g>`;
       });
 
@@ -4271,13 +4307,13 @@
       }
       focusedNoteIndex = index;
       updateNoteListenTarget();
-      const pitch = flatNotes[index].pitch;
-      const accent = accentForPitch(pitch);
+      const { pitch, finger } = flatNotes[index];
+      const accent = accentForPitch(pitch, finger);
       box.style.setProperty("--accent", accent);
       nameEl.innerHTML = noteLabel(pitch);
-      hintEl.textContent = hintForPitch(pitch);
+      hintEl.textContent = hintForPitch(pitch, finger);
       box.classList.toggle("live", live);
-      renderFingerboard(pitch, accent);
+      renderFingerboard(pitch, accent, undefined, finger);
       renderNoteSymbol(index, accent);
     }
 
@@ -4346,6 +4382,9 @@
         const letter = note.pitch[0];
         const above = letters[(letters.indexOf(letter) + 1) % 7];
         fact("Sharp ♯", `raises the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(letter)} and ${noteLabel(above)}, so the finger goes a little closer to the bridge.`);
+      }
+      if (note.finger === 4) {
+        fact("4", `the fingering: 4th finger on the ${FB_STRINGS[fingerPlacement(note.pitch, 4).string][0]} string. It sounds the same as the open string, but the bow stays on one string between the notes around it.`);
       }
       if (note.natural) {
         fact("Natural ♮", `cancels the sharp from earlier in the bar: play plain ${noteLabel(note.pitch)}, not ${noteLabel(`${note.pitch[0]}#${note.pitch.slice(1)}`)}.`);
@@ -4416,6 +4455,7 @@
         }
       }
       if (note.dotted) svg += `<circle cx="${x + rx + 4.5}" cy="${(y - top) % 10 === 0 ? y - 5 : y}" r="1.7" fill="${ink}"/>`;
+      if (note.finger !== undefined) svg += `<text x="${x}" y="${Math.min(top, up ? stemEnd : y - ry) - 4}" font-size="11" font-weight="700" fill="${ink}" text-anchor="middle" font-family="-apple-system, sans-serif">${note.finger}</text>`;
       // Ties run off the edge toward the note they join.
       const tieY = y + (up ? 1 : -1) * (ry + 1.5);
       const bulge = (up ? 1 : -1) * 6;
@@ -4450,18 +4490,19 @@
 
     // Open string when possible, otherwise the one string where the note is 1\u20136 half steps up
     // (the E string also takes the 4th finger, 7 up). Null outside first position.
-    function fingerPlacement(pitch) {
+    // `finger` 4 asks for the 4th finger instead of the open string above it.
+    function fingerPlacement(pitch, finger) {
       const midi = pitchToMidi(pitch);
       const offsets = FB_STRINGS.map((open) => midi - pitchToMidi(open));
-      let string = offsets.indexOf(0);
+      let string = finger === 4 ? offsets.indexOf(7) : offsets.indexOf(0);
       if (string < 0) string = offsets.findIndex((o) => o >= 1 && o <= 6);
       if (string < 0 && offsets[3] === 7) string = 3;
       if (string < 0) return null;
       return { string, offset: offsets[string], finger: FB_FINGER[offsets[string]] };
     }
 
-    function renderFingerboard(pitch, accent, el = document.getElementById("np-fingerboard")) {
-      const place = pitch ? fingerPlacement(pitch) : null;
+    function renderFingerboard(pitch, accent, el = document.getElementById("np-fingerboard"), finger) {
+      const place = pitch ? fingerPlacement(pitch, finger) : null;
       el.classList.toggle("idle", !place);
       const nutY = 26;
       const bottomY = 170;
@@ -4695,6 +4736,7 @@
       document.getElementById("piece-meta").textContent = piece.meta;
       document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
       document.getElementById("piece-sound").hidden = !piece.piano;
+      document.getElementById("fourth-finger-row").hidden = !fourthFingerEs(flatNotes).length;
       // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
       if (piece.tempo?.length) {
         const slider = document.getElementById("piece-bpm");
@@ -4705,6 +4747,19 @@
       renderSheet(pieceId, -1);
       reserveNotePanelHeights();
     }
+
+    const fourthFingerBox = document.getElementById("fourth-finger");
+    fourthFingerBox.checked = showFourthFinger;
+    fourthFingerBox.addEventListener("change", () => {
+      showFourthFinger = fourthFingerBox.checked;
+      try { localStorage.setItem("fidluaefing-fourth-finger", showFourthFinger ? "1" : "0"); } catch {}
+      const piece = PIECES[activePieceId];
+      if (!piece) return;
+      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
+      setNowPlaying(focusedNoteIndex, document.getElementById("now-playing").classList.contains("live"));
+      renderSheet(activePieceId, sheetHighlight);
+      reserveNotePanelHeights();
+    });
 
     function closePiece() {
       stopPitchListener();
@@ -5398,6 +5453,7 @@
             facts: [
               "The small number says which finger: <strong>0</strong> open string, <strong>1</strong> index, <strong>2</strong> middle, <strong>3</strong> ring, <strong>4</strong> little finger.",
               "Here: H (B), 1st finger on the A string.",
+              "A <strong>4</strong> over E means the 4th finger on the A string instead of the open E: the same note, but the bow stays on the A string. In Notes, tick <strong>Show 4th finger</strong> to mark it where an E sits between two A-string notes.",
             ],
           },
           {
