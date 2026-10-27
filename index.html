@@ -1097,7 +1097,9 @@
       .piece-controls .controls { grid-column: 1; grid-row: 1; margin: 0; }
       .piece-controls .controls button { padding: 0.5rem 1.25rem; }
       .piece-controls #piece-sound { grid-column: 1; grid-row: 2; margin: 0; }
-      .piece-controls .check-row { grid-column: 1; grid-row: 3; margin: 0; }
+      .piece-controls #piece-click { grid-column: 1; grid-row: 3; margin: 0; }
+      .piece-controls #piece-sound[hidden] + #piece-click { grid-row: 2; }
+      .piece-controls .check-row { grid-column: 2; grid-row: 3; margin: 0; }
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
       .piece-controls .slider-row input { min-width: 0; }
@@ -1479,6 +1481,12 @@
             <button type="button" class="chip active" data-piece-sound="melody">Melody</button>
             <button type="button" class="chip" data-piece-sound="both">With piano</button>
             <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
+          </div>
+          <div class="chip-row" id="piece-click" title="Clicks before the music starts, or on every beat">
+            <span class="chip-label">Click</span>
+            <button type="button" class="chip" data-piece-click="off">Off</button>
+            <button type="button" class="chip active" data-piece-click="count">Count-in</button>
+            <button type="button" class="chip" data-piece-click="beat">Every beat</button>
           </div>
           <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
             <input type="checkbox" id="fourth-finger"> Show 4th finger
@@ -4590,6 +4598,44 @@
       document.getElementById("now-playing").classList.remove("live");
     }
 
+    // The Click chips: off, a count-in before the music, or a click on every beat as well.
+    let pieceClick = "count";
+    try { pieceClick = ["off", "count", "beat"].find((mode) => mode === localStorage.getItem("fidluaefing-click")) ?? "count"; } catch {}
+
+    // A full bar in beats: the longest one, since a pickup and the last bar after it are short.
+    function barBeats(piece) {
+      return Math.max(...measureSpans(piece).map((span) => span.length));
+    }
+
+    // Where a note falls in a full bar: a pickup is the end of a bar, so its notes start late.
+    function beatInFullBar(piece, note) {
+      return note.beatInBar + (note.measure === 0 && piece.pickup ? barBeats(piece) - measureSpans(piece)[0].length : 0);
+    }
+
+    // The count-in is a bar of clicks, or two of a 2/4 bar, which alone is over too quickly.
+    const countInBeats = (piece) => barBeats(piece) * (barBeats(piece) < 3 ? 2 : 1);
+
+    // Every whole beat of one pass, in beats from its start, and whether it begins a bar.
+    function passBeatClicks(piece) {
+      const { order, spans } = playOrder(piece);
+      const full = barBeats(piece);
+      const clicks = [];
+      let at = 0;
+      order.forEach((mi) => {
+        const { length } = spans[mi];
+        const late = mi === 0 && piece.pickup ? full - length : 0;
+        for (let j = Math.ceil(late); j < late + length; j++) clicks.push({ beat: snapBeat(at + j - late), first: j === 0 });
+        at = snapBeat(at + length);
+      });
+      return clicks;
+    }
+
+    function showCountIn(count, bpmNow) {
+      document.getElementById("np-name").textContent = count;
+      document.getElementById("np-hint").textContent = `Count-in · ♩ = ${Math.round(bpmNow)}`;
+      document.getElementById("now-playing").classList.remove("live");
+    }
+
     function updatePlayButton() {
       document.getElementById("piece-play").textContent = piecePlayback ? "Pause" : pausedPlayback ? "Resume" : "Play";
     }
@@ -4598,7 +4644,7 @@
       if (!piecePlayback) return;
       piecePlayback.cancelled = true;
       piecePlayback.timers.forEach(clearTimeout);
-      if (piecePlayback.pianoOut) fadeOutBus(piecePlayback.pianoOut, 0.02);
+      if (piecePlayback.out) fadeOutBus(piecePlayback.out, 0.02);
       piecePlayback = null;
     }
 
@@ -4640,10 +4686,11 @@
       stopTone();
 
       const timers = [];
-      // Piano chords ring on past their beat, so they share one output that Pause and Stop fade.
-      const pianoOut = getCtx().createGain();
-      pianoOut.connect(output());
-      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, slot: fromSlot, pianoOut };
+      // Piano chords and clicks are queued a little ahead on the audio clock, and the chords ring
+      // on past their beat, so they share one output that Pause and Stop fade.
+      const out = getCtx().createGain();
+      out.connect(output());
+      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, slot: fromSlot, out };
       piecePlayback = playback;
       updatePlayButton();
 
@@ -4669,7 +4716,23 @@
       const fromEntry = seq.find((en) => en.index === fromIndex && en.slot === fromSlot) || seq.find((en) => en.index === fromIndex) || seq[0];
       playback.slot = fromEntry.slot;
       const fromBeat = fromPass * passBeats + fromEntry.beat;
-      const msAt = (beat) => 50 + delaySec * 1000 + (timeAt(beat) - timeAt(fromBeat)) * 1000;
+
+      // The Click chips can add a count-in: a bar of clicks (two short ones) at the starting
+      // speed, plus the beats of the first note's bar before it, so it comes in on its beat.
+      const beatSec = beatDurAt(fromBeat);
+      const counts = pieceClick === "off" ? 0 : countInBeats(piece) + beatInFullBar(piece, flatNotes[fromEntry.index]);
+      const countMs = 50 + delaySec * 1000;
+      const audioStart = getCtx().currentTime + 0.05 + delaySec;
+      const msAt = (beat) => countMs + (counts * beatSec + timeAt(beat) - timeAt(fromBeat)) * 1000;
+      const audioAt = (beat) => audioStart + counts * beatSec + timeAt(beat) - timeAt(fromBeat);
+      const full = barBeats(piece);
+      for (let j = 0; j < counts; j++) {
+        schedule(() => {
+          playMetroClick(Math.max(audioStart + j * beatSec, getCtx().currentTime), j % full ? "beat" : "bar", out);
+        }, Math.max(0, countMs + j * beatSec * 1000 - 100));
+        schedule(() => showCountIn(j % full + 1, 60 / beatSec), countMs + j * beatSec * 1000);
+      }
+
       const soundFraction = piece.staccato ? 0.55 : 0.9;
       // A tied note sounds once for its whole held length; the notes it ties into only move
       // the highlight (unless playback resumes on one of them).
@@ -4697,7 +4760,6 @@
       // started or resumed, or the piano was just switched on); resuming mid-beat strikes at once.
       if (piece.piano) {
         const strikes = pianoStrikes(piece);
-        const audioStart = getCtx().currentTime + 0.05 + delaySec;
         let lastStruck = -1;
         for (let pass = fromPass; pass < passes; pass++) {
           strikes.forEach(({ beat, chord, bass, accent }, k) => {
@@ -4707,19 +4769,32 @@
             const n = pass * strikes.length + k;
             schedule(() => {
               if (!pieceSounds(piece).piano) return;
-              const time = Math.max(audioStart + timeAt(at) - timeAt(fromBeat), getCtx().currentTime);
+              const time = Math.max(audioAt(at), getCtx().currentTime);
               const beats = piece.staccato ? 0.5 : 1;
-              playPianoChord(chord, { bass: bass || lastStruck !== n - 1, accent, beats }, time, beatDurAt(at), pianoOut);
+              playPianoChord(chord, { bass: bass || lastStruck !== n - 1, accent, beats }, time, beatDurAt(at), out);
               lastStruck = n;
             }, Math.max(0, msAt(at) - 100));
           });
         }
       }
 
+      // With "Every beat" the click goes on under the music; it is queued like the piano, so
+      // the chips work mid-piece too.
+      const clicks = passBeatClicks(piece);
+      for (let pass = fromPass; pass < passes; pass++) {
+        clicks.forEach(({ beat, first }) => {
+          const at = pass * passBeats + beat;
+          if (at < fromBeat) return;
+          schedule(() => {
+            if (pieceClick === "beat") playMetroClick(Math.max(audioAt(at), getCtx().currentTime), first ? "bar" : "beat", out);
+          }, Math.max(0, msAt(at) - 100));
+        });
+      }
+
       schedule(() => {
         // The last chord rings out instead of being cut off.
-        fadeOutBus(pianoOut, 1.5);
-        playback.pianoOut = null;
+        fadeOutBus(out, 1.5);
+        playback.out = null;
         stopPiecePlayback();
       }, msAt(passes * passBeats));
     }
@@ -4852,6 +4927,13 @@
     // Melody alone, melody with the piano, or the piano alone to play along with.
     chipGroup("[data-piece-sound]", (data) => {
       pieceSound = data.pieceSound;
+    });
+
+    // The click setting is kept on this device.
+    document.querySelectorAll("[data-piece-click]").forEach((chip) => chip.classList.toggle("active", chip.dataset.pieceClick === pieceClick));
+    chipGroup("[data-piece-click]", (data) => {
+      pieceClick = data.pieceClick;
+      try { localStorage.setItem("fidluaefing-click", pieceClick); } catch {}
     });
 
     // --- Learn: reading sheet music ---
