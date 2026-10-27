@@ -1521,6 +1521,7 @@
             <button type="button" class="chip active" data-voice="first" aria-pressed="true">Melody</button>
             <button type="button" class="chip" data-voice="second" aria-pressed="false">2nd violin</button>
             <button type="button" class="chip" data-voice="piano" aria-pressed="false">Piano</button>
+            <button type="button" class="chip active" data-voice="drone" aria-pressed="true">Drone</button>
           </div>
           <div class="chip-row" id="piece-part" title="Which part the sheet shows, for playing it yourself" hidden>
             <span class="chip-label">Sheet</span>
@@ -2896,6 +2897,7 @@
       F4: "Low 2nd finger (D string)",
       "F#4": "2nd finger (D string)",
       G4: "3rd finger (D string)",
+      "G#4": "High 3rd finger (D string)",
       A3: "1st finger (G string)",
       B3: "2nd finger (G string)",
       C4: "3rd finger (G string)",
@@ -2962,6 +2964,26 @@
       measures: TWINKLE_CELLS.map((pitches) => pitches.flatMap(cell)),
       piano: TWINKLE_PIANO,
       sheetLayout: { measuresPerSystem: 4 },
+    });
+
+    // Scales and arpeggios: quarter notes up and back down, the top note once and the last note
+    // held to the end of its bar, over a drone of the key note and its 5th (`drone`).
+    function scaleMeasures(up) {
+      const notes = [...up, ...up.slice(0, -1).reverse()];
+      const bars = [];
+      for (let i = 0; i < notes.length; i += 4) bars.push(notes.slice(i, i + 4));
+      const last = bars[bars.length - 1];
+      last[last.length - 1] = last.length === 1 ? w(last[0]) : h(last[last.length - 1]);
+      return bars;
+    }
+    const scale = (title, detail, key, kind, accent, up, drone) => ({
+      title,
+      detail,
+      meta: `${kind} · ${key} · 4/4 · up and back down, over a drone of ${drone.map((p) => noteName(p)).join(" and ")}`,
+      accent,
+      tempo: [{ bar: 1, bpm: 80 }],
+      measures: scaleMeasures(up),
+      drone,
     });
 
     const PIECES = {
@@ -3828,6 +3850,27 @@
         piano: ["G", "G", "C D7", "G", "G", "G", "C D7", "G", "G", "Em", "C D7", "G", "D", "G D7", "G", "Em C", "G"],
         sheetLayout: { systems: [4, 4, 4, 5] },
       },
+      // The Scales songbook: A, D and G major in first position, one octave, and two where it fits.
+      scaleA1: scale("A major scale", "One octave · A and E strings", "A major", "Scale, one octave", "#4a8fc4",
+        ["A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
+      arpeggioA1: scale("A major arpeggio", "One octave · A and E strings", "A major", "Arpeggio, one octave", "#6a7ec4",
+        ["A4", "C#5", "E5", "A5"], ["A3", "E4"]),
+      scaleA2: scale("A major scale, two octaves", "From the G string to the E string", "A major", "Scale, two octaves", "#4a8fc4",
+        ["A3", "B3", "C#4", "D4", "E4", "F#4", "G#4", "A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
+      arpeggioA2: scale("A major arpeggio, two octaves", "From the G string to the E string", "A major", "Arpeggio, two octaves", "#6a7ec4",
+        ["A3", "C#4", "E4", "A4", "C#5", "E5", "A5"], ["A3", "E4"]),
+      scaleD1: scale("D major scale", "One octave · D and A strings", "D major", "Scale, one octave", "#5a9e6f",
+        ["D4", "E4", "F#4", "G4", "A4", "B4", "C#5", "D5"], ["D3", "A3"]),
+      arpeggioD1: scale("D major arpeggio", "One octave · D and A strings", "D major", "Arpeggio, one octave", "#4a9e7a",
+        ["D4", "F#4", "A4", "D5"], ["D3", "A3"]),
+      scaleG1: scale("G major scale", "One octave · D, A and E strings", "G major", "Scale, one octave", "#c47a3a",
+        ["G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"], ["G3", "D4"]),
+      arpeggioG1: scale("G major arpeggio", "One octave · D, A and E strings", "G major", "Arpeggio, one octave", "#c4826a",
+        ["G4", "B4", "D5", "G5"], ["G3", "D4"]),
+      scaleG2: scale("G major scale, two octaves", "From the open G string up", "G major", "Scale, two octaves", "#c47a3a",
+        ["G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"], ["G3", "D4"]),
+      arpeggioG2: scale("G major arpeggio, two octaves", "From the open G string up", "G major", "Arpeggio, two octaves", "#c4826a",
+        ["G3", "B3", "D4", "G4", "B4", "D5", "G5"], ["G3", "D4"]),
     };
 
     // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here;
@@ -3870,6 +3913,17 @@
         detail: "Christmas songs · G and D major · first position",
         accent: "#c4574a",
         pieces: ["heimsUmBol", "jingleBells", "deckTheHalls", "weWishYou", "goodKingWenceslas"],
+      },
+      {
+        id: "scales",
+        title: "Scales",
+        detail: "Scales and arpeggios over a drone · A, D and G major · first position",
+        accent: "#8a9e6a",
+        pieces: [
+          { title: "A major", detail: "Scale and arpeggio, one and two octaves", accent: "#4a8fc4", pieces: ["scaleA1", "arpeggioA1", "scaleA2", "arpeggioA2"] },
+          { title: "D major", detail: "Scale and arpeggio, one octave", accent: "#5a9e6f", pieces: ["scaleD1", "arpeggioD1"] },
+          { title: "G major", detail: "Scale and arpeggio, one and two octaves", accent: "#c47a3a", pieces: ["scaleG1", "arpeggioG1", "scaleG2", "arpeggioG2"] },
+        ],
       },
     ];
 
@@ -4073,12 +4127,13 @@
 
     // What plays, from the Sound chips: the melody, the 2nd violin and the piano, each on or off,
     // for the parts a piece has. A piece with no other part always plays its melody.
-    const pieceVoices = { first: true, second: false, piano: false };
+    const pieceVoices = { first: true, second: false, piano: false, drone: true };
 
     function voiceOn(piece, voice) {
       if (voice === "piano") return !!piece.piano && pieceVoices.piano;
       if (voice === "second") return !!secondPart(piece) && pieceVoices.second;
-      return pieceVoices.first || (!piece.piano && !secondPart(piece));
+      if (voice === "drone") return !!piece.drone && pieceVoices.drone;
+      return pieceVoices.first || (!piece.piano && !secondPart(piece) && !piece.drone);
     }
 
     // --- Duets: a 2nd violin part ---
@@ -5014,6 +5069,7 @@
       if (!piecePlayback) return;
       piecePlayback.cancelled = true;
       piecePlayback.timers.forEach(clearTimeout);
+      piecePlayback.drone?.oscs.forEach((osc) => osc.stop(getCtx().currentTime + (piecePlayback.out ? 0.05 : 1.6)));
       if (piecePlayback.out) fadeOutBus(piecePlayback.out, 0.02);
       piecePlayback = null;
     }
@@ -5093,6 +5149,28 @@
       const second = secondPart(piece);
       const partNotes = { first: flattenMeasures(piece.measures, piece.beamBeats), second: second && flattenMeasures(second, piece.beamBeats) };
       let lastStruck = -1;
+
+      // A piece with a `drone` holds its key note and 5th under everything, from the countdown
+      // on, through the playback's output; the Drone chip turns it up or down as it plays.
+      if (piece.drone) {
+        const audio = getCtx();
+        const gain = audio.createGain();
+        gain.gain.value = voiceOn(piece, "drone") ? 1 : 0;
+        gain.connect(out);
+        const oscs = piece.drone.map((pitch) => {
+          const osc = audio.createOscillator();
+          const level = audio.createGain();
+          osc.type = "sine";
+          osc.frequency.value = midiToFreq(pitchToMidi(pitch));
+          level.gain.setValueAtTime(0, startAudio);
+          level.gain.linearRampToValueAtTime(volume() * 0.14, startAudio + 0.4);
+          osc.connect(level);
+          level.connect(gain);
+          osc.start(startAudio);
+          return osc;
+        });
+        playback.drone = { gain, oscs };
+      }
 
       // Queues one pass of `played` from beat `fromBeat` on, that beat falling `start` seconds
       // from now, and returns when the pass ends. Rests keep the previous note highlighted.
@@ -5356,9 +5434,10 @@
     // The Sound chips show the parts a piece has, and the Sheet chips only when it has a 2nd part.
     function showPartChips(piece) {
       const second = !!secondPart(piece);
-      document.getElementById("piece-sound").hidden = !piece.piano && !second;
+      document.getElementById("piece-sound").hidden = !piece.piano && !second && !piece.drone;
       document.querySelector('[data-voice="second"]').hidden = !second;
       document.querySelector('[data-voice="piano"]').hidden = !piece.piano;
+      document.querySelector('[data-voice="drone"]').hidden = !piece.drone;
       document.getElementById("piece-part").hidden = !second;
       document.querySelectorAll("[data-piece-part]").forEach((chip) => chip.classList.toggle("active", chip.dataset.piecePart === (second ? sheetPart : "first")));
     }
@@ -5371,6 +5450,7 @@
         pieceVoices[chip.dataset.voice] = on;
         chip.classList.toggle("active", on);
         chip.setAttribute("aria-pressed", on);
+        piecePlayback?.drone?.gain.gain.setTargetAtTime(voiceOn(PIECES[activePieceId], "drone") ? 1 : 0, getCtx().currentTime, 0.05);
       });
     });
 
