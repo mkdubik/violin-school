@@ -720,6 +720,13 @@
       border-radius: 6px;
     }
 
+    .pattern-strip { margin-top: 0.6rem; }
+    .pattern-strip svg { display: block; width: 100%; height: auto; }
+
+    .find-board { max-width: 300px; margin: 1rem auto 0; }
+    .find-board svg { display: block; width: 100%; height: auto; }
+    .find-spot { cursor: pointer; }
+
     .quiz-answers {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -785,7 +792,8 @@
     [hidden] { display: none !important; }
 
     .segmented {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.35rem;
       margin-bottom: 1rem;
       padding: 0.3rem;
@@ -794,7 +802,6 @@
     }
 
     .seg {
-      flex: 1;
       padding: 0.5rem 0.25rem;
       border: none;
       border-radius: 7px;
@@ -1182,6 +1189,10 @@
          The drawing keeps its shape and centres in the card. */
       #ladder-wrap svg { max-height: calc(100dvh - 430px); }
       #quiz-wrap svg, #play-wrap svg { max-height: calc(100dvh - 590px); min-height: 120px; }
+      #find-wrap svg { max-height: 110px; }
+      #find-board svg { max-height: calc(100dvh - 420px); min-height: 220px; margin: 0 auto; }
+      #pattern-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+      #pattern-list .value-card { margin-top: 0; }
       #tap-bar svg { max-height: 120px; }
       #rhythm-options {
         display: grid;
@@ -1547,6 +1558,7 @@
         <button type="button" class="subtab" data-group="values">Note values</button>
         <button type="button" class="subtab" data-group="signs">Signs</button>
         <button type="button" class="subtab" data-group="intervals">Intervals</button>
+        <button type="button" class="subtab" data-group="fingers">Fingers</button>
         <button type="button" class="subtab" data-group="quiz">Quiz</button>
       </div>
 
@@ -1599,16 +1611,29 @@
         <p class="hint">A <strong>half step</strong> is the smallest step, fingers touching; a <strong>whole step</strong> leaves a finger&rsquo;s width between them. Every bigger interval is made of these.</p>
       </div>
 
+      <div class="learn-section" id="learn-fingers">
+        <p class="lesson-text">On each string your fingers sit a <strong>whole step</strong> apart, a finger&rsquo;s width between them, or a <strong>half step</strong> apart, touching. Where they touch makes the <strong>finger pattern</strong>: with <strong>high 2</strong> the 2nd finger touches the 3rd, with <strong>low 2</strong> it touches the 1st. Tap a string to hear it from the open string up to the 4th finger. Test yourself under Quiz &rsaquo; Find it.</p>
+        <p class="learn-progress" id="fingers-progress"></p>
+        <div class="chip-row" id="pattern-chips">
+          <button type="button" class="chip active" data-pattern="high">High 2</button>
+          <button type="button" class="chip" data-pattern="low">Low 2</button>
+        </div>
+        <div id="pattern-list"></div>
+        <p class="hint">Which pattern a string takes depends on the key. <strong>A major</strong> (Twinkle to Long, Long Ago) has high 2 on the D, A and E strings: F&#9839;, C&#9839;, G&#9839;. <strong>G major</strong> (the minuets, The Happy Farmer) has high 2 on the G and D strings and low 2 on the A and E strings: C and G. <strong>D major</strong> has low 2 only on the E string.</p>
+      </div>
+
       <div class="learn-section" id="learn-quiz">
         <div class="segmented" id="quiz-modes">
           <button type="button" class="seg active" data-mode="name">Name it</button>
           <button type="button" class="seg" data-mode="play">Play it</button>
+          <button type="button" class="seg" data-mode="find">Find it</button>
           <button type="button" class="seg" data-mode="rhythm">Rhythm</button>
           <button type="button" class="seg" data-mode="signs">Signs</button>
           <button type="button" class="seg" data-mode="intervals">Intervals</button>
+          <button type="button" class="seg" data-mode="tunes">Tunes</button>
         </div>
 
-        <!-- Shared by Name it and Play it -->
+        <!-- Shared by Name it, Play it and Find it -->
         <div id="read-settings">
           <div class="chip-row">
             <span class="chip-label">Notes</span>
@@ -1664,6 +1689,17 @@
           <div class="controls">
             <button type="button" id="play-hint-btn">Show me where</button>
             <button type="button" id="play-next">Skip</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-find">
+          <p class="lesson-text">Find the note on the violin: tap the string where you&rsquo;d play it, at the open string or where the finger goes.</p>
+          <div class="sheet-wrap" id="find-wrap"></div>
+          <div class="find-board" id="find-board"></div>
+          <div class="quiz-feedback" id="find-feedback"></div>
+          <div class="quiz-score" id="quiz-score-find"></div>
+          <div class="controls">
+            <button type="button" id="find-next">Skip</button>
           </div>
         </div>
 
@@ -1724,6 +1760,22 @@
           <div class="controls">
             <button type="button" id="interval-play">Play</button>
             <button type="button" id="interval-next">Skip</button>
+          </div>
+        </div>
+
+        <div class="quiz-mode" id="quiz-mode-tunes">
+          <div class="chip-row">
+            <span class="chip-label">Pieces</span>
+            <button type="button" class="chip active" data-tune-pool="vol1">Vol 1</button>
+            <button type="button" class="chip" data-tune-pool="all">All songbooks</button>
+          </div>
+          <p class="lesson-text">Press Play and listen to how a piece begins. Which one is it?</p>
+          <div class="sign-answers" id="tune-answers"></div>
+          <div class="quiz-feedback" id="tune-feedback"></div>
+          <div class="quiz-score" id="quiz-score-tunes"></div>
+          <div class="controls">
+            <button type="button" id="tune-play">Play</button>
+            <button type="button" id="tune-next">Skip</button>
           </div>
         </div>
 
@@ -5783,6 +5835,81 @@
       sound.at(playInterval(iv.low, iv.high, sound), stopLearnSound);
     });
 
+    // --- Learn › Fingers: finger patterns ---
+    // Where the fingers go on a string, in half steps above the open string: high 2 touches the
+    // 3rd finger, low 2 the 1st. The 4th finger reaches the next string's open note.
+    const PATTERNS = {
+      high: [0, 2, 4, 5, 7],
+      low: [0, 2, 3, 5, 7],
+    };
+    let fingerPattern = "high";
+
+    // Low 2 on the G string is B♭ (B in Icelandic), which the sharps-only spelling calls A♯.
+    const patternLabel = (pitch) => (pitch === "A#3" ? "B♭ (B)" : noteLabel(pitch));
+    const patternShort = (pitch) => (pitch === "A#3" ? "B♭" : icelandicName(pitch));
+
+    // One string drawn flat: the open string left of the nut, then the half steps up to the 4th
+    // finger, with the beginner tapes. Fingers that touch are joined; `lit` lights one of them.
+    function patternSvg(open, offsets, accent, lit = -1) {
+      const x = (k) => (k === 0 ? 14 : 30 + k * 28);
+      const y = 20;
+      let svg = `<line x1="4" y1="${y}" x2="${x(7) + 16}" y2="${y}" stroke="#5a5650" stroke-width="1.5"/>`;
+      FB_TAPES.forEach((k) => { svg += `<line x1="${x(k)}" y1="${y - 13}" x2="${x(k)}" y2="${y + 13}" stroke="#3a3632" stroke-width="3"/>`; });
+      svg += `<rect x="28" y="${y - 13}" width="3.5" height="26" rx="1" fill="#d4c8b4"/>`;
+      offsets.forEach((off, f) => {
+        if (f > 1 && off - offsets[f - 1] === 1) svg += `<line x1="${x(offsets[f - 1])}" y1="${y}" x2="${x(off)}" y2="${y}" stroke="${accent}" stroke-width="5"/>`;
+      });
+      offsets.forEach((off, f) => {
+        const on = f === lit;
+        const pitch = midiToPitch(pitchToMidi(open) + off);
+        svg += f === 0
+          ? `<circle cx="${x(0)}" cy="${y}" r="7.5" fill="${on ? accent : "none"}" stroke="${accent}" stroke-width="1.6"/>`
+          : `<circle cx="${x(off)}" cy="${y}" r="9.5" fill="${on ? accent : "#262320"}" stroke="${accent}" stroke-width="1.6"/>`;
+        svg += `<text x="${x(off)}" y="${y + 3.5}" font-size="10" font-weight="700" fill="${on ? "#0f0e0d" : "#f5f0e8"}" text-anchor="middle" font-family="-apple-system, sans-serif">${f}</text>`;
+        svg += `<text x="${x(off)}" y="${y + 27}" font-size="9" fill="${on ? accent : "#8a8278"}" text-anchor="middle" font-family="-apple-system, sans-serif">${patternShort(pitch)}</text>`;
+      });
+      return `<svg viewBox="0 0 ${x(7) + 20} 52" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${open[0]} string, ${fingerPattern} 2 pattern">${svg}</svg>`;
+    }
+
+    function renderPatterns() {
+      const offsets = PATTERNS[fingerPattern];
+      document.getElementById("pattern-list").innerHTML = FB_STRINGS.map((open, i) => {
+        const accent = STRING_ACCENT[OPEN_STRING[open].string];
+        const names = offsets.map((off) => patternLabel(midiToPitch(pitchToMidi(open) + off))).join(" · ");
+        return `<button type="button" class="value-card" data-pattern-string="${i}" style="--accent:${accent}">
+          <div class="value-head"><div class="info">
+            <div class="name">${open[0]} string</div>
+            <div class="detail">${names}</div>
+          </div></div>
+          <div class="pattern-strip">${patternSvg(open, offsets, accent)}</div>
+        </button>`;
+      }).join("");
+    }
+
+    // A tap plays the string from the open note up, lighting each finger in turn.
+    document.getElementById("pattern-list").addEventListener("click", (ev) => {
+      const card = ev.target.closest(".value-card");
+      if (!card) return;
+      if (learnSound?.card === card) return stopLearnSound();
+      const open = FB_STRINGS[card.dataset.patternString];
+      const offsets = PATTERNS[fingerPattern];
+      const accent = STRING_ACCENT[OPEN_STRING[open].string];
+      const strip = card.querySelector(".pattern-strip");
+      const sound = startLearnSound(() => {
+        card.classList.remove("active");
+        strip.innerHTML = patternSvg(open, offsets, accent);
+      });
+      sound.card = card;
+      card.classList.add("active");
+      markProgress("fingers", `${fingerPattern} ${open[0]}`);
+      const t = getCtx().currentTime + 0.05;
+      offsets.forEach((off, f) => {
+        playNoteTone(midiToPitch(pitchToMidi(open) + off), 0.5, { time: t + f * 0.55, out: sound.out });
+        sound.at(t + f * 0.55, () => { strip.innerHTML = patternSvg(open, offsets, accent, f); });
+      });
+      sound.at(t + offsets.length * 0.55 + 0.2, stopLearnSound);
+    });
+
     // --- Learn › Signs: what the other marks on the page mean ---
     // Each glyph is a short staff with its lines at top…top + 40; `ac` colours the part explained.
     function signGlyph(body, top = 25) {
@@ -6002,7 +6129,7 @@
     // tapped (Staff), every value heard (Note values), every sign named in the quiz (Signs) or
     // every interval heard (Intervals).
     const PROGRESS_KEY = "fidluaefing-learn-progress";
-    const QUIZ_MODES = ["name", "play", "rhythm", "signs", "intervals"];
+    const QUIZ_MODES = ["name", "play", "find", "rhythm", "signs", "intervals", "tunes"];
     const progress = loadProgress();
     const session = Object.fromEntries(QUIZ_MODES.map((mode) => [mode, { asked: 0, firstTry: 0, streak: 0 }]));
 
@@ -6012,6 +6139,7 @@
         values: [],
         signs: [],
         intervals: [],
+        fingers: [],
         stars: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
         best: Object.fromEntries(QUIZ_MODES.map((mode) => [mode, 0])),
       };
@@ -6064,6 +6192,8 @@
         ["values", NOTE_VALUES.filter((v) => progress.values.includes(v.beats)).length, NOTE_VALUES.length, (n, of) => `Heard ${n} of ${of}`, "✓ All of them heard"],
         ["signs", ALL_SIGNS.filter((s) => progress.signs.includes(s.name)).length, ALL_SIGNS.length, (n, of) => `Named ${n} of ${of} in the quiz`, "✓ All of them named in the quiz"],
         ["intervals", INTERVALS.filter((iv) => progress.intervals.includes(iv.name)).length, INTERVALS.length, (n, of) => `Heard ${n} of ${of}`, "✓ All of them heard"],
+        ["fingers", Object.keys(PATTERNS).flatMap((pattern) => FB_STRINGS.map((open) => `${pattern} ${open[0]}`)).filter((item) => progress.fingers.includes(item)).length, 8,
+          (n, of) => `Heard ${n} of ${of}: each string in both patterns`, "✓ Every string heard in both patterns"],
       ];
       lessons.forEach(([lesson, n, of, partly, done]) => {
         document.getElementById(`${lesson}-progress`).textContent = n < of ? partly(n, of) : done;
@@ -6663,6 +6793,150 @@
     document.getElementById("interval-play").addEventListener("click", () => hearQuizInterval());
     document.getElementById("interval-next").addEventListener("click", nextInterval);
 
+    // --- Learn › Quiz › Find it: tap where a note is played ---
+    // The board is the fingerboard seen from the player: G, D, A and E from left to right, the
+    // open string above the nut and every half step below it down to the 4th finger, with the
+    // beginner tapes. A note that two strings can play (A as open A or 4th finger on D) is right
+    // on either.
+    const findQuiz = { pitch: null, missed: false, done: false, timer: null, marks: {} };
+    const SPOT_NAMES = ["open string", "low 1st finger", "1st finger", "low 2nd finger", "2nd finger", "3rd finger", "high 3rd finger", "4th finger"];
+    const spotX = (s) => 50 + s * 54;
+    const spotY = (k) => (k === 0 ? 30 : 46 + k * 36 - 16);
+
+    function findBoardSvg() {
+      const bottom = spotY(7) + 22;
+      let svg = `<rect x="22" y="44" width="216" height="${bottom - 44}" rx="6" fill="#0f0e0d" stroke="#3a3632"/>`;
+      FB_TAPES.forEach((k) => { svg += `<line x1="22" y1="${spotY(k)}" x2="238" y2="${spotY(k)}" stroke="#4a4640" stroke-width="3"/>`; });
+      [[2, 1], [4, 2], [5, 3], [7, 4]].forEach(([k, f]) => {
+        svg += `<text x="10" y="${spotY(k) + 4}" font-size="11" fill="#5a5650" text-anchor="middle" font-family="-apple-system, sans-serif">${f}</text>`;
+      });
+      svg += `<rect x="22" y="43" width="216" height="4" rx="1" fill="#d4c8b4"/>`;
+      FB_STRINGS.forEach((open, s) => {
+        const accent = STRING_ACCENT[OPEN_STRING[open].string];
+        svg += `<line x1="${spotX(s)}" y1="45" x2="${spotX(s)}" y2="${bottom}" stroke="#8a8278" stroke-width="${2.2 - s * 0.35}"/>`;
+        svg += `<text x="${spotX(s)}" y="13" font-size="12" font-weight="700" fill="${accent}" text-anchor="middle" font-family="-apple-system, sans-serif">${open[0]}</text>`;
+        for (let k = 0; k <= 7; k++) {
+          const mark = findQuiz.marks[`${s}:${k}`];
+          const color = mark === "right" ? "#5a9e6f" : mark === "wrong" ? "#c47a3a" : null;
+          const label = mark ? `<text x="${spotX(s)}" y="${spotY(k) + 3.5}" font-size="9" font-weight="700" fill="#0f0e0d" text-anchor="middle" font-family="-apple-system, sans-serif">${icelandicName(midiToPitch(pitchToMidi(open) + k))}</text>` : "";
+          svg += `<g class="find-spot" data-spot="${s}:${k}"><circle cx="${spotX(s)}" cy="${spotY(k)}" r="17" fill="transparent"/>
+            <circle cx="${spotX(s)}" cy="${spotY(k)}" r="${mark ? 11 : 7}" fill="${color ?? "#1c1a18"}" stroke="${color ?? "#4a4640"}" stroke-width="1.5"/>${label}</g>`;
+        }
+      });
+      return `<svg viewBox="0 0 256 ${bottom + 4}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fingerboard: tap where the note is played">${svg}</svg>`;
+    }
+
+    function nextFind() {
+      clearTimeout(findQuiz.timer);
+      Object.assign(findQuiz, { pitch: pickOne(QUIZ_RANGES[readSettings.range].filter((p) => p !== findQuiz.pitch)), missed: false, done: false, marks: {} });
+      document.getElementById("find-wrap").innerHTML = readStaffSvg([findQuiz.pitch]);
+      document.getElementById("find-board").innerHTML = findBoardSvg();
+      setFeedback("find-feedback", "", "Where do you play this note?");
+    }
+
+    // Each tap sounds the note at that spot; only a first-try answer earns a star.
+    function answerFind(spot) {
+      if (findQuiz.done || findQuiz.marks[spot]) return;
+      const [s, k] = spot.split(":").map(Number);
+      const target = sounding(findQuiz.pitch);
+      const tapped = midiToPitch(pitchToMidi(FB_STRINGS[s]) + k);
+      playNoteTone(tapped, 0.6);
+      if (pitchToMidi(tapped) === pitchToMidi(target)) {
+        findQuiz.done = true;
+        findQuiz.marks[spot] = "right";
+        setFeedback("find-feedback", "right", `<strong>Yes — ${noteLabel(target)}</strong>: the ${k ? `${SPOT_NAMES[k]} on the ${FB_STRINGS[s][0]} string` : `open ${FB_STRINGS[s][0]} string`}.`);
+        scoreAnswer("find", !findQuiz.missed);
+        findQuiz.timer = setTimeout(nextFind, 2500);
+      } else {
+        findQuiz.missed = true;
+        findQuiz.marks[spot] = "wrong";
+        setFeedback("find-feedback", "wrong", `<strong>That's ${noteLabel(tapped)}</strong>, ${pitchToMidi(tapped) < pitchToMidi(target) ? "lower" : "higher"} than the note. Try again.`);
+      }
+      document.getElementById("find-board").innerHTML = findBoardSvg();
+    }
+
+    document.getElementById("find-board").addEventListener("click", (ev) => {
+      const spot = ev.target.closest(".find-spot");
+      if (spot) answerFind(spot.dataset.spot);
+    });
+
+    document.getElementById("find-next").addEventListener("click", nextFind);
+
+    // --- Learn › Quiz › Tunes: name a piece from how it begins ---
+    // The pieces are the songbooks' own (not grouped variations or the scales), from Vol 1 or
+    // from all of them; four titles to choose from.
+    const tuneQuiz = { pool: "vol1", id: null, missed: false, done: false, timer: null };
+
+    const tunePool = () => COLLECTIONS
+      .filter((collection) => (tuneQuiz.pool === "vol1" ? collection.id === "vol1" : collection.id !== "scales"))
+      .flatMap((collection) => collection.pieces.filter((entry) => typeof entry === "string"));
+
+    // The melody's first bars at its own tempo: the pickup, then whole bars until there are at
+    // least twelve beats.
+    function playTuneOpening(id, sound) {
+      const piece = PIECES[id];
+      const notes = flattenMeasures(piece.measures, piece.beamBeats);
+      const spans = measureSpans(piece);
+      const from = piece.pickup ? spans[0].length : 0;
+      const end = (spans.find((span) => span.start + span.length - from >= 12) ?? spans[spans.length - 1]);
+      const stop = end.start + end.length;
+      const beat = 60 / (piece.tempo?.[0].bpm ?? 96);
+      const t = getCtx().currentTime + 0.1;
+      notes.forEach((n, i) => {
+        if (n.start >= stop || notes[i - 1]?.tie) return;
+        playNoteTone(n.pitch, Math.min(heldBeats(i, notes), stop - n.start) * beat * 0.9, { time: t + n.start * beat, out: sound.out });
+      });
+      return t + stop * beat;
+    }
+
+    function hearTune() {
+      const sound = startLearnSound();
+      sound.at(playTuneOpening(tuneQuiz.id, sound), stopLearnSound);
+    }
+
+    function nextTune() {
+      clearTimeout(tuneQuiz.timer);
+      stopLearnSound();
+      const pool = tunePool();
+      const id = pickOne(pool.filter((p) => p !== tuneQuiz.id));
+      Object.assign(tuneQuiz, { id, missed: false, done: false });
+      const answers = document.getElementById("tune-answers");
+      answers.replaceChildren(...shuffle([id, ...shuffle(pool.filter((p) => p !== id)).slice(0, 3)]).map((p) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "quiz-answer";
+        btn.dataset.tune = p;
+        btn.textContent = PIECES[p].title;
+        return btn;
+      }));
+      setFeedback("tune-feedback", "", "Press Play to hear it.");
+    }
+
+    function answerTune(btn) {
+      if (tuneQuiz.done || btn.classList.contains("wrong")) return;
+      if (btn.dataset.tune === tuneQuiz.id) {
+        tuneQuiz.done = true;
+        btn.classList.add("right");
+        const book = COLLECTIONS.find((collection) => collection.pieces.includes(tuneQuiz.id));
+        setFeedback("tune-feedback", "right", `<strong>Yes — ${PIECES[tuneQuiz.id].title}</strong>${book ? `, from ${book.title}` : ""}.`);
+        scoreAnswer("tunes", !tuneQuiz.missed);
+        tuneQuiz.timer = setTimeout(nextTune, 3000);
+      } else {
+        tuneQuiz.missed = true;
+        btn.classList.add("wrong");
+        setFeedback("tune-feedback", "wrong", `<strong>Not ${PIECES[btn.dataset.tune].title}.</strong> Listen again.`);
+        hearTune();
+      }
+    }
+
+    document.getElementById("tune-answers").addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".quiz-answer");
+      if (btn) answerTune(btn);
+    });
+
+    document.getElementById("tune-play").addEventListener("click", hearTune);
+    document.getElementById("tune-next").addEventListener("click", nextTune);
+
     // --- Learn › Quiz: modes and settings ---
     function chipGroup(selector, onPick) {
       const chips = document.querySelectorAll(selector);
@@ -6676,19 +6950,32 @@
       stopLearnSound();
       stopPitchListener();
       document.querySelectorAll(".quiz-mode").forEach((m) => m.classList.toggle("active", m.id === `quiz-mode-${mode}`));
-      document.getElementById("read-settings").hidden = mode !== "name" && mode !== "play";
+      document.getElementById("read-settings").hidden = !["name", "play", "find"].includes(mode);
     });
 
     chipGroup("[data-read-range]", ({ readRange }) => {
       readSettings.range = readRange;
       nextQuiz();
       nextPlay();
+      nextFind();
     });
 
     chipGroup("[data-read-key]", ({ readKey }) => {
       readSettings.key = readKey;
       nextQuiz();
       nextPlay();
+      nextFind();
+    });
+
+    chipGroup("[data-tune-pool]", ({ tunePool }) => {
+      tuneQuiz.pool = tunePool;
+      nextTune();
+    });
+
+    chipGroup("[data-pattern]", ({ pattern }) => {
+      stopLearnSound();
+      fingerPattern = pattern;
+      renderPatterns();
     });
 
     chipGroup("[data-play-length]", ({ playLength }) => {
@@ -6732,6 +7019,9 @@
     newTapRhythm();
     nextSign();
     nextInterval();
+    renderPatterns();
+    nextFind();
+    nextTune();
     renderProgress();
 
     let resizeTimer = null;
