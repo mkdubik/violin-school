@@ -5093,8 +5093,9 @@
         return secAt(beats);
       }
 
-      // Each time round a loop is queued a second before the last one ends, after the rest of a
-      // short last bar and the beats before a pickup, so the beat goes on evenly.
+      // Each time round a loop is queued a second before the last one ends. With a start delay
+      // it waits that long again, counting down; without one the beat goes on evenly, after the
+      // rest of a short last bar and the beats before a pickup.
       function queueLoop(pass, prevEnd, prevBpm) {
         schedule(() => {
           announcePlayed(pieceId);
@@ -5105,7 +5106,9 @@
           const top = playSequence(next.played).seq[0];
           // Pausing between times round resumes at the top of the loop.
           schedule(() => Object.assign(playback, { pass, index: top.index, slot: top.slot }), prevEnd);
-          const start = prevEnd + (full - ends) * 60 / prevBpm + lead * 60 / next.bpm;
+          const delay = pieceDelay();
+          for (let s = delay; s > 0; s--) schedule(() => showCountdown(s), prevEnd + delay - s);
+          const start = delay ? prevEnd + delay : prevEnd + (full - ends) * 60 / prevBpm + lead * 60 / next.bpm;
           queueLoop(pass + 1, queuePass(pass, next, 0, start), next.bpm);
         }, prevEnd - 1);
       }
