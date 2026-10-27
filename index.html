@@ -1128,7 +1128,9 @@
       .piece-controls #piece-sound[hidden] + #piece-click { grid-row: 2; }
       .piece-controls #piece-speed { grid-column: 1; grid-row: 4; margin: 0; }
       .piece-controls #piece-sound[hidden] ~ #piece-speed { grid-row: 3; }
-      .piece-controls .check-row { grid-column: 2; grid-row: 3; margin: 0; }
+      .piece-controls #piece-part { grid-column: 2; grid-row: 3; margin: 0; }
+      .piece-controls .check-row { grid-column: 2; grid-row: 4; margin: 0; }
+      .piece-controls #piece-part[hidden] + .check-row { grid-row: 3; }
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
       .piece-controls .slider-row input { min-width: 0; }
@@ -1508,11 +1510,11 @@
           </div>
         </div>
         <div class="piece-controls">
-          <div class="chip-row" id="piece-sound" hidden>
+          <div class="chip-row" id="piece-sound" title="What plays: tap to turn each part on or off" hidden>
             <span class="chip-label">Sound</span>
-            <button type="button" class="chip active" data-piece-sound="melody">Melody</button>
-            <button type="button" class="chip" data-piece-sound="both">With piano</button>
-            <button type="button" class="chip" data-piece-sound="piano">Piano only</button>
+            <button type="button" class="chip active" data-voice="first" aria-pressed="true">Melody</button>
+            <button type="button" class="chip" data-voice="second" aria-pressed="false">2nd violin</button>
+            <button type="button" class="chip" data-voice="piano" aria-pressed="false">Piano</button>
           </div>
           <div class="chip-row" id="piece-click" title="Clicks before the music starts, or on every beat">
             <span class="chip-label">Click</span>
@@ -1525,6 +1527,11 @@
             <button type="button" class="chip active" data-piece-speed="0">Off</button>
             <button type="button" class="chip" data-piece-speed="2">+2</button>
             <button type="button" class="chip" data-piece-speed="4">+4</button>
+          </div>
+          <div class="chip-row" id="piece-part" title="Which part the sheet shows, for playing it yourself" hidden>
+            <span class="chip-label">Sheet</span>
+            <button type="button" class="chip active" data-piece-part="first">Melody</button>
+            <button type="button" class="chip" data-piece-part="second">2nd violin</button>
           </div>
           <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
             <input type="checkbox" id="fourth-finger"> Show 4th finger
@@ -3842,7 +3849,7 @@
     let activePieceId = null;
     let piecePlayback = null;
     let pausedPlayback = null; // { pass, slot } while paused; resume starts at the highlighted note
-    let pieceSound = "melody"; // "melody", "both" or "piano", for pieces with a piano part
+    let sheetPart = "first"; // the part on the sheet: "first" (the melody) or "second" (2nd violin)
     let flatNotes = [];
     let loopBars = null; // the bars Loop repeats, { first, last } as bar indexes
     let loopPick = null; // "first" while Loop waits for the passage's first note, then { first }
@@ -3948,13 +3955,14 @@
     }
 
     // Every note of one pass in playing order with the beat it starts on and its `slot` in the
-    // order (a bar played twice lists its notes twice, in two slots).
-    function playSequence(piece) {
+    // order (a bar played twice lists its notes twice, in two slots). `notes` is the part on the
+    // sheet unless another is given.
+    function playSequence(piece, notes = flatNotes) {
       const { order, spans, beats } = playOrder(piece);
       const seq = [];
       let at = 0;
       order.forEach((mi, slot) => {
-        flatNotes.forEach((note) => {
+        notes.forEach((note) => {
           if (note.measure === mi) seq.push({ index: note.globalIndex, beat: snapBeat(at + note.start - spans[mi].start), slot });
         });
         at = snapBeat(at + spans[mi].length);
@@ -4028,10 +4036,96 @@
       return strikes;
     }
 
-    // What plays: a piece without a piano part always plays its melody.
-    function pieceSounds(piece) {
-      const sound = piece.piano ? pieceSound : "melody";
-      return { melody: sound !== "piano", piano: sound !== "melody" };
+    // What plays, from the Sound chips: the melody, the 2nd violin and the piano, each on or off,
+    // for the parts a piece has. A piece with no other part always plays its melody.
+    const pieceVoices = { first: true, second: false, piano: false };
+
+    function voiceOn(piece, voice) {
+      if (voice === "piano") return !!piece.piano && pieceVoices.piano;
+      if (voice === "second") return !!secondPart(piece) && pieceVoices.second;
+      return pieceVoices.first || (!piece.piano && !secondPart(piece));
+    }
+
+    // --- Duets: a 2nd violin part ---
+    // A piece can write its own `second` part (measures like `measures`, or false for none);
+    // one with piano chords gets one made from them. On each beat it takes a chord note a 3rd
+    // or 6th under the melody where one fits, otherwise the nearest that sounds well, moving as
+    // little as it can and holding a note while it stays the same. It rests through a pickup
+    // and wherever the melody rests, and stays in first position, G3 to E5, for a beginner.
+    const secondParts = new WeakMap();
+
+    function secondPart(piece) {
+      if (piece.second !== undefined) return piece.second || null;
+      if (!piece.piano) return null;
+      if (!secondParts.has(piece)) secondParts.set(piece, makeSecondPart(piece));
+      return secondParts.get(piece);
+    }
+
+    // How a note sounds under the melody, by the half steps between them (lower is better). A
+    // 3rd above is for melody notes too low to go under.
+    const HARMONY_COST = { 3: 0, 4: 0, 8: 1, 9: 1, 7: 3, 15: 3.5, 16: 3.5, 12: 4, [-3]: 5, [-4]: 5, 5: 6 };
+
+    function harmonyUnder(melody, chord, prev) {
+      const tones = new Set([chord.bass, ...chord.chord].map((p) => pitchToMidi(p) % 12));
+      let best = null;
+      for (let n = pitchToMidi("G3"); n <= pitchToMidi("E5"); n++) {
+        const cost = HARMONY_COST[melody - n];
+        if (!tones.has(n % 12) || cost === undefined) continue;
+        const move = prev === null ? 0 : Math.abs(n - prev);
+        const total = cost + move * 0.2 + (move > 7 ? 2 : 0) + (move > 12 ? 3 : 0);
+        if (!best || total < best.total) best = { n, total };
+      }
+      return best ? best.n : null;
+    }
+
+    // The piece as the sheet shows it: its 2nd violin part in place of the melody while that is
+    // the part being read (the bars, tempo and repeats are the same).
+    function shownPiece(piece) {
+      const second = sheetPart === "second" && secondPart(piece);
+      return second ? { ...piece, measures: second } : piece;
+    }
+
+    // Rests filling `beats`, longest first, so each has a sign of its own.
+    function restsFor(beats) {
+      const out = [];
+      for (const len of [4, 2, 1, 0.5, 0.25]) {
+        while (beats >= len - 1e-9) {
+          out.push(rest(len));
+          beats = snapBeat(beats - len);
+        }
+      }
+      return out;
+    }
+
+    function makeSecondPart(piece) {
+      const melody = flattenMeasures(piece.measures, piece.beamBeats);
+      const spans = measureSpans(piece);
+      const full = barBeats(piece);
+      const held = { 1: (p) => p, 2: h, 3: (p) => dotted(h(p)), 4: w };
+      let prev = null;
+      return piece.measures.map((_, mi) => {
+        const { length } = spans[mi];
+        if (mi === 0 && piece.pickup) return restsFor(length);
+        const chords = piece.piano[mi].split(" ");
+        const picks = [];
+        for (let b = 0; b + 1 <= length + 1e-9; b++) {
+          // The melody note sounding on the beat, or else the one coming in during it.
+          const inBar = melody.filter((n) => n.measure === mi);
+          const note = inBar.find((n) => n.beatInBar <= b && b < n.beatInBar + n.beats) ?? inBar.find((n) => n.beatInBar > b && n.beatInBar < b + 1);
+          const chord = PIANO_CHORDS[chords[Math.min(Math.floor(b / (full / chords.length)), chords.length - 1)]];
+          const pick = note && chord ? harmonyUnder(pitchToMidi(note.pitch), chord, prev) : null;
+          if (pick !== null) prev = pick;
+          picks.push(pick);
+        }
+        const bar = [];
+        for (let b = 0; b < picks.length;) {
+          let run = 1;
+          while (b + run < picks.length && picks[b + run] === picks[b] && run < 4) run++;
+          bar.push(...(picks[b] === null ? restsFor(run) : [held[run](midiToPitch(picks[b]))]));
+          b += run;
+        }
+        return [...bar, ...restsFor(snapBeat(length - picks.length))];
+      });
     }
 
     // Rests take time (`start` counts them) but are not notes you can tap or play; each note
@@ -4107,8 +4201,8 @@
     }
 
     // Beats a note is held for, counting the notes it is tied into.
-    function heldBeats(i) {
-      return flatNotes[i].beats + (flatNotes[i].tie && flatNotes[i + 1] ? heldBeats(i + 1) : 0);
+    function heldBeats(i, notes = flatNotes) {
+      return notes[i].beats + (notes[i].tie && notes[i + 1] ? heldBeats(i + 1, notes) : 0);
     }
 
     // Units are SVG user units; the SVG scales to the full card width, so fewer
@@ -4278,7 +4372,7 @@
     let sheetHighlight = -1;
 
     function renderSheet(pieceId, highlightIndex = -1) {
-      const piece = PIECES[pieceId];
+      const piece = shownPiece(PIECES[pieceId]);
       const wrap = document.getElementById("sheet-wrap");
       const layout = sheetLayoutFor(piece);
       const { padL, padR, staffH, noteRx, noteRy, stemLen, beamW, clefSize } = layout;
@@ -4620,7 +4714,7 @@
 
     // One short line for each part of the symbol (and the marks around it) on the sheet.
     function noteSymbolFacts(index) {
-      const piece = PIECES[activePieceId];
+      const piece = shownPiece(PIECES[activePieceId]);
       const note = flatNotes[index];
       const prev = flatNotes[index - 1];
       const next = flatNotes[index + 1];
@@ -4813,7 +4907,7 @@
     renderNoteSymbol(-1);
 
     // Plays now, or at `time` on the audio clock; `out` lets a loop cut its own notes at once.
-    function playNoteTone(pitch, durSec, { time, out = output() } = {}) {
+    function playNoteTone(pitch, durSec, { time, out = output(), level = 1 } = {}) {
       const audio = getCtx();
       const t = time ?? audio.currentTime;
       const osc = audio.createOscillator();
@@ -4821,8 +4915,8 @@
       osc.type = "triangle";
       osc.frequency.value = midiToFreq(pitchToMidi(pitch));
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(volume() * 0.35, t + 0.02);
-      gain.gain.setValueAtTime(volume() * 0.35, t + durSec - 0.05);
+      gain.gain.linearRampToValueAtTime(volume() * 0.35 * level, t + 0.02);
+      gain.gain.setValueAtTime(volume() * 0.35 * level, t + durSec - 0.05);
       gain.gain.linearRampToValueAtTime(0, t + durSec);
       osc.connect(gain);
       gain.connect(out);
@@ -4998,6 +5092,8 @@
       const piece = PIECES[pieceId];
       const full = barBeats(piece);
       const soundFraction = piece.staccato ? 0.55 : 0.9;
+      const second = secondPart(piece);
+      const partNotes = { first: flattenMeasures(piece.measures, piece.beamBeats), second: second && flattenMeasures(second, piece.beamBeats) };
       let lastStruck = -1;
 
       // `counts` beats of clicks from `start`, the first of each bar accented.
@@ -5014,20 +5110,30 @@
         const { seq, beats } = playSequence(played);
         const { timeAt, beatDurAt } = pieceTiming(played, bpm);
         const secAt = (beat) => start + timeAt(beat) - timeAt(fromBeat);
-        // A tied note sounds once for its whole held length; the notes it ties into only move
-        // the highlight (unless playback resumes on one of them).
         seq.forEach(({ index: i, beat, slot }) => {
           if (beat < fromBeat) return;
-          const sounds = beat === fromBeat || !flatNotes[i - 1]?.tie;
           schedule(() => {
             playback.pass = pass;
             playback.index = i;
             playback.slot = slot;
             setNowPlaying(i, true);
             renderSheet(activePieceId, i);
-            if (sounds && pieceSounds(piece).melody) playNoteTone(flatNotes[i].pitch, (timeAt(beat + heldBeats(i)) - timeAt(beat)) * soundFraction);
           }, secAt(beat));
         });
+
+        // Each part sounds from its own notes, the one on the sheet and the other alike, as the
+        // Sound chips say when the note is queued. A tied note sounds once for its whole held
+        // length; the notes it ties into don't sound again (unless playback resumes on one).
+        for (const [voice, notes] of Object.entries(partNotes)) {
+          if (!notes) continue;
+          playSequence(played, notes).seq.forEach(({ index: i, beat }) => {
+            if (beat < fromBeat || (beat > fromBeat && notes[i - 1]?.tie)) return;
+            const dur = (timeAt(beat + heldBeats(i, notes)) - timeAt(beat)) * soundFraction;
+            queueSound((time) => {
+              if (voiceOn(piece, voice)) playNoteTone(notes[i].pitch, dur, { time, level: voice === "second" ? 0.8 : 1 });
+            }, secAt(beat));
+          });
+        }
 
         // Chord strikes are queued on the audio clock, so the piano keeps a steady beat. The
         // Sound chips are read then, so switching works mid-piece. A strike adds the bass when
@@ -5040,7 +5146,7 @@
             const at = Math.max(beat, fromBeat);
             const n = pass * strikes.length + k;
             queueSound((time) => {
-              if (!pieceSounds(piece).piano) return;
+              if (!voiceOn(piece, "piano")) return;
               playPianoChord(chord, { bass: bass || lastStruck !== n - 1, accent, beats: piece.staccato ? 0.5 : 1 }, time, beatDurAt(at), out);
               lastStruck = n;
             }, secAt(at));
@@ -5130,7 +5236,7 @@
       const piece = PIECES[pieceId];
       if (!piece) return;
       activePieceId = pieceId;
-      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
+      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
       loopBars = null;
       loopPick = null;
       updateLoopUi();
@@ -5140,7 +5246,7 @@
       document.getElementById("piece-title").textContent = piece.title;
       document.getElementById("piece-meta").textContent = piece.meta;
       document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
-      document.getElementById("piece-sound").hidden = !piece.piano;
+      showPartChips(piece);
       document.getElementById("fourth-finger-row").hidden = !fourthFingerEs(flatNotes).length;
       // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
       if (piece.tempo?.length) {
@@ -5160,7 +5266,7 @@
       try { localStorage.setItem("fidluaefing-fourth-finger", showFourthFinger ? "1" : "0"); } catch {}
       const piece = PIECES[activePieceId];
       if (!piece) return;
-      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
+      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
       setNowPlaying(focusedNoteIndex, document.getElementById("now-playing").classList.contains("live"));
       renderSheet(activePieceId, sheetHighlight);
       reserveNotePanelHeights();
@@ -5295,9 +5401,37 @@
 
     document.getElementById("piece-bpm").addEventListener("input", showPieceBpm);
 
-    // Melody alone, melody with the piano, or the piano alone to play along with.
-    chipGroup("[data-piece-sound]", (data) => {
-      pieceSound = data.pieceSound;
+    // The Sound chips show the parts a piece has, and the Sheet chips only when it has a 2nd part.
+    function showPartChips(piece) {
+      const second = !!secondPart(piece);
+      document.getElementById("piece-sound").hidden = !piece.piano && !second;
+      document.querySelector('[data-voice="second"]').hidden = !second;
+      document.querySelector('[data-voice="piano"]').hidden = !piece.piano;
+      document.getElementById("piece-part").hidden = !second;
+      document.querySelectorAll("[data-piece-part]").forEach((chip) => chip.classList.toggle("active", chip.dataset.piecePart === (second ? sheetPart : "first")));
+    }
+
+    // Each Sound chip turns its part on or off, mid-piece too: the melody with the piano is a
+    // play-along, the 2nd violin without the melody a duet to play the melody against.
+    document.querySelectorAll("[data-voice]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const on = !pieceVoices[chip.dataset.voice];
+        pieceVoices[chip.dataset.voice] = on;
+        chip.classList.toggle("active", on);
+        chip.setAttribute("aria-pressed", on);
+      });
+    });
+
+    // Reading the 2nd violin part puts it on the sheet: highlighted, tappable and listened to.
+    chipGroup("[data-piece-part]", (data) => {
+      sheetPart = data.piecePart;
+      const piece = PIECES[activePieceId];
+      stopPiecePlayback();
+      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
+      document.getElementById("fourth-finger-row").hidden = !fourthFingerEs(flatNotes).length;
+      setNowPlaying(-1, false);
+      renderSheet(activePieceId, -1);
+      reserveNotePanelHeights();
     });
 
     // The click setting is kept on this device.
