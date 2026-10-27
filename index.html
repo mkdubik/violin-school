@@ -188,6 +188,81 @@
     .group-pieces { margin: 0.75rem 0 0 1.5rem; }
     .group-pieces[hidden] { display: none; }
 
+    /* Practice log: the streak and today's minutes, the last seven days, and pieces to review. */
+    .practice-card {
+      margin-bottom: 1.25rem;
+      padding: 0.9rem 1.1rem 1rem;
+      background: #1c1a18;
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .practice-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .practice-streak { font-weight: 600; }
+    .practice-streak .star { color: #d4a574; }
+    .practice-time { font-size: 0.8rem; color: #8a8278; white-space: nowrap; }
+
+    .practice-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.35rem;
+      margin-top: 0.75rem;
+    }
+
+    .practice-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem 0;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      color: #5a5650;
+    }
+
+    .practice-day .mark { font-size: 1rem; line-height: 1; color: #3a3632; }
+    .practice-day.done .mark { color: #d4a574; }
+    .practice-day.today { background: #262320; color: #c8c0b4; }
+
+    .practice-review { margin-top: 0.75rem; }
+
+    .practice-review .label {
+      margin-bottom: 0.3rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+    }
+
+    .practice-review .empty { font-size: 0.8rem; color: #5a5650; line-height: 1.45; }
+
+    .review-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #c8c0b4;
+      font-size: 0.85rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .review-item:hover { background: #262320; }
+    .review-item .ago { color: #5a5650; font-size: 0.78rem; white-space: nowrap; }
+
+    .card-btn .practice-line { margin-top: 0.15rem; font-size: 0.75rem; color: #5a5650; }
+    .card-btn .practice-line.today { color: #7bc492; }
+
     .collection-view { display: none; text-align: left; }
     .collection-view.active { display: block; }
     .collection-view .piece-title { margin-bottom: 1rem; }
@@ -1455,6 +1530,14 @@
       <div id="notes-catalog">
         <div id="collection-list">
           <p class="subtitle">Sheet music &middot; pick a songbook</p>
+          <div class="practice-card" id="practice-card">
+            <div class="practice-top">
+              <span class="practice-streak" id="practice-streak"></span>
+              <span class="practice-time" id="practice-time"></span>
+            </div>
+            <div class="practice-week" id="practice-week"></div>
+            <div class="practice-review" id="practice-review"></div>
+          </div>
           <div class="btn-list" id="collection-buttons"></div>
         </div>
         <div class="collection-view" id="collection-view">
@@ -4772,7 +4855,8 @@
         schedule(() => showCountdown(s), delaySec - s);
       }
 
-      const piece = PIECES[activePieceId];
+      const pieceId = activePieceId;
+      const piece = PIECES[pieceId];
       const full = barBeats(piece);
       const soundFraction = piece.staccato ? 0.55 : 0.9;
       let lastStruck = -1;
@@ -4840,6 +4924,7 @@
       // Speed up adds some, up to the piece's full tempo.
       function queueLoop(pass, prevEnd, prevBpm) {
         schedule(() => {
+          logPiecePlayed(pieceId);
           const slider = document.getElementById("piece-bpm");
           const fullTempo = piece.tempo?.[0].bpm ?? parseInt(slider.max, 10);
           const sliderBpm = pieceBpm() < fullTempo ? Math.min(fullTempo, pieceBpm() + speedUp) : pieceBpm();
@@ -4891,11 +4976,14 @@
         return;
       }
       for (let pass = fromPass + 1; pass < (piece.repeat ? 2 : 1); pass++) end = queuePass(pass, first, 0, end);
+      // Played to the end, it goes in the practice log; played from the start, with its tempo.
+      const fromStart = fromPass === 0 && fromEntry === seq[0];
       schedule(() => {
         // The last chord rings out instead of being cut off.
         fadeOutBus(out, 1.5);
         playback.out = null;
         stopPiecePlayback();
+        logPiecePlayed(pieceId, fromStart ? first.bpm : 0);
       }, end);
     }
 
@@ -4942,6 +5030,7 @@
     function closePiece() {
       stopPitchListener();
       stopPiecePlayback();
+      renderPractice();
       activePieceId = null;
       focusedNoteIndex = -1;
       updateNoteListenTarget();
@@ -4967,7 +5056,14 @@
 
     function pieceCard(id) {
       const piece = PIECES[id];
-      return catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
+      const card = catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
+      // When it was last played, from the practice log.
+      const line = document.createElement("div");
+      line.className = "practice-line";
+      card.querySelector(".info").append(line);
+      card.dataset.pieceId = id;
+      showPracticeLine(card);
+      return card;
     }
 
     // A group of pieces is one row, closed at first; tapping it shows its pieces under it.
@@ -5077,6 +5173,140 @@
       pieceClick = data.pieceClick;
       try { localStorage.setItem("fidluaefing-click", pieceClick); } catch {}
     });
+
+    // --- Practice log ---
+    // Kept on this device: the minutes practised each day (while a sound or the mic is on), the
+    // pieces played to the end or looped each day, and for each piece the day it was last played
+    // and the fastest tempo it was played through at, from the start.
+    const PRACTICE_KEY = "fidluaefing-practice";
+    const practiceLog = loadPracticeLog();
+
+    function loadPracticeLog() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PRACTICE_KEY));
+        if (saved?.days && saved?.pieces) return saved;
+      } catch (_) {}
+      return { days: {}, pieces: {} };
+    }
+
+    function savePracticeLog() {
+      try {
+        localStorage.setItem(PRACTICE_KEY, JSON.stringify(practiceLog));
+      } catch (_) {}
+      renderPractice();
+    }
+
+    // Days go by their local date, "2026-10-27".
+    const dayKey = (date = new Date()) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+    function daysSince(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      const now = new Date();
+      return Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(y, m - 1, d)) / 86400000);
+    }
+
+    function todaysLog() {
+      const key = dayKey();
+      return practiceLog.days[key] ?? (practiceLog.days[key] = { seconds: 0, pieces: [] });
+    }
+
+    // A day counts once it has a minute of practice or a piece played.
+    function practisedOn(key) {
+      const day = practiceLog.days[key];
+      return !!day && (day.seconds >= 60 || day.pieces.length > 0);
+    }
+
+    function logPiecePlayed(id, bpm = 0) {
+      const today = todaysLog();
+      if (!today.pieces.includes(id)) today.pieces.push(id);
+      const record = practiceLog.pieces[id] ?? (practiceLog.pieces[id] = { last: "", bpm: 0 });
+      record.last = dayKey();
+      record.bpm = Math.max(record.bpm, bpm);
+      savePracticeLog();
+    }
+
+    // Every 5 seconds with a sound or the mic on, while the app is on screen, is practice.
+    setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (!(piecePlayback || metro.running || rhythmLoop || activeTone || pitchListener || learnSound)) return;
+      todaysLog().seconds += 5;
+      savePracticeLog();
+    }, 5000);
+
+    // Days in a row up to today, or up to yesterday while today has no practice yet.
+    function practiceStreak() {
+      const date = new Date();
+      if (!practisedOn(dayKey(date))) date.setDate(date.getDate() - 1);
+      let streak = 0;
+      while (practisedOn(dayKey(date))) {
+        streak++;
+        date.setDate(date.getDate() - 1);
+      }
+      return streak;
+    }
+
+    const playedAgo = (days) => (days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`);
+
+    // "Played 3 days ago · best ♩ 92 / 104" under a piece in its songbook.
+    function showPracticeLine(card) {
+      const id = card.dataset.pieceId;
+      const record = practiceLog.pieces[id];
+      const full = PIECES[id].tempo?.[0].bpm;
+      const line = card.querySelector(".practice-line");
+      line.textContent = !record ? ""
+        : `Played ${playedAgo(daysSince(record.last))}${record.bpm ? ` · best ♩ ${record.bpm}${full ? ` / ${full}` : ""}` : ""}`;
+      line.classList.toggle("today", record?.last === dayKey());
+    }
+
+    const collectionOf = (id) => COLLECTIONS.find((collection) => collection.pieces.some((entry) => entry === id || entry.pieces?.includes(id)));
+
+    function renderPractice() {
+      const today = dayKey();
+      const streak = practiceStreak();
+      document.getElementById("practice-streak").innerHTML = streak
+        ? `<span class="star">★</span> ${streak} ${streak === 1 ? "day" : "days"} in a row${practisedOn(today) ? "" : " · play today to keep it going"}`
+        : "Practise today to start a streak";
+      document.getElementById("practice-time").textContent = `${Math.floor((practiceLog.days[today]?.seconds ?? 0) / 60)} min today`;
+
+      const week = [];
+      for (let back = 6; back >= 0; back--) {
+        const date = new Date();
+        date.setDate(date.getDate() - back);
+        const key = dayKey(date);
+        const day = practiceLog.days[key];
+        const done = practisedOn(key);
+        const title = `${date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}${day ? ` · ${Math.floor(day.seconds / 60)} min · ${day.pieces.length} ${day.pieces.length === 1 ? "piece" : "pieces"}` : ""}`;
+        week.push(`<div class="practice-day${done ? " done" : ""}${back ? "" : " today"}" title="${title}"><span>${"SMTWTFS"[date.getDay()]}</span><span class="mark">${done ? "★" : "·"}</span></div>`);
+      }
+      document.getElementById("practice-week").innerHTML = week.join("");
+
+      // Review, as in the Suzuki method: the three pieces played longest ago, other than today's.
+      const box = document.getElementById("practice-review");
+      const review = Object.entries(practiceLog.pieces)
+        .filter(([id, { last }]) => PIECES[id] && collectionOf(id) && last !== today)
+        .sort((a, b) => a[1].last.localeCompare(b[1].last))
+        .slice(0, 3);
+      box.innerHTML = review.length ? '<div class="label">Review</div>'
+        : Object.keys(practiceLog.pieces).length ? ""
+        : '<p class="empty">Play a piece along to the end, and it comes back here for you to review on another day.</p>';
+      review.forEach(([id, { last }]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "review-item";
+        btn.innerHTML = `<span></span><span class="ago">${playedAgo(daysSince(last))}</span>`;
+        btn.firstChild.textContent = PIECES[id].title;
+        btn.addEventListener("click", () => {
+          openCollection(collectionOf(id));
+          openPiece(id);
+        });
+        box.append(btn);
+      });
+
+      document.querySelectorAll("[data-piece-id]").forEach(showPracticeLine);
+    }
+
+    renderPractice();
 
     // --- Learn: reading sheet music ---
     // The drawings match the sheet: staff lines 10 units apart, noteheads 6.2 × 4.6.
