@@ -3850,6 +3850,47 @@
         piano: ["G", "G", "C D7", "G", "G", "G", "C D7", "G", "G", "Em", "C D7", "G", "D", "G D7", "G", "Em C", "G"],
         sheetLayout: { systems: [4, 4, 4, 5] },
       },
+      // Sigvaldi Kaldalóns's lullaby from Þrjú sönglög (Reykjavík, about 1917), the voice from the
+      // IMSLP scan, a half step down in E minor so it stays in first position and needs no flats.
+      // The piano chords follow his accompaniment, F minor over an F pedal with B♭ minor, D♭ and C7
+      // (here E minor with A minor, C and B7); its two bars before and after the voice are left
+      // out, and so is the fermata on the long B in bar 20.
+      sofdu: {
+        title: "Sofðu, unga ástin mín",
+        detail: "Kaldalóns · E minor · 2/2",
+        meta: "S. Kaldalóns, 1917 · words by Jóhann Sigurjónsson · E minor (written in F minor) · 2/2 (counted in quarters)",
+        accent: "#7a8ab4",
+        tempo: [{ bar: 1, bpm: 72 }],
+        measures: [
+          ["B3", "B3", "B3", "B3"],
+          ["C4", "D4", h("B3")],
+          ["B3", "B3", "A3", e("G3"), e("A3")],
+          ["B3", "C4", h("B3")],
+          ["E4", "E4", "E4", "E4"],
+          ["F#4", "G4", h("E4")],
+          ["E4", "E4", "E4", "E4"],
+          ["G4", "A4", h("B4")],
+          ["B4", e("B4"), e("B4"), "A4", "A4"],
+          ["G4", "G4", "F#4", "F#4"],
+          [h("E4"), h("E4")],
+          [rest(4)],
+          ["B3", "B3", "B3", "B3"],
+          ["C4", "D4", h("B3")],
+          ["B3", "B3", "A3", e("G3"), e("A3")],
+          ["B3", "C4", h("B3")],
+          ["E4", "E4", "E4", "E4"],
+          ["F#4", "G4", h("E4")],
+          ["E4", "E4", "E4", "E4"],
+          ["G4", "A4", dotted("B4"), e("B4")],
+          ["B4", e("B4"), e("B4"), "A4", "A4"],
+          ["G4", "G4", "F#4", "F#4"],
+          [h("E4"), h("E4")],
+        ],
+        piano: [
+          "Em", "Am Em", "Em Am", "B7", "Em", "Am Em", "Em", "C B7", "Em B7", "Em B7", "Am Em", "B7",
+          "Em", "Am Em", "Em Am", "B7", "Em", "Am Em", "Em", "C B7", "Em B7", "Em B7", "Am Em",
+        ],
+      },
       // The Scales songbook: A, D and G major in first position, one octave, and two where it fits.
       scaleA1: scale("A major scale", "One octave · A and E strings", "A major", "Scale, one octave", "#4a8fc4",
         ["A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
@@ -3913,6 +3954,13 @@
         detail: "Christmas songs · G and D major · first position",
         accent: "#c4574a",
         pieces: ["heimsUmBol", "jingleBells", "deckTheHalls", "weWishYou", "goodKingWenceslas"],
+      },
+      {
+        id: "islensk",
+        title: "Íslensk lög",
+        detail: "Icelandic songs · first position",
+        accent: "#4a7e9a",
+        pieces: ["sofdu"],
       },
       {
         id: "scales",
@@ -4152,8 +4200,8 @@
     }
 
     // How a note sounds under the melody, by the half steps between them (lower is better). A
-    // 3rd above is for melody notes too low to go under.
-    const HARMONY_COST = { 3: 0, 4: 0, 8: 1, 9: 1, 7: 3, 15: 3.5, 16: 3.5, 12: 4, [-3]: 5, [-4]: 5, 5: 6 };
+    // 3rd, 6th or 5th above is for melody notes too low to go under.
+    const HARMONY_COST = { 3: 0, 4: 0, 8: 1, 9: 1, 7: 3, 15: 3.5, 16: 3.5, 12: 4, [-3]: 5, [-4]: 5, 5: 6, [-8]: 6, [-9]: 6, [-7]: 7 };
 
     function harmonyUnder(melody, chord, prev) {
       const tones = new Set([chord.bass, ...chord.chord].map((p) => pitchToMidi(p) % 12));
