@@ -1783,11 +1783,6 @@
         <button type="button" class="link-btn" id="progress-reset">Reset stars and progress on this device</button>
       </div>
     </div>
-
-    <div class="slider-row">
-      <label for="vol">Volume</label>
-      <input type="range" id="vol" min="0" max="100" value="60">
-    </div>
   </div>
 
   <!-- Local-only songbooks (not published); see local/songbooks.js. -->
@@ -2344,8 +2339,9 @@
       return { hz: midiToFreq(pitchToMidi(flatNotes[focusedNoteIndex].pitch)) };
     }
 
+    // The level the app plays at. The system audio controls the loudness, so this is fixed.
     function volume() {
-      return document.getElementById("vol").value / 100;
+      return 0.6;
     }
 
     function bpm() {
@@ -2711,10 +2707,6 @@
         stopRhythm();
         startRhythm(btn);
       }
-    });
-
-    document.getElementById("vol").addEventListener("input", () => {
-      if (activeTone) activeTone.gain.gain.value = volume() * 0.4;
     });
 
     // --- Metronome ---
