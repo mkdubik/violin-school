@@ -3565,6 +3565,65 @@
         ],
         sheetLayout: { systems: [5, 4, 4, 4, 4, 4] },
       },
+      // The United States' national anthem: John Stafford Smith's tune (To Anacreon in Heaven)
+      // to Francis Scott Key's words of 1814, in the Service Version of 1918 as printed in The
+      // Everyday Song Book (1927), a major third up from B♭ in D major so it stays in first
+      // position (D4 to A5), with G♯ the only accidental. The piano chords follow the Service
+      // Version's four parts, simpler where they move within a beat. Its tempo is ♩ = 104, 96 from
+      // the chorus; the held note at "wave" and the broadening at the end are slowed down here.
+      starSpangledBanner: {
+        title: "The Star-Spangled Banner",
+        detail: "J. S. Smith · D major · 3/4",
+        meta: "Words by F. S. Key, 1814 · J. S. Smith · D major (printed in B♭) · 3/4 · starts on a pickup · slows down at the end",
+        accent: "#b4644a",
+        tempo: [
+          { bar: 1, bpm: 104 }, { bar: 25, bpm: 104 }, { bar: 26, bpm: 96 }, { bar: 29, bpm: 96 },
+          { bar: 30, bpm: 80 }, { bar: 32, bpm: 80 }, { bar: 33, bpm: 60 },
+        ],
+        pickup: true,
+        measures: [
+          [dotted(e("A4")), s("F#4")],
+          ["D4", "F#4", "A4"],
+          [h("D5"), dotted(e("F#5")), s("E5")],
+          ["D5", "F#4", "G#4"],
+          [h("A4"), e("A4"), e("A4")],
+          [dotted("F#5"), e("E5"), "D5"],
+          [h("C#5"), dotted(e("B4")), s("C#5")],
+          ["D5", "D5", "A4"],
+          ["F#4", "D4", dotted(e("A4")), s("F#4")],
+          ["D4", "F#4", "A4"],
+          [h("D5"), dotted(e("F#5")), s("E5")],
+          ["D5", "F#4", "G#4"],
+          [h("A4"), e("A4"), e("A4")],
+          [dotted("F#5"), e("E5"), "D5"],
+          [h("C#5"), dotted(e("B4")), s("C#5")],
+          ["D5", "D5", "A4"],
+          ["F#4", "D4", e("F#5"), e("F#5")],
+          ["F#5", "G5", "A5"],
+          [h("A5"), e("G5"), e("F#5")],
+          ["E5", "F#5", "G5"],
+          [h("G5"), "G5"],
+          [dotted("F#5"), e("E5"), "D5"],
+          [h("C#5"), dotted(e("B4")), s("C#5")],
+          ["D5", "F#4", "G#4"],
+          [h("A4"), "A4"],
+          ["D5", "D5", e("D5"), e("C#5")],
+          ["B4", "B4", "B4"],
+          ["E5", e("G5"), e("F#5"), e("E5"), e("D5")],
+          ["D5", "C#5", e("A4"), e("A4")],
+          [dotted("D5"), e("E5"), e("F#5"), e("G5")],
+          [h("A5"), e("D5"), e("E5")],
+          [dotted("F#5"), e("G5"), "E5"],
+          [h("D5")],
+        ],
+        piano: [
+          "-", "D D A", "Bm Bm F#", "Bm Bm E7", "A", "D", "A A A7", "D", "D",
+          "D D A", "Bm Bm F#", "Bm Bm E7", "A", "D", "A A A7", "D", "D",
+          "D Em D", "D", "A D A7", "A7", "D", "A A A7", "D Bm E7", "A",
+          "D Em D", "G G B7", "Em Em E7", "D A A7", "D", "D D E7", "D D A7", "D",
+        ],
+        sheetLayout: { systems: [5, 4, 4, 4, 4, 4, 4, 4] },
+      },
       // Iceland's national anthem (1874), the soprano line of the SATB setting on Wikimedia
       // Commons, a half step down in D major. The piano chords are simpler than the choir's,
       // following it where it changes key.
@@ -3933,7 +3992,7 @@
         title: "Heartstrings",
         detail: "Pieces that move an audience · first position",
         accent: "#b86a7a",
-        pieces: ["odeToJoy", "shenandoah", "dannyBoy", "canon", "iVowToThee", "lofsongur", "traumerei", "aveMaria"],
+        pieces: ["odeToJoy", "shenandoah", "dannyBoy", "canon", "iVowToThee", "starSpangledBanner", "lofsongur", "traumerei", "aveMaria"],
       },
       {
         id: "jol",
