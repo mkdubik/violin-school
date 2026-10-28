@@ -1802,6 +1802,7 @@
       D7: { bass: "D3", chord: ["F#3", "A3", "C4"] },
       A7: { bass: "A2", chord: ["G3", "C#4", "E4"] },
       Am: { bass: "A2", chord: ["A3", "C4", "E4"] },
+      F: { bass: "F2", chord: ["A3", "C4", "F4"] },
       Em: { bass: "E2", chord: ["G3", "B3", "E4"] },
       Bm: { bass: "B2", chord: ["F#3", "B3", "D4"] },
       "F#m": { bass: "F#2", chord: ["F#3", "A3", "C#4"] },
@@ -3842,46 +3843,40 @@
         piano: ["G", "G", "C D7", "G", "G", "G", "C D7", "G", "G", "Em", "C D7", "G", "D", "G D7", "G", "Em C", "G"],
         sheetLayout: { systems: [4, 4, 4, 5] },
       },
-      // Sigvaldi Kaldalóns's lullaby from Þrjú sönglög (Reykjavík, about 1917), the voice from the
-      // IMSLP scan, a half step down in E minor so it stays in first position and needs no flats.
-      // The piano chords follow his accompaniment, F minor over an F pedal with B♭ minor, D♭ and C7
-      // (here E minor with A minor, C and B7); its two bars before and after the voice are left
-      // out, and so is the fermata on the long B in bar 20.
+      // The folk lullaby to Jóhann Sigurjónsson's words from Fjalla-Eyvindur (1911), the tune
+      // everyone sings (Íslenzk þjóðlög), read from the 8notes SA arrangement (Icelandic Trad.,
+      // arr. CM, 2017), which has it in G minor. Here a whole step up in A minor, since the sheet
+      // only writes sharps: E4 to D5 on the D and A strings, with G♯ the only accidental. The
+      // chords follow that arrangement (G minor, D at the cadences, D7 and a bar of E♭ then A at
+      // "völuskrín"); its four piano bars before the voice are left out. Three verses: the app
+      // repeats it once.
       sofdu: {
         title: "Sofðu, unga ástin mín",
-        detail: "Kaldalóns · E minor · 2/2",
-        meta: "S. Kaldalóns, 1917 · words by Jóhann Sigurjónsson · E minor (written in F minor) · 2/2 (counted in quarters)",
+        detail: "Íslenskt þjóðlag · A minor · 4/4",
+        meta: "Icelandic folk tune · words by Jóhann Sigurjónsson, 1911 · A minor (sung in G minor) · 4/4 · played twice",
         accent: "#7a8ab4",
-        tempo: [{ bar: 1, bpm: 72 }],
+        tempo: [{ bar: 1, bpm: 84 }],
+        repeat: true,
+        fingerHints: {
+          C5: "Low 2nd finger (A string)",
+          "G#4": "High 3rd finger (D string)",
+        },
         measures: [
-          ["B3", "B3", "B3", "B3"],
-          ["C4", "D4", h("B3")],
-          ["B3", "B3", "A3", e("G3"), e("A3")],
-          ["B3", "C4", h("B3")],
-          ["E4", "E4", "E4", "E4"],
-          ["F#4", "G4", h("E4")],
-          ["E4", "E4", "E4", "E4"],
-          ["G4", "A4", h("B4")],
-          ["B4", e("B4"), e("B4"), "A4", "A4"],
-          ["G4", "G4", "F#4", "F#4"],
-          [h("E4"), h("E4")],
-          [rest(4)],
-          ["B3", "B3", "B3", "B3"],
-          ["C4", "D4", h("B3")],
-          ["B3", "B3", "A3", e("G3"), e("A3")],
-          ["B3", "C4", h("B3")],
-          ["E4", "E4", "E4", "E4"],
-          ["F#4", "G4", h("E4")],
-          ["E4", "E4", "E4", "E4"],
-          ["G4", "A4", dotted("B4"), e("B4")],
-          ["B4", e("B4"), e("B4"), "A4", "A4"],
-          ["G4", "G4", "F#4", "F#4"],
-          [h("E4"), h("E4")],
+          ["E4", "E4", "A4", "A4"],
+          ["B4", e("A4"), e("B4"), h("C5")],
+          ["A4", "C5", "B4", "A4"],
+          [h("G#4"), h("E4")],
+          ["E4", "E4", "A4", "A4"],
+          ["B4", e("A4"), e("B4"), h("C5")],
+          ["B4", "D5", "C5", "B4"],
+          ["A4", "B4", h("E4")],
+          ["E4", e("E4"), e("E4"), "A4", "E4"],
+          ["C5", "B4", "A4", "G#4"],
+          [w("B4")],
+          [w("A4")],
         ],
-        piano: [
-          "Em", "Am Em", "Em Am", "B7", "Em", "Am Em", "Em", "C B7", "Em B7", "Em B7", "Am Em", "B7",
-          "Em", "Am Em", "Em Am", "B7", "Em", "Am Em", "Em", "C B7", "Em B7", "Em B7", "Am Em",
-        ],
+        piano: ["Am", "E Am", "Am", "E", "Am", "E Am", "E7 Am", "F E7", "Am", "Am E", "E", "Am"],
+        sheetLayout: { systems: [4, 4, 4] },
       },
       // The Scales songbook: A, D and G major in first position, one octave, and two where it fits.
       scaleA1: scale("A major scale", "One octave · A and E strings", "A major", "Scale, one octave", "#4a8fc4",
