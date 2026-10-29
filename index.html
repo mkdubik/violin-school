@@ -1417,7 +1417,7 @@
           <span class="icon">a</span>
           <span class="info">
             <div class="name">Kópavogur hoppstopp</div>
-            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+            <div class="detail">Open E string, then rest while the piano answers</div>
           </span>
           <span class="indicator"></span>
         </button>
@@ -1425,7 +1425,7 @@
           <span class="icon">b</span>
           <span class="info">
             <div class="name">Hann fer &mdash; Hún fer</div>
-            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+            <div class="detail">Open E string, then rest while the piano answers</div>
           </span>
           <span class="indicator"></span>
         </button>
@@ -1433,7 +1433,7 @@
           <span class="icon">c</span>
           <span class="info">
             <div class="name">Fá epli fá epli</div>
-            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+            <div class="detail">Open E string, then rest while the piano answers</div>
           </span>
           <span class="indicator"></span>
         </button>
@@ -1441,7 +1441,7 @@
           <span class="icon">c</span>
           <span class="info">
             <div class="name">Banani</div>
-            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+            <div class="detail">Open E string, then rest while the piano answers</div>
           </span>
           <span class="indicator"></span>
         </button>
@@ -1449,7 +1449,7 @@
           <span class="icon">d</span>
           <span class="info">
             <div class="name">Apríkósa</div>
-            <div class="detail">Open E string &middot; piano plays A &ndash; D &ndash; E &ndash; A</div>
+            <div class="detail">Open E string, then rest while the piano answers</div>
           </span>
           <span class="indicator"></span>
         </button>
@@ -1877,6 +1877,7 @@
       "E/G#": { bass: "G#2", chord: ["G#3", "B3", "E4"] },
       "E/B": { bass: "B2", chord: ["G#3", "B3", "E4"] },
       "F#7/C#": { bass: "C#3", chord: ["F#3", "A#3", "E4"] },
+      "A/C#": { bass: "C#3", chord: ["A3", "C#4", "E4"] },
     };
 
     const RHYTHMS = {
@@ -1941,14 +1942,45 @@
       },
     };
 
-    // Every rhythm also comes with piano, on open E only: the piano plays I–IV–V–I in A major,
-    // one chord per bar. Each chord sits under the open E: it is the 5th of A, 9th of D and root of E.
+    // Every rhythm also comes with piano, on open E only, arranged like the Pre-Twinkle play-along
+    // recordings: a round is the rhythm on open E for two beats, a violin playing it with you over
+    // the piano's chord on each beat, then two beats of the piano answering while you rest. Seven
+    // rounds, the piano's ending, and from the top again. Hann fer – Hún fer is two phrases, so its
+    // rounds take turns. Each round lists the chords under the rhythm's two beats, then the answer:
+    // a chord and its melody per beat (two notes are eighths), with the beats it lasts if not one.
+    const PIANO_ROUNDS = [
+      { under: ["A", "A"], answer: [["F#m", "C#5"], ["A", "A4"]] },
+      { under: ["A", "A"], answer: [["F#m", "C#5"], ["A", "A4"]] },
+      { under: ["A", "A"], answer: [["A", "A4"], ["F#m", "C#5"]] },
+      { under: ["E", "E7"], answer: [["E7", "D5"], ["E/B", "B4"]] },
+      { under: ["E", "E7"], answer: [["E", "B4 C#5"], ["E/G#", "D5 B4"]] },
+      { under: ["A", "A"], answer: [["A", "E5"], ["A/C#", "C#5"]] },
+      // The last answer is the ending: down to the A chord, held for two beats.
+      { under: ["A", "A"], answer: [["E", "G#4"], ["E7", "F#4"], ["E7", "E4"], ["E7", "D4"], ["A", "A4", 2]] },
+    ];
+
     for (const id of Object.keys(RHYTHMS)) {
       RHYTHMS[`${id}Piano`] = {
         ...RHYTHMS[id],
         name: `${RHYTHMS[id].name} · E string + piano`,
-        piano: ["A", "D", "E", "A"].map((name) => PIANO_CHORDS[name]),
+        piano: true,
       };
+    }
+
+    // A rhythm's steps in two-beat phrases (indexes into its steps): Hann fer – Hún fer has two,
+    // the others one.
+    function rhythmPhrases(rhythm) {
+      const phrases = [[]];
+      let beats = 0;
+      rhythm.steps.forEach((step, i) => {
+        if (beats > 1.999) {
+          phrases.push([]);
+          beats = 0;
+        }
+        phrases[phrases.length - 1].push(i);
+        beats += step.dur;
+      });
+      return phrases;
     }
 
     let ctx = null;
@@ -2681,7 +2713,8 @@
       out.connect(output());
 
       btn.classList.add("active");
-      renderRhythmDisplay(rhythm, -1);
+      const caption = rhythm.piano ? "Open E string" : "";
+      renderRhythmDisplay(rhythm, -1, { caption });
 
       function scheduleAtAudioTime(audioTime, fn) {
         const delayMs = Math.max(0, (audioTime - getCtx().currentTime) * 1000);
@@ -2690,11 +2723,14 @@
         }, delayMs));
       }
 
-      let bar = 0;
+      // Queue the next round a little before it starts. Scheduling it exactly on time means
+      // the timer sometimes fires a few ms late, the first note skips its fade-in and clicks.
+      function queueNext(start, length, play) {
+        scheduleAtAudioTime(start + length - Math.min(0.25, length / 2), () => play(start + length));
+      }
 
       function playCycle(cycleStart) {
         if (cancelled) return;
-        let chord = null;
         const audio = getCtx();
         const beatDur = 60 / bpm();
         let offset = 0;
@@ -2702,22 +2738,49 @@
 
         rhythm.steps.forEach((step, i) => {
           const t = start + offset;
-          // Each bar (the cycle start or a bar line) moves the piano to its next chord.
-          const newBar = i === 0 || step.bar;
-          if (rhythm.piano && newBar) chord = rhythm.piano[bar++ % rhythm.piano.length];
-          if (!step.rest) {
-            if (chord) playPianoChord(chord, { bass: newBar, accent: step.accent, beats: step.dur }, t, beatDur, out);
-            else playClick(t, !!step.accent, out);
-          }
+          if (!step.rest) playClick(t, !!step.accent, out);
           scheduleAtAudioTime(t, () => renderRhythmDisplay(rhythm, i));
           offset += step.dur * beatDur;
         });
+        queueNext(start, offset, playCycle);
+      }
 
-        // Queue the next round a little before it starts. Scheduling it exactly on time means
-        // the timer sometimes fires a few ms late, the first note skips its fade-in and clicks.
-        const nextStart = start + offset;
-        const lookahead = Math.min(0.25, offset / 2);
-        scheduleAtAudioTime(nextStart - lookahead, () => playCycle(nextStart));
+      // With piano, one round of PIANO_ROUNDS at a time: the phrase, then the piano's answer.
+      const phrases = rhythmPhrases(rhythm);
+      let round = 0;
+
+      function playRound(roundStart) {
+        if (cancelled) return;
+        const beatDur = 60 / bpm();
+        const start = roundStart ?? getCtx().currentTime + 0.05;
+        const { under, answer } = PIANO_ROUNDS[round];
+
+        under.forEach((name, beat) => {
+          const bass = beat === 0 || name !== under[beat - 1];
+          playPianoChord(PIANO_CHORDS[name], { bass, accent: beat === 0, beats: 1 }, start + beat * beatDur, beatDur, out);
+        });
+        let offset = 0;
+        for (const i of phrases[round % phrases.length]) {
+          const step = rhythm.steps[i];
+          const t = start + offset;
+          if (!step.rest) playNoteTone("E5", step.dur * beatDur * 0.85, { time: t, out, level: 0.8 });
+          scheduleAtAudioTime(t, () => renderRhythmDisplay(rhythm, i, { caption }));
+          offset += step.dur * beatDur;
+        }
+
+        scheduleAtAudioTime(start + offset, () => renderRhythmDisplay(rhythm, -1, { caption: "Rest", resting: true }));
+        for (const [name, melody, beats = 1] of answer) {
+          const t = start + offset;
+          playPianoChord(PIANO_CHORDS[name], { bass: true, beats }, t, beatDur, out);
+          const notes = melody.split(" ");
+          notes.forEach((pitch, n) => {
+            playPianoNote(pitch, t + (n * beatDur) / notes.length, 0.16, Math.max(0.6, beats * beatDur * 1.4), out);
+          });
+          offset += beats * beatDur;
+        }
+
+        round = (round + 1) % PIANO_ROUNDS.length;
+        queueNext(start, offset, playRound);
       }
 
       rhythmLoop = {
@@ -2728,7 +2791,8 @@
           fadeOutBus(out, 0.02);
         },
       };
-      playCycle();
+      if (rhythm.piano) playRound();
+      else playCycle();
     }
 
     function stopRhythm() {
