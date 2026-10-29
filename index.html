@@ -432,6 +432,56 @@
       color: var(--accent, #c47a3a);
     }
 
+    /* While a recording's piano answers: the pattern waits, dimmed, for the next phrase. */
+    .rhythm-display.resting :is(.syllables, .notation) { opacity: 0.45; }
+
+    .rhythm-caption {
+      font-size: 0.85rem;
+      color: #8a8278;
+      text-align: center;
+    }
+
+    /* Recordings: one card per rhythm, with a chip for each recording of it. */
+    .rec-set {
+      --accent: #d4a574;
+      padding: 0.85rem 1.1rem;
+      border-radius: 12px;
+      background: #1c1a18;
+    }
+
+    .rec-set .rec-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      font-weight: 500;
+    }
+
+    .rec-set .icon {
+      width: 1.5rem;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .rec-set .chip-row { margin: 0.6rem 0 0; }
+
+    .chip.rec-chip.active {
+      border-color: var(--accent);
+      color: #f5f0e8;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+
+    /* In one column the list of recordings is long, so the pattern stays in view at the bottom. */
+    @media not all and (min-width: 960px) and (min-height: 560px) {
+      #panel-rhythms.recordings .rhythm-display {
+        position: sticky;
+        bottom: 0.75rem;
+        z-index: 1;
+        box-shadow: 0 0 0 0.75rem #0f0e0d;
+      }
+    }
+
     .controls {
       margin-top: 1.25rem;
       display: flex;
@@ -1316,6 +1366,7 @@
       <div class="subtabs">
         <button type="button" class="subtab active" data-group="clicks">Rhythms</button>
         <button type="button" class="subtab" data-group="piano">With piano</button>
+        <button type="button" class="subtab" data-group="recordings" hidden>Recordings</button>
       </div>
 
       <div class="btn-list rhythm-group active" id="rhythm-group-clicks">
@@ -1403,6 +1454,9 @@
           <span class="indicator"></span>
         </button>
       </div>
+
+      <!-- Filled from local/recordings.js when it is there. -->
+      <div class="btn-list rhythm-group" id="rhythm-group-recordings"></div>
 
       <div class="rhythm-display empty" id="rhythm-display">
         Select a rhythm to see the beat pattern
@@ -1785,8 +1839,9 @@
     </div>
   </div>
 
-  <!-- Local-only songbooks (not published); see local/songbooks.js. -->
+  <!-- Local-only songbooks and recordings (not published); see local/songbooks.js and local/recordings.js. -->
   <script src="local/songbooks.js"></script>
+  <script src="local/recordings.js"></script>
   <script>
     // Piano chords voiced under the violin: a low bass note, then the chord. A, D, E and E7
     // carry the A major pieces; G, C, D7, A7 and Am the G major ones. The Heartstrings pieces
@@ -2582,9 +2637,11 @@
       setTimeout(() => out.disconnect(), fadeSec * 1000 + 40);
     }
 
-    function renderRhythmDisplay(rhythm, hitStep) {
+    // `caption` is a line above the syllables (a recording's note, or "Rest"); `resting` dims them.
+    function renderRhythmDisplay(rhythm, hitStep, { caption = "", resting = false } = {}) {
       const el = document.getElementById("rhythm-display");
       el.classList.remove("empty");
+      el.classList.toggle("resting", resting);
       el.style.setProperty("--accent", getComputedStyle(
         document.querySelector(`[data-rhythm="${rhythm.id}"]`)
       ).getPropertyValue("--accent"));
@@ -2603,6 +2660,7 @@
       }).join(" ");
 
       el.innerHTML = `
+        ${caption ? `<div class="rhythm-caption">${caption}</div>` : ""}
         <div class="syllables">${sylHtml}</div>
         <div class="notation">${noteHtml}</div>
       `;
@@ -2680,7 +2738,15 @@
       rhythmLoop = null;
       const el = document.getElementById("rhythm-display");
       el.classList.add("empty");
+      el.classList.remove("resting");
       el.textContent = "Select a rhythm to see the beat pattern";
+      showRhythmBpm();
+    }
+
+    // The tempo, and while a recording plays, its own tempo next to it ("50 / 67").
+    function showRhythmBpm() {
+      const full = rhythmLoop?.recording?.full;
+      document.getElementById("bpm-val").textContent = full ? `${bpm()} / ${full}` : bpm();
     }
 
     document.querySelectorAll("[data-rhythm]").forEach(btn => {
@@ -2692,9 +2758,22 @@
 
     document.getElementById("stop-rhythm").addEventListener("click", stopRhythm);
 
+    // On Recordings the Tempo slider sets each recording's speed; leaving gives the clicks and
+    // piano their own tempo back.
+    let savedRhythmSlider = null;
+
     document.querySelectorAll("#panel-rhythms .subtab").forEach(sub => {
       sub.addEventListener("click", () => {
         stopRhythm();
+        const slider = document.getElementById("bpm");
+        if (sub.dataset.group === "recordings") {
+          savedRhythmSlider ??= { min: slider.min, max: slider.max, value: slider.value };
+        } else if (savedRhythmSlider) {
+          Object.assign(slider, savedRhythmSlider);
+          savedRhythmSlider = null;
+          showRhythmBpm();
+        }
+        document.getElementById("panel-rhythms").classList.toggle("recordings", sub.dataset.group === "recordings");
         document.querySelectorAll("#panel-rhythms .subtab").forEach(s => s.classList.toggle("active", s === sub));
         document.querySelectorAll(".rhythm-group").forEach(g =>
           g.classList.toggle("active", g.id === "rhythm-group-" + sub.dataset.group));
@@ -2702,13 +2781,151 @@
     });
 
     document.getElementById("bpm").addEventListener("input", () => {
-      document.getElementById("bpm-val").textContent = bpm();
-      if (rhythmLoop) {
+      showRhythmBpm();
+      if (rhythmLoop?.recording) {
+        rhythmLoop.recording.setRate();
+      } else if (rhythmLoop) {
         const btn = rhythmLoop.btn;
         stopRhythm();
         startRhythm(btn);
       }
     });
+
+    // --- Recordings (local only) ---
+    // Play-along recordings kept on this computer (local/recordings.js, never published) get a
+    // Recordings subtab. The highlight follows the recording: each phrase lists when its
+    // syllables start in the audio, and between phrases, while the piano answers, the pattern
+    // rests. The Tempo slider slows a recording down without changing its pitch.
+    const RECORDINGS = window.LOCAL_RECORDINGS?.tracks ?? [];
+    const RECORDING_GROUPS = ["a", "b", "c", "c2", "d", "all"];
+
+    // A recording's own tempo, from how long its phrases (two beats each) last.
+    function recordingBpm(track) {
+      const beats = track.phrases.map((row) => (row[row.length - 1] - row[1]) / 2);
+      return Math.round(60 / (beats.reduce((sum, b) => sum + b, 0) / beats.length));
+    }
+
+    // Each phrase with its rhythm, its syllables' start times and the step it starts on: a
+    // phrase that is half a rhythm (Hann fer) leaves the other half (Hún fer) to the next one.
+    function recordingPlan(track) {
+      const rhythmIds = track.parts
+        ? track.parts.flatMap(([id, count]) => Array(count).fill(id))
+        : track.phrases.map(() => track.rhythm);
+      const played = {};
+      return track.phrases.map((row, i) => {
+        const id = rhythmIds[i];
+        const times = row.slice(1, -1);
+        const firstStep = ((played[id] ?? 0) * times.length) % RHYTHMS[id].steps.length;
+        played[id] = (played[id] ?? 0) + 1;
+        return { rhythm: { ...RHYTHMS[id], id }, note: row[0], times, end: row[row.length - 1], firstStep };
+      });
+    }
+
+    // Where a phrase is played, e.g. "Open A string" or "D · A string, 3rd finger".
+    function recordingNoteText(note) {
+      if (!note) return "";
+      const where = fingeringText(note);
+      return OPEN_STRING[note] ? capitalize(where) : `${noteLabel(note)} · ${where}`;
+    }
+
+    // Phrase `i` (past the last one: the piano's ending), and its syllable `step` (-1: not yet).
+    function renderRecording(plan, i, step) {
+      const phrase = plan[i];
+      if (phrase && step >= 0) {
+        renderRhythmDisplay(phrase.rhythm, phrase.firstStep + step, { caption: recordingNoteText(phrase.note) || " " });
+        return;
+      }
+      const prev = plan[i - 1];
+      const next = phrase ? recordingNoteText(phrase.note) : "";
+      let caption = " ";
+      if (phrase && !prev) caption = next ? `Get ready &mdash; ${next}` : "Get ready";
+      else if (phrase) caption = next && next !== recordingNoteText(prev.note) ? `Rest &mdash; next: ${next}` : "Rest";
+      renderRhythmDisplay((phrase ?? prev).rhythm, -1, { caption, resting: true });
+    }
+
+    function startRecording(btn) {
+      stopPitchListener();
+      stopRhythm();
+      stopTone();
+
+      const track = RECORDINGS[btn.dataset.recording];
+      const plan = recordingPlan(track);
+      const full = recordingBpm(track);
+      const audio = new Audio(window.LOCAL_RECORDINGS.folder + track.file);
+      audio.preservesPitch = true;
+      let frameId = 0;
+      let shown = "";
+
+      // Every recording opens at its own tempo; the slider goes from half of it to a bit faster.
+      const slider = document.getElementById("bpm");
+      slider.min = Math.round(full / 2);
+      slider.max = Math.round(full * 1.25);
+      slider.value = full;
+      const setRate = () => { audio.playbackRate = bpm() / full; };
+      setRate();
+
+      // Each frame finds the phrase and syllable at the recording's current time; the display
+      // only changes when they do.
+      function frame() {
+        const t = audio.currentTime;
+        let i = plan.findIndex((phrase) => t < phrase.end);
+        if (i < 0) i = plan.length;
+        const step = i < plan.length ? plan[i].times.findLastIndex((start) => start <= t) : -1;
+        if (`${i}:${step}` !== shown) {
+          shown = `${i}:${step}`;
+          renderRecording(plan, i, step);
+        }
+        frameId = requestAnimationFrame(frame);
+      }
+
+      btn.classList.add("active");
+      rhythmLoop = {
+        btn,
+        recording: { full, setRate },
+        stop() {
+          cancelAnimationFrame(frameId);
+          audio.pause();
+        },
+      };
+      showRhythmBpm();
+      audio.addEventListener("ended", () => {
+        if (rhythmLoop?.btn === btn) stopRhythm();
+      });
+      audio.addEventListener("error", () => {
+        if (rhythmLoop?.btn !== btn) return;
+        stopRhythm();
+        document.getElementById("rhythm-display").textContent = `Couldn't load ${track.file}`;
+      });
+      audio.play();
+      frame();
+    }
+
+    if (RECORDINGS.length) {
+      const group = document.getElementById("rhythm-group-recordings");
+      for (const id of RECORDING_GROUPS) {
+        const tracks = RECORDINGS.map((track, i) => ({ track, i })).filter(({ track }) => track.rhythm === id);
+        if (!tracks.length) continue;
+        const card = document.querySelector(`.card-btn[data-rhythm="${id}"]`);
+        const set = document.createElement("div");
+        set.className = "rec-set";
+        if (card) set.style.setProperty("--accent", getComputedStyle(card).getPropertyValue("--accent"));
+        const icon = card ? card.querySelector(".icon").textContent : "&#9835;";
+        const name = card ? RHYTHMS[id].name : "All five rhythms";
+        const chips = tracks.map(({ track, i }) => `<button type="button" class="chip rec-chip" data-recording="${i}">${track.name}</button>`);
+        set.innerHTML = `
+          <div class="rec-head"><span class="icon">${icon}</span><span class="name">${name}</span></div>
+          <div class="chip-row">${chips.join("")}</div>
+        `;
+        group.append(set);
+      }
+      group.querySelectorAll("[data-recording]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (rhythmLoop?.btn === btn) stopRhythm();
+          else startRecording(btn);
+        });
+      });
+      document.querySelector('#panel-rhythms .subtab[data-group="recordings"]').hidden = false;
+    }
 
     // --- Metronome ---
     // Clicks are scheduled a little ahead on the audio clock (a timer checks every 25 ms), so
