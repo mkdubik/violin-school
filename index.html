@@ -441,6 +441,15 @@
       text-align: center;
     }
 
+    /* The seconds left before a rhythm starts. */
+    .rhythm-caption .count {
+      margin-left: 0.4rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #f5f0e8;
+      vertical-align: middle;
+    }
+
     /* Recordings: one card per rhythm, with a chip for each recording of it. */
     .rec-set {
       --accent: #d4a574;
@@ -1116,8 +1125,8 @@
       #panel-rhythms.active {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-areas: "sub sub" "tabs display" "list display" "list ctrl" "list slider" "list hint";
-        grid-template-rows: auto auto auto auto auto 1fr;
+        grid-template-areas: "sub sub" "tabs display" "list display" "list ctrl" "list slider" "list delay" "list hint";
+        grid-template-rows: auto auto auto auto auto auto 1fr;
         align-content: start;
         column-gap: 2rem;
         max-width: 920px;
@@ -1129,6 +1138,7 @@
       #panel-rhythms .rhythm-display { grid-area: display; margin-top: 0; }
       #panel-rhythms .controls { grid-area: ctrl; }
       #panel-rhythms .slider-row { grid-area: slider; }
+      #panel-rhythms #rhythm-delay-row { grid-area: delay; }
       #panel-rhythms .hint { grid-area: hint; }
 
       /* Metronome: the beat and tempo on the left, its settings on the right. */
@@ -1470,6 +1480,12 @@
         <label for="bpm">Tempo</label>
         <input type="range" id="bpm" min="20" max="100" value="36" step="1">
         <span class="value" id="bpm-val">36</span>
+      </div>
+
+      <div class="slider-row" id="rhythm-delay-row">
+        <label for="rhythm-delay">Start delay</label>
+        <input type="range" id="rhythm-delay" min="0" max="10" value="3" step="1">
+        <span class="value" id="rhythm-delay-val">3 s</span>
       </div>
 
       <p class="hint">Bow on each highlighted syllable. Rests are silent — don&rsquo;t bow. Tap again to stop.</p>
@@ -2698,8 +2714,19 @@
       `;
     }
 
-    // `fromRound` starts With piano partway through its rounds (a tempo change carries on there).
-    function startRhythm(btn, { fromRound = 0 } = {}) {
+    function rhythmDelay() {
+      return parseInt(document.getElementById("rhythm-delay").value, 10);
+    }
+
+    // Before a rhythm starts: its pattern dimmed, what to play on, and the seconds left.
+    function showRhythmCountdown(rhythm, secondsLeft, what = "") {
+      const caption = `Get ready${what ? ` &mdash; ${what}` : ""}<span class="count">${secondsLeft}</span>`;
+      renderRhythmDisplay(rhythm, -1, { caption, resting: true });
+    }
+
+    // `fromRound` starts With piano partway through its rounds (a tempo change carries on there);
+    // `delay` is the countdown in seconds before the first note.
+    function startRhythm(btn, { fromRound = 0, delay = rhythmDelay() } = {}) {
       stopPitchListener();
       stopRhythm();
       stopTone();
@@ -2715,7 +2742,8 @@
 
       btn.classList.add("active");
       const caption = rhythm.piano ? "Open E string" : "";
-      renderRhythmDisplay(rhythm, -1, { caption });
+      if (delay) showRhythmCountdown(rhythm, delay, caption);
+      else renderRhythmDisplay(rhythm, -1, { caption });
 
       function scheduleAtAudioTime(audioTime, fn) {
         const delayMs = Math.max(0, (audioTime - getCtx().currentTime) * 1000);
@@ -2786,17 +2814,24 @@
         queueNext(start, offset, playRound);
       }
 
+      // The first round waits out the countdown, a number a second.
+      const begin = getCtx().currentTime + delay + 0.05;
+      for (let s = delay - 1; s > 0; s--) {
+        scheduleAtAudioTime(begin - s, () => showRhythmCountdown(rhythm, s, caption));
+      }
+
       rhythmLoop = {
         btn,
         get round() { return playing; },
+        get counting() { return getCtx().currentTime < begin; },
         stop() {
           cancelled = true;
           timers.forEach(clearTimeout);
           fadeOutBus(out, 0.02);
         },
       };
-      if (rhythm.piano) playRound();
-      else playCycle();
+      if (rhythm.piano) playRound(begin);
+      else playCycle(begin);
     }
 
     function stopRhythm() {
@@ -2855,11 +2890,16 @@
     });
 
     // Letting go of the slider starts a loop's current round again at the new tempo, so the
-    // change is heard at once without going back to the first round.
+    // change is heard at once without going back to the first round; during the countdown it
+    // counts down again.
     document.getElementById("bpm").addEventListener("change", () => {
       if (!rhythmLoop || rhythmLoop.recording) return;
-      const { btn, round } = rhythmLoop;
-      startRhythm(btn, { fromRound: round });
+      const { btn, round, counting } = rhythmLoop;
+      startRhythm(btn, { fromRound: round, delay: counting ? rhythmDelay() : 0 });
+    });
+
+    document.getElementById("rhythm-delay").addEventListener("input", () => {
+      document.getElementById("rhythm-delay-val").textContent = rhythmDelay() + " s";
     });
 
     // --- Recordings (local only) ---
@@ -2957,10 +2997,14 @@
       }
 
       btn.classList.add("active");
+      const delay = rhythmDelay();
+      const timers = [];
+      let started = false;
       const loop = {
         btn,
         recording: { full, setRate },
         stop() {
+          timers.forEach(clearTimeout);
           cancelAnimationFrame(frameId);
           audio.pause();
         },
@@ -2978,8 +3022,30 @@
         document.getElementById("rhythm-display").textContent = `Couldn't play ${track.file}`;
       };
       audio.addEventListener("error", fail);
-      audio.play().catch(fail);
-      frame();
+
+      function begin() {
+        started = true;
+        audio.muted = false;
+        audio.currentTime = 0;
+        audio.play().catch(fail);
+        frame();
+      }
+      if (!delay) {
+        begin();
+        return;
+      }
+      // Started muted within the tap and paused, so the browser lets it play once the countdown,
+      // a number a second, is over.
+      audio.muted = true;
+      audio.play().then(() => {
+        if (!started) audio.pause();
+      }, () => {});
+      const first = plan[0];
+      showRhythmCountdown(first.rhythm, delay, recordingNoteText(first.note));
+      for (let s = delay - 1; s > 0; s--) {
+        timers.push(setTimeout(() => showRhythmCountdown(first.rhythm, s, recordingNoteText(first.note)), (delay - s) * 1000));
+      }
+      timers.push(setTimeout(begin, delay * 1000));
     }
 
     if (RECORDINGS.length) {
