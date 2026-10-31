@@ -2698,7 +2698,8 @@
       `;
     }
 
-    function startRhythm(btn) {
+    // `fromRound` starts With piano partway through its rounds (a tempo change carries on there).
+    function startRhythm(btn, { fromRound = 0 } = {}) {
       stopPitchListener();
       stopRhythm();
       stopTone();
@@ -2747,10 +2748,12 @@
 
       // With piano, one round of PIANO_ROUNDS at a time: the phrase, then the piano's answer.
       const phrases = rhythmPhrases(rhythm);
-      let round = 0;
+      let round = fromRound;
+      let playing = fromRound; // the round sounding now; `round` moves on as the next is queued
 
       function playRound(roundStart) {
         if (cancelled) return;
+        playing = round;
         const beatDur = 60 / bpm();
         const start = roundStart ?? getCtx().currentTime + 0.05;
         const { under, answer } = PIANO_ROUNDS[round];
@@ -2785,6 +2788,7 @@
 
       rhythmLoop = {
         btn,
+        get round() { return playing; },
         stop() {
           cancelled = true;
           timers.forEach(clearTimeout);
@@ -2846,9 +2850,16 @@
 
     document.getElementById("bpm").addEventListener("input", () => {
       showRhythmBpm();
-      // A recording changes speed at once; a loop reads the slider as each round starts, so it
-      // carries on at the new tempo from the next one instead of starting over.
+      // A recording changes speed at once; a loop reads the slider as each round starts.
       rhythmLoop?.recording?.setRate();
+    });
+
+    // Letting go of the slider starts a loop's current round again at the new tempo, so the
+    // change is heard at once without going back to the first round.
+    document.getElementById("bpm").addEventListener("change", () => {
+      if (!rhythmLoop || rhythmLoop.recording) return;
+      const { btn, round } = rhythmLoop;
+      startRhythm(btn, { fromRound: round });
     });
 
     // --- Recordings (local only) ---
@@ -2874,9 +2885,10 @@
         ? track.parts.flatMap(([id, count]) => Array(count).fill(id))
         : track.phrases.map(() => track.rhythm);
       const played = {};
+      const phrasesOf = {};
       return track.phrases.map((row, i) => {
         const id = rhythmIds[i];
-        const phrases = rhythmPhrases(RHYTHMS[id]);
+        const phrases = (phrasesOf[id] ??= rhythmPhrases(RHYTHMS[id]));
         const firstStep = phrases[(played[id] ?? 0) % phrases.length][0];
         played[id] = (played[id] ?? 0) + 1;
         return { rhythm: { ...RHYTHMS[id], id }, note: row[0], times: row.slice(1, -1), end: row[row.length - 1], firstStep };
@@ -2945,7 +2957,7 @@
       }
 
       btn.classList.add("active");
-      rhythmLoop = {
+      const loop = {
         btn,
         recording: { full, setRate },
         stop() {
@@ -2953,13 +2965,15 @@
           audio.pause();
         },
       };
+      rhythmLoop = loop;
       showRhythmBpm();
+      // Each listener checks it is still this playback, not a later one of the same recording.
       audio.addEventListener("ended", () => {
-        if (rhythmLoop?.btn === btn) stopRhythm();
+        if (rhythmLoop === loop) stopRhythm();
       });
       // Not loading, or not starting; a play cut short by Stop or the next recording is fine.
       const fail = () => {
-        if (rhythmLoop?.btn !== btn) return;
+        if (rhythmLoop !== loop) return;
         stopRhythm();
         document.getElementById("rhythm-display").textContent = `Couldn't play ${track.file}`;
       };
