@@ -1198,7 +1198,6 @@
       .piece-controls .controls { grid-column: 1; grid-row: 1; margin: 0; }
       .piece-controls .controls button { padding: 0.5rem 1rem; white-space: nowrap; }
       .piece-controls #piece-sound { grid-column: 1; grid-row: 2; margin: 0; }
-      .piece-controls #piece-part { grid-column: 1; grid-row: 3; margin: 0; }
       .piece-controls .check-row { grid-column: 2; grid-row: 3; margin: 0; }
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
@@ -1558,11 +1557,6 @@
             <button type="button" class="chip" data-voice="second" aria-pressed="false">2nd violin</button>
             <button type="button" class="chip" data-voice="piano" aria-pressed="false">Piano</button>
             <button type="button" class="chip active" data-voice="drone" aria-pressed="true">Drone</button>
-          </div>
-          <div class="chip-row" id="piece-part" title="Which part the sheet shows, for playing it yourself" hidden>
-            <span class="chip-label">Sheet</span>
-            <button type="button" class="chip active" data-piece-part="first">Melody</button>
-            <button type="button" class="chip" data-piece-part="second">2nd violin</button>
           </div>
           <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
             <input type="checkbox" id="fourth-finger"> Show 4th finger
@@ -4292,7 +4286,6 @@
     let activePieceId = null;
     let piecePlayback = null;
     let pausedPlayback = null; // { pass, slot } while paused; resume starts at the highlighted note
-    let sheetPart = "first"; // the part on the sheet: "first" (the melody) or "second" (2nd violin)
     let flatNotes = [];
     let loopBars = null; // the bars Loop repeats, { first, last } as bar indexes
     let loopPick = null; // "first" while Loop waits for the passage's first note, then { first }
@@ -4520,13 +4513,6 @@
         if (!best || total < best.total) best = { n, total };
       }
       return best ? best.n : null;
-    }
-
-    // The piece as the sheet shows it: its 2nd violin part in place of the melody while that is
-    // the part being read (the bars, tempo and repeats are the same).
-    function shownPiece(piece) {
-      const second = sheetPart === "second" && secondPart(piece);
-      return second ? { ...piece, measures: second } : piece;
     }
 
     // Rests filling `beats`, longest first, so each has a sign of its own.
@@ -4816,7 +4802,7 @@
     let sheetHighlight = -1;
 
     function renderSheet(pieceId, highlightIndex = -1) {
-      const piece = shownPiece(PIECES[pieceId]);
+      const piece = PIECES[pieceId];
       const wrap = document.getElementById("sheet-wrap");
       const layout = sheetLayoutFor(piece);
       const { padL, padR, staffH, noteRx, noteRy, stemLen, beamW, clefSize } = layout;
@@ -5158,7 +5144,7 @@
 
     // One short line for each part of the symbol (and the marks around it) on the sheet.
     function noteSymbolFacts(index) {
-      const piece = shownPiece(PIECES[activePieceId]);
+      const piece = PIECES[activePieceId];
       const note = flatNotes[index];
       const prev = flatNotes[index - 1];
       const next = flatNotes[index + 1];
@@ -5634,7 +5620,7 @@
       const piece = PIECES[pieceId];
       if (!piece) return;
       activePieceId = pieceId;
-      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
+      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
       loopBars = null;
       loopPick = null;
       updateLoopUi();
@@ -5664,7 +5650,7 @@
       try { localStorage.setItem("fidluaefing-fourth-finger", showFourthFinger ? "1" : "0"); } catch {}
       const piece = PIECES[activePieceId];
       if (!piece) return;
-      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
+      flatNotes = flattenMeasures(piece.measures, piece.beamBeats);
       setNowPlaying(focusedNoteIndex, document.getElementById("now-playing").classList.contains("live"));
       renderSheet(activePieceId, sheetHighlight);
       reserveNotePanelHeights();
@@ -5812,15 +5798,13 @@
       startPiecePlayback({ fromIndex: index, fromPass: pass, fromSlot: slot, countdown: !started });
     });
 
-    // The Sound chips show the parts a piece has, and the Sheet chips only when it has a 2nd part.
+    // The Sound chips show the parts a piece has.
     function showPartChips(piece) {
       const second = !!secondPart(piece);
       document.getElementById("piece-sound").hidden = !piece.piano && !second && !piece.drone;
       document.querySelector('[data-voice="second"]').hidden = !second;
       document.querySelector('[data-voice="piano"]').hidden = !piece.piano;
       document.querySelector('[data-voice="drone"]').hidden = !piece.drone;
-      document.getElementById("piece-part").hidden = !second;
-      document.querySelectorAll("[data-piece-part]").forEach((chip) => chip.classList.toggle("active", chip.dataset.piecePart === (second ? sheetPart : "first")));
     }
 
     // Each Sound chip turns its part on or off, mid-piece too: the melody with the piano is a
@@ -5833,18 +5817,6 @@
         chip.setAttribute("aria-pressed", on);
         piecePlayback?.drone?.gain.gain.setTargetAtTime(voiceOn(PIECES[activePieceId], "drone") ? 1 : 0, getCtx().currentTime, 0.05);
       });
-    });
-
-    // Reading the 2nd violin part puts it on the sheet: highlighted, tappable and listened to.
-    chipGroup("[data-piece-part]", (data) => {
-      sheetPart = data.piecePart;
-      const piece = PIECES[activePieceId];
-      stopPiecePlayback();
-      flatNotes = flattenMeasures(shownPiece(piece).measures, piece.beamBeats);
-      document.getElementById("fourth-finger-row").hidden = !fourthFingerEs(flatNotes).length;
-      setNowPlaying(-1, false);
-      renderSheet(activePieceId, -1);
-      reserveNotePanelHeights();
     });
 
 
