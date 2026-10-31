@@ -432,6 +432,9 @@
       color: var(--accent, #c47a3a);
     }
 
+    /* In one column the pattern and its controls just follow the list (see the wide layout). */
+    .rhythm-side { display: contents; }
+
     /* While a recording's piano answers: the pattern waits, dimmed, for the next phrase. */
     .rhythm-display.resting :is(.syllables, .notation) { opacity: 0.45; }
 
@@ -1121,12 +1124,13 @@
       #panel-tuner .listen-block { grid-area: listen; margin-top: 0; align-self: start; }
       #panel-tuner .hint { grid-area: hint; }
 
-      /* Rhythms: the list on the left, the beat pattern and its controls on the right. */
+      /* Rhythms: the list on the left, the beat pattern and its controls on the right, held at
+         the top while a long list (the recordings) scrolls past. */
       #panel-rhythms.active {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-areas: "sub sub" "tabs display" "list display" "list ctrl" "list slider" "list delay" "list hint";
-        grid-template-rows: auto auto auto auto auto auto 1fr;
+        grid-template-areas: "sub sub" "tabs side" "list side";
+        grid-template-rows: auto auto 1fr;
         align-content: start;
         column-gap: 2rem;
         max-width: 920px;
@@ -1135,11 +1139,14 @@
       #panel-rhythms .subtitle { grid-area: sub; }
       #panel-rhythms .subtabs { grid-area: tabs; }
       #panel-rhythms .rhythm-group { grid-area: list; align-self: start; }
-      #panel-rhythms .rhythm-display { grid-area: display; margin-top: 0; }
-      #panel-rhythms .controls { grid-area: ctrl; }
-      #panel-rhythms .slider-row { grid-area: slider; }
-      #panel-rhythms #rhythm-delay-row { grid-area: delay; }
-      #panel-rhythms .hint { grid-area: hint; }
+      #panel-rhythms .rhythm-side {
+        display: block;
+        grid-area: side;
+        align-self: start;
+        position: sticky;
+        top: 0;
+      }
+      #panel-rhythms .rhythm-display { margin-top: 0; }
 
       /* Metronome: the beat and tempo on the left, its settings on the right. */
       #panel-metronome.active {
@@ -1424,27 +1431,30 @@
       <!-- Filled from local/recordings.js when it is there. -->
       <div class="btn-list rhythm-group" id="rhythm-group-recordings"></div>
 
-      <div class="rhythm-display empty" id="rhythm-display">
-        Select a rhythm to see the beat pattern
-      </div>
+      <!-- The pattern and its controls: beside the list, in view while it scrolls, on wide screens. -->
+      <div class="rhythm-side">
+        <div class="rhythm-display empty" id="rhythm-display">
+          Select a rhythm to see the beat pattern
+        </div>
 
-      <div class="controls">
-        <button id="stop-rhythm">Stop</button>
-      </div>
+        <div class="controls">
+          <button id="stop-rhythm">Stop</button>
+        </div>
 
-      <div class="slider-row">
-        <label for="bpm">Tempo</label>
-        <input type="range" id="bpm" min="20" max="100" value="36" step="1">
-        <span class="value" id="bpm-val">36</span>
-      </div>
+        <div class="slider-row">
+          <label for="bpm">Tempo</label>
+          <input type="range" id="bpm" min="20" max="100" value="36" step="1">
+          <span class="value" id="bpm-val">36</span>
+        </div>
 
-      <div class="slider-row" id="rhythm-delay-row">
-        <label for="rhythm-delay">Start delay</label>
-        <input type="range" id="rhythm-delay" min="0" max="10" value="3" step="1">
-        <span class="value" id="rhythm-delay-val">3 s</span>
-      </div>
+        <div class="slider-row" id="rhythm-delay-row">
+          <label for="rhythm-delay">Start delay</label>
+          <input type="range" id="rhythm-delay" min="0" max="10" value="3" step="1">
+          <span class="value" id="rhythm-delay-val">3 s</span>
+        </div>
 
-      <p class="hint">Bow on each highlighted syllable. Rests are silent — don&rsquo;t bow. Tap again to stop.</p>
+        <p class="hint">Bow on each highlighted syllable. Rests are silent — don&rsquo;t bow. Tap again to stop.</p>
+      </div>
     </div>
 
     <!-- Metronome -->
