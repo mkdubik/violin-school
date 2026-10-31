@@ -2846,13 +2846,9 @@
 
     document.getElementById("bpm").addEventListener("input", () => {
       showRhythmBpm();
-      if (rhythmLoop?.recording) {
-        rhythmLoop.recording.setRate();
-      } else if (rhythmLoop) {
-        const btn = rhythmLoop.btn;
-        stopRhythm();
-        startRhythm(btn);
-      }
+      // A recording changes speed at once; a loop reads the slider as each round starts, so it
+      // carries on at the new tempo from the next one instead of starting over.
+      rhythmLoop?.recording?.setRate();
     });
 
     // --- Recordings (local only) ---
@@ -2862,6 +2858,8 @@
     // rests. The Tempo slider slows a recording down without changing its pitch.
     const RECORDINGS = window.LOCAL_RECORDINGS?.tracks ?? [];
     const RECORDING_GROUPS = ["a", "b", "c", "c2", "d", "all"];
+    // How fast recordings play, as a share of their own tempo; it carries over to the next one.
+    let recordingSpeed = 1;
 
     // A recording's own tempo, from how long its phrases (two beats each) last.
     function recordingBpm(track) {
@@ -2869,8 +2867,8 @@
       return Math.round(60 / (beats.reduce((sum, b) => sum + b, 0) / beats.length));
     }
 
-    // Each phrase with its rhythm, its syllables' start times and the step it starts on: a
-    // phrase that is half a rhythm (Hann fer) leaves the other half (Hún fer) to the next one.
+    // Each phrase with its rhythm, its syllables' start times and the step it starts on: the
+    // rhythm's phrases take turns, so Hann fer leaves Hún fer to the next one.
     function recordingPlan(track) {
       const rhythmIds = track.parts
         ? track.parts.flatMap(([id, count]) => Array(count).fill(id))
@@ -2878,10 +2876,10 @@
       const played = {};
       return track.phrases.map((row, i) => {
         const id = rhythmIds[i];
-        const times = row.slice(1, -1);
-        const firstStep = ((played[id] ?? 0) * times.length) % RHYTHMS[id].steps.length;
+        const phrases = rhythmPhrases(RHYTHMS[id]);
+        const firstStep = phrases[(played[id] ?? 0) % phrases.length][0];
         played[id] = (played[id] ?? 0) + 1;
-        return { rhythm: { ...RHYTHMS[id], id }, note: row[0], times, end: row[row.length - 1], firstStep };
+        return { rhythm: { ...RHYTHMS[id], id }, note: row[0], times: row.slice(1, -1), end: row[row.length - 1], firstStep };
       });
     }
 
@@ -2920,12 +2918,16 @@
       let frameId = 0;
       let shown = "";
 
-      // Every recording opens at its own tempo; the slider goes from half of it to a bit faster.
+      // The slider goes from half the recording's own tempo to a bit faster, and starts at the
+      // speed the last recording played at (its own tempo at first).
       const slider = document.getElementById("bpm");
       slider.min = Math.round(full / 2);
       slider.max = Math.round(full * 1.25);
-      slider.value = full;
-      const setRate = () => { audio.playbackRate = bpm() / full; };
+      slider.value = Math.round(full * recordingSpeed);
+      const setRate = () => {
+        recordingSpeed = bpm() / full;
+        audio.playbackRate = recordingSpeed;
+      };
       setRate();
 
       // Each frame finds the phrase and syllable at the recording's current time; the display
@@ -2955,12 +2957,14 @@
       audio.addEventListener("ended", () => {
         if (rhythmLoop?.btn === btn) stopRhythm();
       });
-      audio.addEventListener("error", () => {
+      // Not loading, or not starting; a play cut short by Stop or the next recording is fine.
+      const fail = () => {
         if (rhythmLoop?.btn !== btn) return;
         stopRhythm();
-        document.getElementById("rhythm-display").textContent = `Couldn't load ${track.file}`;
-      });
-      audio.play();
+        document.getElementById("rhythm-display").textContent = `Couldn't play ${track.file}`;
+      };
+      audio.addEventListener("error", fail);
+      audio.play().catch(fail);
       frame();
     }
 
