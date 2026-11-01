@@ -4226,7 +4226,7 @@
         piano: ["Am", "Am", "E", "E", "Am Dm", "G C", "E Am", "Dm E", "Am Dm", "G C", "E Am", "Dm E Am -"],
         sheetLayout: { systems: [4, 4, 4] },
       },
-      // The Scales songbook: A, D and G major in first position, one octave, and two where it fits.
+      // The Scales songbook: A, D and G major in first position, one octave (G major in both octaves), and two where it fits.
       scaleA1: scale("A major scale", "One octave · A and E strings", "A major", "Scale, one octave", "#4a8fc4",
         ["A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
       arpeggioA1: scale("A major arpeggio", "One octave · A and E strings", "A major", "Arpeggio, one octave", "#6a7ec4",
@@ -4239,6 +4239,10 @@
         ["D4", "E4", "F#4", "G4", "A4", "B4", "C#5", "D5"], ["D3", "A3"]),
       arpeggioD1: scale("D major arpeggio", "One octave · D and A strings", "D major", "Arpeggio, one octave", "#4a9e7a",
         ["D4", "F#4", "A4", "D5"], ["D3", "A3"]),
+      scaleG0: scale("G major scale, from open G", "One octave · G and D strings", "G major", "Scale, one octave", "#c47a3a",
+        ["G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4"], ["G3", "D4"]),
+      arpeggioG0: scale("G major arpeggio, from open G", "One octave · G and D strings", "G major", "Arpeggio, one octave", "#c4826a",
+        ["G3", "B3", "D4", "G4"], ["G3", "D4"]),
       scaleG1: scale("G major scale", "One octave · D, A and E strings", "G major", "Scale, one octave", "#c47a3a",
         ["G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"], ["G3", "D4"]),
       arpeggioG1: scale("G major arpeggio", "One octave · D, A and E strings", "G major", "Arpeggio, one octave", "#c4826a",
@@ -4305,7 +4309,7 @@
         pieces: [
           { title: "A major", detail: "Scale and arpeggio, one and two octaves", accent: "#4a8fc4", pieces: ["scaleA1", "arpeggioA1", "scaleA2", "arpeggioA2"] },
           { title: "D major", detail: "Scale and arpeggio, one octave", accent: "#5a9e6f", pieces: ["scaleD1", "arpeggioD1"] },
-          { title: "G major", detail: "Scale and arpeggio, one and two octaves", accent: "#c47a3a", pieces: ["scaleG1", "arpeggioG1", "scaleG2", "arpeggioG2"] },
+          { title: "G major", detail: "Scale and arpeggio, one and two octaves", accent: "#c47a3a", pieces: ["scaleG0", "arpeggioG0", "scaleG1", "arpeggioG1", "scaleG2", "arpeggioG2"] },
         ],
       },
     ];
