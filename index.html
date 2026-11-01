@@ -1834,7 +1834,6 @@
       A7: { bass: "A2", chord: ["G3", "C#4", "E4"] },
       Am: { bass: "A2", chord: ["A3", "C4", "E4"] },
       Dm: { bass: "D3", chord: ["F3", "A3", "D4"] },
-      Gm: { bass: "G2", chord: ["G3", "A#3", "D4"] },
       F: { bass: "F2", chord: ["A3", "C4", "F4"] },
       Em: { bass: "E2", chord: ["G3", "B3", "E4"] },
       Bm: { bass: "B2", chord: ["F#3", "B3", "D4"] },
@@ -4194,36 +4193,37 @@
         sheetLayout: { systems: [4, 4, 4] },
       },
       // Sigvaldi Kaldalóns's riding song to Grímur Thomsen's poem (1916), read from the Klingende
-      // Brücke song sheet, which has it in D minor with chords: D4 to C5 on the D and A strings,
-      // and since the tune never touches B, no accidental. The first four bars repeat for the
-      // verse's two couplets; the refrain's first and second endings are written out, with the
-      // sheet's slur on "minn" as two notes. The chords follow the sheet.
+      // Brücke song sheet (D minor, with chords) and checked against the Helbling choral edition
+      // (E minor). Here a fifth up in A minor, where it needs no accidental: A4 to F5 on the A
+      // and E strings. The first four bars repeat for the verse's two couplets; the refrain's
+      // first and second endings are written out, with the sheet's slur on "minn" as two notes.
+      // The chords follow the song sheet.
       sprengisandur: {
         title: "Á Sprengisandi",
-        detail: "Sigvaldi Kaldalóns · D minor · 4/4",
-        meta: "Ríðum, ríðum · Sigvaldi Kaldalóns, 1916 · words by Grímur Thomsen · D minor · 4/4 · first four bars repeated",
+        detail: "Sigvaldi Kaldalóns · A minor · 4/4",
+        meta: "Ríðum, ríðum · Sigvaldi Kaldalóns, 1916 · words by Grímur Thomsen · A minor (sung in G minor) · 4/4 · first four bars repeated",
         accent: "#6a8ea4",
         tempo: [{ bar: 1, bpm: 100 }],
         sections: [{ from: 1, to: 4, repeat: true }, { from: 5, to: 12 }],
         fingerHints: {
-          F4: "Low 2nd finger (D string)",
           C5: "Low 2nd finger (A string)",
+          F5: "Low 1st finger (E string)",
         },
         measures: [
-          ["D4", "F4", "D4", "F4"],
-          [e("D4"), e("F4"), e("F4"), e("F4"), "D4", "F4"],
-          ["E4", "A4", "E4", "A4"],
-          [e("E4"), e("F4"), e("G4"), e("F4"), "E4", REST],
-          ["A4", "A4", "C5", "C5"],
-          ["C5", e("C5"), e("C5"), "C5", "A4"],
-          [e("G4"), e("G4"), e("G4"), e("G4"), "G4", e("F4"), e("F4")],
-          ["F4", "F4", "E4", REST],
-          ["A4", "A4", "C5", "C5"],
-          ["C5", e("C5"), e("C5"), "C5", "A4"],
-          [e("G4"), e("G4"), e("G4"), e("G4"), "G4", e("F4"), e("F4")],
-          ["F4", "E4", "D4", REST],
+          ["A4", "C5", "A4", "C5"],
+          [e("A4"), e("C5"), e("D5"), e("C5"), "A4", "C5"],
+          ["B4", "E5", "B4", "E5"],
+          [e("B4"), e("C5"), e("D5"), e("C5"), "B4", REST],
+          ["E5", "E5", "F5", "F5"],
+          ["F5", e("F5"), e("F5"), "F5", "E5"],
+          [e("D5"), e("D5"), e("D5"), e("D5"), "D5", e("C5"), e("C5")],
+          ["C5", "C5", "B4", REST],
+          ["E5", "E5", "F5", "F5"],
+          ["F5", e("F5"), e("F5"), "F5", "E5"],
+          [e("D5"), e("D5"), e("D5"), e("D5"), "D5", e("C5"), e("C5")],
+          ["C5", "B4", "A4", REST],
         ],
-        piano: ["Dm", "Dm", "A", "A", "Dm Gm", "C F", "A Dm", "Gm A", "Dm Gm", "C F", "A Dm", "Gm A Dm -"],
+        piano: ["Am", "Am", "E", "E", "Am Dm", "G C", "E Am", "Dm E", "Am Dm", "G C", "E Am", "Dm E Am -"],
         sheetLayout: { systems: [4, 4, 4] },
       },
       // The Scales songbook: A, D and G major in first position, one octave, and two where it fits.
