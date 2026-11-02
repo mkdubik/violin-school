@@ -1429,7 +1429,7 @@
         </button>
       </div>
 
-      <!-- Filled from local/recordings.js when it is there. -->
+      <!-- Filled from recordings.js. -->
       <div class="btn-list rhythm-group" id="rhythm-group-recordings"></div>
 
       <!-- The pattern and its controls: beside the list, in view while it scrolls, on wide screens. -->
@@ -1822,9 +1822,9 @@
     </div>
   </div>
 
-  <!-- Local-only songbooks and recordings (not published); see local/songbooks.js and local/recordings.js. -->
+  <!-- Local-only songbooks (not published); see local/songbooks.js. -->
   <script src="local/songbooks.js"></script>
-  <script src="local/recordings.js"></script>
+  <script src="recordings.js"></script>
   <script>
     // Piano chords voiced under the violin: a low bass note, then the chord. A, D, E and E7
     // carry the A major pieces; G, C, D7, A7 and Am the G major ones. The Heartstrings pieces
@@ -2799,12 +2799,11 @@
       document.getElementById("rhythm-delay-val").textContent = rhythmDelay() + " s";
     });
 
-    // --- Recordings (local only) ---
-    // Play-along recordings kept on this computer (local/recordings.js, never published) get a
-    // Recordings subtab. The highlight follows the recording: each phrase lists when its
+    // --- Recordings ---
+    // Play-along recordings (recordings.js) get a Recordings subtab. The highlight follows the recording: each phrase lists when its
     // syllables start in the audio, and between phrases, while the piano answers, the pattern
     // rests. The Tempo slider slows a recording down without changing its pitch.
-    const RECORDINGS = window.LOCAL_RECORDINGS?.tracks ?? [];
+    const RECORDINGS = window.PLAYALONG_RECORDINGS?.tracks ?? [];
     const RECORDING_GROUPS = ["a", "b", "c", "c2", "d", "all"];
     // How fast recordings play, as a share of their own tempo; it carries over to the next one.
     let recordingSpeed = 1;
@@ -2862,7 +2861,7 @@
       const track = RECORDINGS[btn.dataset.recording];
       const plan = recordingPlan(track);
       const full = recordingBpm(track);
-      const audio = new Audio(window.LOCAL_RECORDINGS.folder + track.file);
+      const audio = new Audio(window.PLAYALONG_RECORDINGS.folder + track.file);
       audio.preservesPitch = true;
       let frameId = 0;
       let shown = "";
