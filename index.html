@@ -4763,6 +4763,33 @@
       return { systems, natural, contentRight, width: contentRight + layout.padR };
     }
 
+    // How far below each line's staff top its down stems reach, with the 3 under a triplet's
+    // beam. Stems point the way renderSheet draws them: a beamed group follows the note
+    // farthest from the middle line, and its sloped beam can lower the ends by up to 5.
+    function downStemReach(natural, { stemLen }) {
+      const lineOf = natural.flatMap((s, si) => s.notes.map(() => si));
+      const reach = natural.map(() => 0);
+      const groups = new Map();
+      flatNotes.forEach((note, gi) => {
+        const key = note.beam < 0 ? `note ${gi}` : note.beam;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(gi);
+      });
+      groups.forEach((group) => {
+        const ys = group.map((gi) => pitchToStaffY(flatNotes[gi].pitch, 0));
+        if (Math.max(...ys) - 20 > 20 - Math.min(...ys)) return;
+        const ends = group.map((gi, k) => {
+          const note = flatNotes[gi];
+          const base = note.dotted ? note.beats / 1.5 : note.beats;
+          return base >= 4 ? ys[k] : ys[k] + (base === 0.25 ? stemLen + 5 : stemLen);
+        });
+        const end = Math.max(...ends) + (group.length > 1 ? 5 : 0)
+          + (group.length > 1 && group.some((gi) => flatNotes[gi].triplet) ? 12 : 0);
+        group.forEach((gi) => { reach[lineOf[gi]] = Math.max(reach[lineOf[gi]], end); });
+      });
+      return reach;
+    }
+
     // Where each line's staff starts, and the sheet's total height. A line whose notes climb
     // high above the staff (ledger lines, plus room for a tie) moves down so they don't run
     // into the line above; one whose notes hang far below it pushes the next line down the
@@ -4772,7 +4799,8 @@
       const systemYs = (si) => natural[si].notes.map((n) => pitchToStaffY(n.pitch, 0));
       const lowest = (si) => Math.max(staffH, ...systemYs(si));
       // Note names go under the lowest note and any down stem, on one baseline per line.
-      const nameY = (si) => Math.max(staffH + 7, lowest(si) + noteRy) + 12;
+      const reach = showNoteNames ? downStemReach(natural, layout) : [];
+      const nameY = (si) => Math.max(staffH + 2, lowest(si) + noteRy, reach[si]) + 11;
       const bottom = (si) => (showNoteNames ? nameY(si) + 3 : lowest(si) + noteRy);
       // Tempo marks sit above the first line, so it starts lower.
       const markRoom = piece.tempo?.length || piece.labels?.length ? 16 + fingeringRoom() : 0;
@@ -5106,7 +5134,7 @@
         const name = !showNoteNames || flatNotes[gi - 1]?.tie ? ""
           : `<text x="${pos.x}" y="${nameYs[pos.systemIndex]}" font-size="9.5" font-weight="${hit ? 700 : 500}" fill="${hit ? accent : "#5a5650"}" text-anchor="middle" font-family="-apple-system, sans-serif">${noteName(note.pitch)}</text>`;
         const hitTop = Math.min(stemY2, y - noteRy) - 4;
-        const hitBottom = Math.max(stemY2, y + noteRy) + 4;
+        const hitBottom = name ? nameYs[pos.systemIndex] + 3 : Math.max(stemY2, y + noteRy) + 4;
         // A whole note's head is rounder and wider, with a thicker rim.
         const head = hd.whole
           ? `<ellipse cx="${pos.x}" cy="${y}" rx="${noteRx + 1.4}" ry="${noteRy + 0.4}" fill="${fill}" stroke="${color}" stroke-width="2.4"/>`
