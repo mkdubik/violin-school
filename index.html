@@ -535,6 +535,7 @@
     .check-row[hidden] { display: none; }
     .check-rows { display: flex; flex-wrap: wrap; column-gap: 1.25rem; }
     .check-row input { accent-color: #c47a3a; margin: 0; }
+    .check-row:has(input:disabled) { opacity: 0.45; cursor: default; }
 
     .slider-row input {
       flex: 1;
@@ -1564,7 +1565,7 @@
             <label class="check-row" title="Write each note's letter name under the staff">
               <input type="checkbox" id="note-names"> Show note names
             </label>
-            <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
+            <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string">
               <input type="checkbox" id="fourth-finger"> Show 4th finger
             </label>
           </div>
@@ -5721,7 +5722,12 @@
       document.getElementById("piece-meta").textContent = piece.meta;
       document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
       showPartChips(piece);
-      document.getElementById("fourth-finger-row").hidden = !fourthFingerEs(flatNotes).length;
+      // The box stays in place on every piece, greyed out where no E falls between A-string notes.
+      const hasFourthFingerEs = fourthFingerEs(flatNotes).length > 0;
+      document.getElementById("fourth-finger").disabled = !hasFourthFingerEs;
+      document.getElementById("fourth-finger-row").title = hasFourthFingerEs
+        ? "Mark the Es played with the 4th finger on the A string"
+        : "No E in this piece falls between two notes on the A string";
       // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
       if (piece.tempo?.length) {
         const slider = document.getElementById("piece-bpm");
