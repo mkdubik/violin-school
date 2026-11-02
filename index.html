@@ -2800,9 +2800,10 @@
     });
 
     // --- Recordings ---
-    // Play-along recordings (recordings.js) get a Recordings subtab. The highlight follows the recording: each phrase lists when its
-    // syllables start in the audio, and between phrases, while the piano answers, the pattern
-    // rests. The Tempo slider slows a recording down without changing its pitch.
+    // Play-along recordings (recordings.js) get a Recordings subtab. The highlight follows the
+    // recording: each phrase lists when its syllables start in the audio, and between phrases,
+    // while the piano answers, the pattern rests. The Tempo slider slows a recording down without
+    // changing its pitch.
     const RECORDINGS = window.PLAYALONG_RECORDINGS?.tracks ?? [];
     const RECORDING_GROUPS = ["a", "b", "c", "c2", "d", "all"];
     // How fast recordings play, as a share of their own tempo; it carries over to the next one.
