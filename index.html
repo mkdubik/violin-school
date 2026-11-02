@@ -533,6 +533,7 @@
       cursor: pointer;
     }
     .check-row[hidden] { display: none; }
+    .check-rows { display: flex; flex-wrap: wrap; column-gap: 1.25rem; }
     .check-row input { accent-color: #c47a3a; margin: 0; }
 
     .slider-row input {
@@ -1198,7 +1199,8 @@
       .piece-controls .controls { grid-column: 1; grid-row: 1; margin: 0; }
       .piece-controls .controls button { padding: 0.5rem 1rem; white-space: nowrap; }
       .piece-controls #piece-sound { grid-column: 1; grid-row: 2; margin: 0; }
-      .piece-controls .check-row { grid-column: 2; grid-row: 3; margin: 0; }
+      .piece-controls .check-rows { grid-column: 2; grid-row: 3; }
+      .piece-controls .check-row { margin: 0; }
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
       .piece-controls .slider-row input { min-width: 0; }
@@ -1558,9 +1560,14 @@
             <button type="button" class="chip" data-voice="piano" aria-pressed="false">Piano</button>
             <button type="button" class="chip active" data-voice="drone" aria-pressed="true">Drone</button>
           </div>
-          <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
-            <input type="checkbox" id="fourth-finger"> Show 4th finger
-          </label>
+          <div class="check-rows">
+            <label class="check-row" title="Write each note's letter name under the staff">
+              <input type="checkbox" id="note-names"> Show note names
+            </label>
+            <label class="check-row" id="fourth-finger-row" title="Mark the Es played with the 4th finger on the A string" hidden>
+              <input type="checkbox" id="fourth-finger"> Show 4th finger
+            </label>
+          </div>
           <div class="controls">
             <button type="button" id="piece-play">Play</button>
             <button type="button" id="piece-stop">Stop</button>
@@ -4662,6 +4669,10 @@
     let showFourthFinger = false;
     try { showFourthFinger = localStorage.getItem("fidluaefing-fourth-finger") === "1"; } catch {}
 
+    // The "Show note names" box writes each note's letter name in a row under the staff.
+    let showNoteNames = false;
+    try { showNoteNames = localStorage.getItem("fidluaefing-note-names") === "1"; } catch {}
+
     // Fingering numbers sit just above the staff, so tempo marks and words move up over them.
     const fingeringRoom = () => (flatNotes.some((n) => n.finger !== undefined) ? 9 : 0);
 
@@ -4760,17 +4771,24 @@
       const { staffTop, staffH, systemGap, noteRy } = layout;
       const systemYs = (si) => natural[si].notes.map((n) => pitchToStaffY(n.pitch, 0));
       const lowest = (si) => Math.max(staffH, ...systemYs(si));
+      // Note names go under the lowest note and any down stem, on one baseline per line.
+      const nameY = (si) => Math.max(staffH + 7, lowest(si) + noteRy) + 12;
+      const bottom = (si) => (showNoteNames ? nameY(si) + 3 : lowest(si) + noteRy);
       // Tempo marks sit above the first line, so it starts lower.
       const markRoom = piece.tempo?.length || piece.labels?.length ? 16 + fingeringRoom() : 0;
       const systemTops = [];
       natural.forEach((_, si) => {
         const highest = Math.min(0, ...systemYs(si));
         const extra = Math.max(0, -highest + noteRy + 8 - 22);
-        const below = si === 0 ? 0 : Math.max(0, lowest(si - 1) + noteRy + 8 - staffH - 22);
+        const below = si === 0 ? 0 : Math.max(0, bottom(si - 1) + 8 - staffH - 22);
         systemTops.push((si === 0 ? staffTop + markRoom : systemTops[si - 1] + systemGap + below) + extra);
       });
       const last = natural.length - 1;
-      return { systemTops, height: systemTops[last] + Math.max(staffH + 14, lowest(last) + noteRy + 4) };
+      return {
+        systemTops,
+        nameYs: systemTops.map((top, si) => top + nameY(si)),
+        height: systemTops[last] + Math.max(staffH + 14, bottom(last) + 4),
+      };
     }
 
     // Line breaks with every `k` lines of `counts` (as layoutSystems reads it) joined into one.
@@ -4871,7 +4889,7 @@
       });
 
       const maxWidth = contentRight + padR;
-      const { systemTops, height } = sheetVerticals(piece, natural, layout);
+      const { systemTops, nameYs, height } = sheetVerticals(piece, natural, layout);
       const staffRight = contentRight + 1;
 
       let lines = "";
@@ -5084,6 +5102,9 @@
         const fingerY = Math.min(top, stemUp ? stemY2 : y - noteRy) - 4;
         const fingering = note.finger === undefined ? ""
           : `<text x="${pos.x}" y="${fingerY}" font-size="9" font-weight="700" fill="${color}" text-anchor="middle" font-family="-apple-system, sans-serif">${note.finger}</text>`;
+        // A note tied over from the one before is the same note held, so it isn't named again.
+        const name = !showNoteNames || flatNotes[gi - 1]?.tie ? ""
+          : `<text x="${pos.x}" y="${nameYs[pos.systemIndex]}" font-size="9.5" font-weight="${hit ? 700 : 500}" fill="${hit ? accent : "#5a5650"}" text-anchor="middle" font-family="-apple-system, sans-serif">${noteName(note.pitch)}</text>`;
         const hitTop = Math.min(stemY2, y - noteRy) - 4;
         const hitBottom = Math.max(stemY2, y + noteRy) + 4;
         // A whole note's head is rounder and wider, with a thicker rim.
@@ -5099,6 +5120,7 @@
           ${flag}
           ${dot}
           ${fingering}
+          ${name}
         </g>`;
       });
 
@@ -5694,6 +5716,14 @@
       setNowPlaying(focusedNoteIndex, document.getElementById("now-playing").classList.contains("live"));
       renderSheet(activePieceId, sheetHighlight);
       reserveNotePanelHeights();
+    });
+
+    const noteNamesBox = document.getElementById("note-names");
+    noteNamesBox.checked = showNoteNames;
+    noteNamesBox.addEventListener("change", () => {
+      showNoteNames = noteNamesBox.checked;
+      try { localStorage.setItem("fidluaefing-note-names", showNoteNames ? "1" : "0"); } catch {}
+      if (activePieceId) renderSheet(activePieceId, sheetHighlight);
     });
 
     function closePiece() {
