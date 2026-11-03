@@ -3176,6 +3176,7 @@
       "D#4": "Low 1st finger (D string)",
       "E#5": "Low 1st finger (E string)",
       "G#3": "Low 1st finger (G string)",
+      C6: "Stretched 4th finger (E string)",
     };
 
     // A measure is a list of notes: "A4" = quarter note, h("A4") = half note, w("A4") = whole
@@ -3195,7 +3196,10 @@
     // range listed again (da capo) again. `labels` puts words over the end of a bar, e.g.
     // [{ bar: 16, text: "Fine" }].
     // Eighth notes are beamed per `beamBeats` beats (default 2, one beam per 2/4 bar); where
-    // that span holds sixteenths or triplets, the beams break at every beat.
+    // that span holds sixteenths or triplets, the beams break at every beat. In 6/8 and 3/8
+    // (`beamBeats: 1.5`) a span is already one beat, a dotted quarter, and stays whole.
+    // `tempoUnit: "eighth"` writes the tempo mark and the Tempo slider's numbers in eighth notes
+    // (♪ = 123), as 6/8 and 3/8 are counted; `bpm` stays in quarter notes.
     const h = (pitch) => ({ pitch, beats: 2 });
     const w = (pitch) => ({ pitch, beats: 4 });
     const e = (pitch) => ({ pitch, beats: 0.5 });
@@ -3210,6 +3214,8 @@
     };
     const tied = (item) => ({ ...noteSpec(item), tie: true });
     const f4 = (item) => ({ ...noteSpec(item), finger: 4 });
+    // Beats per minute as the piece's tempo marks count them: eighths for `tempoUnit: "eighth"`.
+    const tempoScale = (piece) => (piece?.tempoUnit === "eighth" ? 2 : 1);
     const rest = (beats) => ({ rest: true, beats });
     const REST = rest(1);
 
@@ -4674,7 +4680,7 @@
         measure.forEach((item, ni) => {
           const { pitch, beats, rest, dotted, tie, triplet, finger } = noteSpec(item);
           const wide = Math.floor(beat / beamBeats);
-          const span = sixteenthSpans.has(wide) ? `${wide}:${Math.floor(beat)}` : wide;
+          const span = sixteenthSpans.has(wide) && beamBeats % 1 === 0 ? `${wide}:${Math.floor(beat)}` : wide;
           if (!rest && (dotted ? beats / 1.5 : beats) <= 0.5) {
             if (beam < 0 || span !== beamSpan) {
               beam = beamCount++;
@@ -5005,7 +5011,7 @@
       if (piece.tempo?.length) {
         const barStart = (m) => (barXs[m].systemIndex !== barXs[m - 1]?.systemIndex ? padL : barXs[m - 1].x + 5);
         const markY = (m) => systemTops[barXs[m].systemIndex] - 9 - fingeringRoom();
-        const metronome = (m, bpm) => `<text x="${barStart(m)}" y="${markY(m)}" font-size="11" font-weight="700" fill="${ink}" font-family="-apple-system, sans-serif"><tspan font-family="serif" font-weight="400" font-size="13">♩</tspan> = ${Math.round(bpm)}</text>`;
+        const metronome = (m, bpm) => `<text x="${barStart(m)}" y="${markY(m)}" font-size="11" font-weight="700" fill="${ink}" font-family="-apple-system, sans-serif"><tspan font-family="serif" font-weight="400" font-size="13">${piece.tempoUnit === "eighth" ? "♪" : "♩"}</tspan> = ${Math.round(bpm * tempoScale(piece))}</text>`;
         const marks = piece.tempo.map((t) => ({ ...t, m: Math.min(Math.max(t.bar, 1), piece.measures.length) - 1 }));
         tempoEls += metronome(marks[0].m, marks[0].bpm);
         marks.slice(1).forEach((mark, i) => {
@@ -5428,16 +5434,17 @@
     // Open string when possible, otherwise the one string where the note is 1\u20136 half steps up
     // (the E string also takes the 4th finger, 7 up). Null outside first position.
     // `finger` 4 asks for the 4th finger instead of the open string above it. A flat 6 half
-    // steps up (E\u266D on the A string) is a low 4th finger rather than a high 3rd.
+    // steps up (E\u266D on the A string) is a low 4th finger rather than a high 3rd, and C6, 8
+    // up the E string, is the 4th finger stretched.
     function fingerPlacement(pitch, finger) {
       const midi = pitchToMidi(pitch);
       const offsets = FB_STRINGS.map((open) => midi - pitchToMidi(open));
       let string = finger === 4 ? offsets.indexOf(7) : offsets.indexOf(0);
       if (string < 0) string = offsets.findIndex((o) => o >= 1 && o <= 6);
-      if (string < 0 && offsets[3] === 7) string = 3;
+      if (string < 0 && (offsets[3] === 7 || offsets[3] === 8)) string = 3;
       if (string < 0) return null;
       const offset = offsets[string];
-      return { string, offset, finger: offset === 6 && accidentalOf(pitch) === "b" ? 4 : FB_FINGER[offset] };
+      return { string, offset, finger: (offset === 6 && accidentalOf(pitch) === "b") || offset === 8 ? 4 : FB_FINGER[offset] };
     }
 
     function renderFingerboard(pitch, accent, el = document.getElementById("np-fingerboard"), finger) {
@@ -5777,11 +5784,11 @@
       // The box stays in place on every piece, greyed out where no E falls between A-string notes
       // and the book marks no 4th finger.
       const bookFourths = flatNotes.some((n) => n.fourth);
-      const hasFourthFingerEs = bookFourths || fourthFingerEs(flatNotes).length > 0;
-      document.getElementById("fourth-finger").disabled = !hasFourthFingerEs;
+      const hasFourths = bookFourths || fourthFingerEs(flatNotes).length > 0;
+      document.getElementById("fourth-finger").disabled = !hasFourths;
       document.getElementById("fourth-finger-row").title = bookFourths
         ? "Mark the notes the book plays with the 4th finger instead of the open string"
-        : hasFourthFingerEs
+        : hasFourths
           ? "Mark the Es played with the 4th finger on the A string"
           : "No E in this piece falls between two notes on the A string";
       // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
@@ -5942,10 +5949,12 @@
       document.getElementById("piece-delay-val").textContent = pieceDelay() + " s";
     });
 
-    // The speed, and the full tempo it is working up to ("72 / 104").
+    // The speed, and the full tempo it is working up to ("72 / 104"), in the piece's tempo unit.
     function showPieceBpm() {
-      const full = PIECES[activePieceId]?.tempo?.[0].bpm;
-      document.getElementById("piece-bpm-val").textContent = full ? `${pieceBpm()} / ${full}` : pieceBpm();
+      const piece = PIECES[activePieceId];
+      const scale = tempoScale(piece);
+      const full = piece?.tempo?.[0].bpm;
+      document.getElementById("piece-bpm-val").textContent = full ? `${pieceBpm() * scale} / ${full * scale}` : pieceBpm() * scale;
     }
 
     document.getElementById("piece-bpm").addEventListener("input", showPieceBpm);
@@ -6016,7 +6025,7 @@
       if (!place) return "";
       const string = `${FB_STRINGS[place.string][0]} string`;
       if (place.offset === 0) return `open ${string}`;
-      const low = place.offset === 1 || place.offset === 3 || (place.offset === 6 && place.finger === 4) ? "low " : "";
+      const low = place.offset === 1 || place.offset === 3 || (place.offset === 6 && place.finger === 4) ? "low " : place.offset === 8 ? "stretched " : "";
       return `${string}, ${low}${ORDINALS[place.finger - 1]} finger`;
     }
 

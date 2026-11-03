@@ -4,13 +4,17 @@
 // IMSLP (CC BY-SA 4.0) and checked against the 1905 Schirmer edition (ed. Gaston Blay),
 // which settles the two places they differ (No. 22 bar 13 starts on E4, No. 28 bar 21 has C5
 // as its 7th note).
-// Wohlfahrt marks only a tempo word; the ♩ = numbers are the LilyPond edition's.
+// Wohlfahrt marks only a tempo word; the tempo numbers are the LilyPond edition's (in 6/8
+// and 3/8 its ♪ = 123 becomes 124, as the slider moves in whole quarter beats).
 //
 // As written in the book, with these changes for the app: the 4th fingers the book marks
 // on the notes an open string also plays (D4, A4, E5) are kept with f4; other fingerings,
 // slurs, bowings and dynamics are left out. Double stops and chords play their top note;
 // in Nos. 13, 27 and 28 their lower notes are the 2nd violin part. No. 15's slashed eighths
 // are written out as sixteenths, and in No. 28 both halves repeat.
+//
+// Made by tools/wohlfahrt/ (ly2app.py, then gen.py): change those and run them again rather
+// than editing this file.
 (window.SONGBOOKS ??= []).push(({ h, w, e, s, t, t6, dotted, tied, f4, rest, REST }) => ({
   pieces: {
     op45no1: {
@@ -354,6 +358,7 @@
       meta: "F. Wohlfahrt, Op. 45 No. 9 · Allegretto · D major · 6/8",
       accent: "#5a9e6f",
       tempo: [{ bar: 1, bpm: 62 }],
+      tempoUnit: "eighth",
       beamBeats: 1.5,
       measures: [
         [e("A3"), e("B3"), e("C#4"), e("D4"), e("E4"), e("F#4")],
@@ -449,6 +454,7 @@
       meta: "F. Wohlfahrt, Op. 45 No. 12 · Allegro · E♭ major · 3/8",
       accent: "#a4646a",
       tempo: [{ bar: 1, bpm: 62 }],
+      tempoUnit: "eighth",
       beamBeats: 1.5,
       measures: [
         [e("Eb4"), e("Bb3"), e("G3")],
@@ -860,6 +866,7 @@
       meta: "F. Wohlfahrt, Op. 45 No. 18 · Allegro · G major · 6/8",
       accent: "#c47a3a",
       tempo: [{ bar: 1, bpm: 62 }],
+      tempoUnit: "eighth",
       beamBeats: 1.5,
       measures: [
         [f4(s("E5")), s("D5"), s("B4"), s("D5"), s("B4"), s("D5"), s("C5"), f4(s("E5")), s("C5"), f4(s("E5")), s("C5"), f4(s("E5"))],
