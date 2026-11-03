@@ -6077,7 +6077,7 @@
       btn.textContent = loopPick ? "Cancel" : loopBars ? "Clear loop" : "Loop";
       btn.classList.toggle("on", !!(loopPick || loopBars));
       const spotBtn = document.getElementById("piece-spot");
-      spotBtn.hidden = !loopBars;
+      spotBtn.hidden = !loopBars || !accelReady;
       spotBtn.textContent = "Hard spot";
     }
 
@@ -7955,8 +7955,11 @@
       document.querySelectorAll("[data-piece-id]").forEach(showPracticeLine);
     }
 
+    // Pieces played before the record has loaded are logged once it has.
+    const playedEarly = [];
     document.addEventListener("piece-played", (ev) => {
       if (accelReady) logPiecePlayed(ev.detail.id, ev.detail.bpm);
+      else playedEarly.push(ev.detail);
     });
 
     // Every 5 seconds with a sound, the mic or a block timer on, while the app is on screen, is practice.
@@ -8093,10 +8096,12 @@
     }
 
     // The cold try is the hard spot practised most recently before today, played once unwarmed:
-    // whether it comes out clean shows what stuck overnight.
+    // whether it comes out clean shows what stuck overnight. A spot already practised today counts
+    // by the day before (`before`), so working on it first doesn't change the pick.
     function coldTrySpot() {
       const date = dayKey();
-      return activeSpots().filter((spot) => spot.last && spot.last < date).sort((a, b) => b.last.localeCompare(a.last))[0];
+      const lastBefore = (spot) => (spot.last < date ? spot.last : spot.before ?? "");
+      return activeSpots().filter((spot) => lastBefore(spot)).sort((a, b) => lastBefore(b).localeCompare(lastBefore(a)))[0];
     }
 
     function renderCold() {
@@ -8164,7 +8169,8 @@
 
     // A clean run counts towards the next step up; a mistake starts the count again.
     function recordRun(id, clean) {
-      const spot = { ...accel.spots[id], last: dayKey() };
+      const old = accel.spots[id];
+      const spot = { ...old, last: dayKey(), before: old.last === dayKey() ? old.before : old.last };
       spot.runs = clean ? spot.runs + 1 : 0;
       if (spot.runs >= SPOT_RUNS) {
         spot.runs = 0;
@@ -8207,7 +8213,8 @@
     // Opens the spot's piece with its bars looped and the slider at the spot's tempo.
     function openSpot(spot) {
       openInNotes(spot.piece);
-      loopBars = { first: spot.from - 1, last: Math.min(spot.to, PIECES[spot.piece].measures.length) - 1 };
+      const bars = PIECES[spot.piece].measures.length;
+      loopBars = { first: Math.min(spot.from, bars) - 1, last: Math.min(spot.to, bars) - 1 };
       updateLoopUi();
       document.getElementById("piece-bpm").value = spot.bpm;
       showPieceBpm();
@@ -8230,11 +8237,11 @@
 
     function renderReview() {
       const items = reviewRotation();
-      document.getElementById("accel-review").innerHTML = items.map(({ spot, piece, last }, i) => `
+      document.getElementById("accel-review").innerHTML = items.map(({ spot, piece, last }) => `
         <div class="accel-row">
           <span class="accel-check"><span><span class="accel-name">${escapeText(spot ? spotName(spot) : PIECES[piece].title)}</span>
             <span class="accel-detail">${spot ? `Hard spot · ♩ ${spot.bpm}` : "Piece"}${last ? ` · ${playedAgo(daysSince(last))}` : ""}</span></span></span>
-          <button type="button" class="accel-btn" data-action="review-open" data-index="${i}">Open</button>
+          <button type="button" class="accel-btn" data-action="${spot ? "spot-open" : "piece-open"}" data-id="${spot ? spot.id : piece}">Open</button>
         </div>`).join("")
         || '<p class="accel-empty">Hard spots and pieces you have played come back here on later days, to rotate through a couple of minutes each.</p>';
     }
@@ -8297,6 +8304,12 @@
         : "This browser is not keeping the record (a private window, or site storage turned off), so it is gone when the page closes. Export saves it as a file.";
     }
 
+    // A milestone just added and never saved goes again when its editing ends.
+    function stopEditingMilestone() {
+      if (accel.milestones[editingMilestone]?.fresh) unstore("milestones", editingMilestone);
+      editingMilestone = null;
+    }
+
     const panel = document.getElementById("panel-accelerator");
 
     panel.addEventListener("click", (ev) => {
@@ -8313,33 +8326,33 @@
         renderSpots();
         renderCold();
         renderReview();
-      } else if (action === "review-open") {
-        const item = reviewRotation()[el.dataset.index];
-        if (item?.spot) openSpot(item.spot);
-        else if (item) openInNotes(item.piece);
-      } else if (action === "listen") {
+      } else if (action === "piece-open") openInNotes(id);
+      else if (action === "listen") {
         const day = today();
         day.listening = Math.max(0, day.listening + Number(el.dataset.step));
         store("days", day);
         renderListening();
       } else if (action === "milestone-add") {
-        const milestone = { id: newId(), title: "New milestone", due: addMonths(dayKey(), 3), done: "" };
+        stopEditingMilestone();
+        const milestone = { id: newId(), title: "New milestone", due: addMonths(dayKey(), 3), done: "", fresh: true };
         store("milestones", milestone);
         editingMilestone = milestone.id;
         renderMilestones();
         panel.querySelector('#accel-milestones [data-field="title"]')?.select();
       } else if (action === "milestone-edit") {
+        stopEditingMilestone();
         editingMilestone = id;
         renderMilestones();
       } else if (action === "milestone-cancel") {
-        editingMilestone = null;
+        stopEditingMilestone();
         renderMilestones();
       } else if (action === "milestone-save") {
         const row = el.closest(".accel-edit");
         const title = row.querySelector('[data-field="title"]').value.trim();
         const due = row.querySelector('[data-field="due"]').value;
         if (!title || !due) return;
-        store("milestones", { ...accel.milestones[id], title, due });
+        const { fresh, ...milestone } = accel.milestones[id];
+        store("milestones", { ...milestone, title, due });
         editingMilestone = null;
         renderMilestones();
         renderSummary();
@@ -8389,13 +8402,19 @@
         data = JSON.parse(await file.text());
       } catch {}
       if (data?.app !== "violin-school") return alert("That file isn't a practice record exported from Violin School.");
-      if (!confirm(`Replace the practice record in this browser with the one exported ${showDay(dayKey(new Date(data.exported)))}?`)) return;
+      const exported = new Date(data.exported);
+      if (!confirm(`Replace the practice record in this browser with the one in the file${isNaN(exported) ? "" : `, exported ${showDay(dayKey(exported))}`}?`)) return;
       stopBlockTimer();
+      editingMilestone = null;
       for (const name of Object.keys(ACCEL_STORES)) {
         accel[name] = {};
         try { accelDb?.transaction(name, "readwrite").objectStore(name).clear(); } catch {}
-        (data[name] ?? []).forEach((record) => store(name, record));
+        for (const record of Array.isArray(data[name]) ? data[name] : []) {
+          if (name === "days" && record?.date) store(name, { ...newDay(record.date), ...record });
+          else if (record?.[ACCEL_STORES[name]]) store(name, record);
+        }
       }
+      ensureStart();
       renderAccel();
     });
 
@@ -8428,18 +8447,26 @@
         setSetting("imported", true);
       }
 
-      // The start is the first day on record until it is set, and the plan's milestones count from it.
-      if (!accel.settings.start) {
-        const first = Object.keys(accel.days).sort()[0];
-        setSetting("start", first && first < dayKey() ? first : dayKey());
-      }
+      // A milestone added and never saved before the page closed.
+      Object.values(accel.milestones).filter((milestone) => milestone.fresh).forEach((milestone) => unstore("milestones", milestone.id));
+
+      ensureStart();
       if (!accel.settings.seeded) {
         if (!Object.keys(accel.milestones).length) seedMilestones(accel.settings.start);
         setSetting("seeded", true);
       }
 
       accelReady = true;
+      playedEarly.splice(0).forEach(({ id, bpm }) => logPiecePlayed(id, bpm));
       renderAccel();
+      if (activePieceId) updateLoopUi();
+    }
+
+    // The start is the first day on record until it is set, and the plan's milestones count from it.
+    function ensureStart() {
+      if (accel.settings.start) return;
+      const first = Object.keys(accel.days).sort()[0];
+      setSetting("start", first && first < dayKey() ? first : dayKey());
     }
 
     loadAccel();
