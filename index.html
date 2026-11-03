@@ -1660,7 +1660,7 @@
       <p class="subtitle">An hour a day, half in the morning and half in the evening</p>
       <div class="accel-grid">
         <div class="accel-col">
-          <div class="accel-card" id="accel-summary"></div>
+          <div class="accel-card"><div id="accel-summary"></div></div>
           <div class="accel-card">
             <div class="accel-label" data-info="plan">Today&rsquo;s hour <span class="count" id="accel-plan-count"></span></div>
             <div id="accel-plan"></div>
@@ -7860,7 +7860,7 @@
     const ACCEL_INFO = {
       summary: `
         <p><strong>What counts as practice.</strong> Every 5 seconds the app is on screen with a sound playing (a piece, the metronome, a rhythm, a reference tone, a Learn sound), the mic listening or a block timer running, 5 seconds go on today&rsquo;s minutes. Practice without the app isn&rsquo;t counted, so tick the blocks or run their timers.</p>
-        <p><strong>The streak.</strong> A day counts once it has a minute of practice, a piece played to the end or a block ticked off. The streak is the days in a row up to today. Until you practise today it counts up to yesterday, so it isn&rsquo;t broken yet. The week shows the last seven days; hold the pointer over a day for its minutes and pieces.</p>
+        <p><strong>The streak.</strong> A day counts once it has a minute of practice, a piece played to the end or a block ticked off. The streak is the days in a row up to today. Until you practise today it counts up to yesterday, so it isn&rsquo;t broken yet. The week shows the last seven days; on a computer, hold the pointer over a day for its minutes and pieces.</p>
         <p><strong>Day and next milestone.</strong> The day number counts from the Started date under Milestones. Next is the first milestone not yet ticked off, with how long until its target date.</p>
         <p><strong>Why a streak.</strong> Skill comes from steady repetition more than long sessions. Thirty minutes every day beats three and a half hours on Sunday, because each night&rsquo;s sleep consolidates what you practised that day.</p>`,
       plan: `
@@ -7931,6 +7931,9 @@
       document.querySelectorAll(`[data-info-text="${key}"]`).forEach((text) => { text.hidden = !openInfo.has(key); });
       document.querySelectorAll(`.accel-info[data-key="${key}"]`).forEach((btn) => btn.setAttribute("aria-expanded", openInfo.has(key)));
     }
+
+    // The summary's text sits outside the part the practice counter redraws every 5 seconds.
+    document.getElementById("accel-summary").insertAdjacentHTML("afterend", infoText("summary"));
 
     // The sections in the page's markup get theirs here; the summary and plan blocks when they render.
     document.querySelectorAll("#panel-accelerator [data-info]").forEach((el) => {
@@ -8129,7 +8132,6 @@
             : "Practise today to start a streak"} ${infoButton("summary")}</span>
           <span class="accel-time">${minutes} / ${PLAN_MINUTES} min today</span>
         </div>
-        ${infoText("summary")}
         <div class="accel-week">${week.join("")}</div>
         <div class="accel-next">Day ${daysSince(start) + 1}${next ? ` · next: ${escapeText(next.title)}, ${until > 0 ? `in ${timeSpan(until)}` : until === 0 ? "due today" : `${timeSpan(-until)} overdue`}` : ""}</div>`;
     }
