@@ -2469,33 +2469,14 @@
 
       setListenUi(block, feedbackEl, { state: "waiting", html: "Asking for microphone access&hellip;" });
 
-      // Echo cancellation / noise suppression / auto gain are tuned for speech and will
-      // attenuate or distort a sustained violin tone, so ask for the raw signal. Fall back to
-      // whatever the browser offers if it rejects the constraints.
-      const rawAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
-      navigator.mediaDevices.getUserMedia({ audio: rawAudio, video: false })
-        .catch((err) => {
-          if (err?.name === "OverconstrainedError" || err?.name === "ConstraintNotSatisfiedError" || err?.name === "TypeError") {
-            return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          }
-          throw err;
-        })
+      openMic()
         .then((s) => {
           if (stopped) {
             s.getTracks().forEach((t) => t.stop());
             return;
           }
           stream = s;
-
-          // On iOS, turning the microphone on switches the audio session and the mic runs at a
-          // different sample rate than the AudioContext we created for playback. Feeding that
-          // stream into the old context gives silence or a wrong pitch, so recreate it.
-          const trackRate = stream.getAudioTracks()[0]?.getSettings?.().sampleRate;
-          if (trackRate && ctx.sampleRate !== trackRate) {
-            try { ctx.close(); } catch (_) {}
-            ctx = new AudioContext({ sampleRate: trackRate });
-          }
-          getCtx();
+          matchMicRate(stream);
 
           analyser = ctx.createAnalyser();
           analyser.fftSize = 4096;
@@ -2571,6 +2552,32 @@
           console.error("Microphone error", err);
           feedbackEl.innerHTML = describeMicError(err);
         });
+    }
+
+    // Echo cancellation / noise suppression / auto gain are tuned for speech and will attenuate
+    // or distort a sustained violin tone, so ask for the raw signal. Fall back to whatever the
+    // browser offers if it rejects the constraints.
+    function openMic() {
+      const rawAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      return navigator.mediaDevices.getUserMedia({ audio: rawAudio, video: false }).catch((err) => {
+        if (err?.name === "OverconstrainedError" || err?.name === "ConstraintNotSatisfiedError" || err?.name === "TypeError") {
+          return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        }
+        throw err;
+      });
+    }
+
+    // On iOS, turning the microphone on switches the audio session and the mic runs at a
+    // different sample rate than the AudioContext we created for playback. Feeding that stream
+    // into the old context gives silence or a wrong pitch, so recreate it.
+    function matchMicRate(stream) {
+      getCtx();
+      const trackRate = stream.getAudioTracks()[0]?.getSettings?.().sampleRate;
+      if (trackRate && ctx.sampleRate !== trackRate) {
+        try { ctx.close(); } catch (_) {}
+        ctx = new AudioContext({ sampleRate: trackRate });
+      }
+      return getCtx();
     }
 
     function toggleListen({ getTarget, mode, block, btn, feedbackEl, onReading }) {
@@ -4816,7 +4823,7 @@
 
     function voiceOn(piece, voice) {
       // A mic check plays the passage silently, so the mic hears only the violin.
-      if (runMuted) return false;
+      if (piecePlayback?.silent) return false;
       if (voice === "piano") return !!piece.piano && pieceVoices.piano;
       if (voice === "second") return !!secondPart(piece) && pieceVoices.second;
       if (voice === "drone") return !!piece.drone && pieceVoices.drone;
@@ -5867,7 +5874,8 @@
     // a piece, with the tempo when it was played from the start, or a loop goes round.
     const announcePlayed = (id, bpm = 0) => document.dispatchEvent(new CustomEvent("piece-played", { detail: { id, bpm } }));
 
-    function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1, countdown = true } = {}) {
+    // `silent` plays only the highlight, for the mic check.
+    function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1, countdown = true, silent = false } = {}) {
       if (!activePieceId) return;
       stopPitchListener();
       stopPiecePlayback();
@@ -5879,7 +5887,7 @@
       // they share one output that Pause and Stop fade.
       const out = getCtx().createGain();
       out.connect(output());
-      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, slot: fromSlot, out };
+      const playback = { cancelled: false, timers, pass: fromPass, index: fromIndex, slot: fromSlot, out, silent };
       piecePlayback = playback;
       updatePlayButton();
 
@@ -7993,7 +8001,7 @@
         <p>Turn it off at any time. What it has recorded stays, and comes back when you turn it on again.</p>`,
       practice: `
         <p><strong>Clean and Mistake.</strong> When the loop is one of your hard spots, its runs can be counted here while you play, without going to the Accelerator. A tempo step up or down moves the Tempo slider with it, so the next time round plays at the new speed.</p>
-        <p><strong>🎤 Check.</strong> Plays the piece or loop with the highlight but silently, so the mic hears only you, and scores every note: in tune within 20 cents (a fifth of a half step), close within 40, otherwise off, or not heard. The result shows after each time round, not during it. Studies of motor learning found that feedback on every movement while it happens makes you depend on it (the guidance hypothesis, Salmoni and colleagues, 1984), so you listen for yourself while playing. A quiet room and the device near the violin help. The mic judges pitch roughly, and it can be wrong on fast notes, so Clean and Mistake stay your call.</p>
+        <p><strong>🎤 Check.</strong> Plays the piece or loop with the highlight but silently, so the mic hears only you, and scores every note: in tune within 20 cents (a fifth of a half step), close within 40, otherwise off, or not heard. The result shows after each time round, not during it. It allows for playing a little behind the highlight, up to a quarter of a second, and says when you were. Studies of motor learning found that feedback on every movement while it happens makes you depend on it (the guidance hypothesis, Salmoni and colleagues, 1984), so you listen for yourself while playing. A quiet room and the device near the violin help. The mic judges pitch roughly, and it can be wrong on fast notes, so Clean and Mistake stay your call.</p>
         <p><strong>Heat map.</strong> Every check goes into a map of the piece: each note coloured by how far off it has been on average (green in tune, amber close, red off or missed). One bad round shows, but doesn&rsquo;t stick. The worst bar can be made a hard spot in one tap, so practice goes to the notes that need it.</p>
         <p><strong>Bow only.</strong> The spot with every note on its open string, keeping the rhythm and the string crossings: the bow alone, while the left hand rests. Splitting a hard skill into parts and putting them back together is called part practice; it helps most when the parts are hard each on their own.</p>
         <p><strong>Dotted and Snapped.</strong> Each pair of eighths long–short, or short–long. The fingers have to land each note of the pair in half the time, and the passage feels steadier when you go back to the written rhythm. Teachers have used this for a long time; the idea that varied practice builds a more flexible memory comes from schema theory (Schmidt, 1975).</p>
@@ -8049,6 +8057,7 @@
     const accel = { days: {}, pieces: {}, spots: {}, milestones: {}, settings: {}, heat: {} };
     let accelDb = null;
     let accelReady = false;
+    let accelBlocked = false;
     let blockTimer = null; // the plan block being timed, { id, end, interval }
     let editingMilestone = null;
 
@@ -8099,8 +8108,18 @@
               if (!request.result.objectStoreNames.contains(name)) request.result.createObjectStore(name, { keyPath });
             }
           };
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = request.onblocked = () => resolve(null);
+          request.onsuccess = () => {
+            const db = request.result;
+            db.onversionchange = () => db.close(); // a newer version of the app, in another tab, is updating the database
+            accelBlocked = false;
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          // An older version of the app open in another tab holds the database until it closes.
+          request.onblocked = () => {
+            accelBlocked = true;
+            renderSummary();
+          };
         } catch {
           resolve(null);
         }
@@ -8159,7 +8178,15 @@
 
     const collectionOf = (id) => COLLECTIONS.find((collection) => collection.pieces.some((entry) => entry === id || entry.pieces?.includes(id)));
     const activeSpots = () => Object.values(accel.spots).filter((spot) => !spot.done && PIECES[spot.piece]);
-    const spotName = (spot) => `${PIECES[spot.piece].title}, ${spot.from === spot.to ? `bar ${spot.from}` : `bars ${spot.from}–${spot.to}`}`;
+    // Bars as the sheet numbers them, given as measure indexes: from 1, or from the bar after a
+    // pickup, which is "the pickup".
+    function barsLabel(pieceId, first, last) {
+      const n = (index) => index + (PIECES[pieceId]?.pickup ? 0 : 1);
+      if (first === last) return n(first) ? `bar ${n(first)}` : "the pickup";
+      return n(first) ? `bars ${n(first)}–${n(last)}` : `the pickup to bar ${n(last)}`;
+    }
+    const barLabel = (pieceId, index) => barsLabel(pieceId, index, index);
+    const spotName = (spot) => `${PIECES[spot.piece].title}, ${barsLabel(spot.piece, spot.from - 1, spot.to - 1)}`;
     const fullTempo = (id) => PIECES[id]?.tempo?.[0].bpm;
     const nextMilestone = () => sortedMilestones().find((milestone) => !milestone.done);
     const sortedMilestones = () => Object.values(accel.milestones).sort((a, b) => a.due.localeCompare(b.due));
@@ -8222,7 +8249,9 @@
     function renderSummary() {
       const box = document.getElementById("accel-summary");
       if (!accelReady) {
-        box.innerHTML = '<p class="accel-empty">Loading your practice record…</p>';
+        box.innerHTML = accelBlocked
+          ? '<p class="accel-empty">The app is open in another tab or window with an older version. Close it, and your practice record opens here.</p>'
+          : '<p class="accel-empty">Loading your practice record…</p>';
         return;
       }
       const date = dayKey();
@@ -8445,7 +8474,9 @@
 
     document.getElementById("piece-spot").addEventListener("click", addHardSpot);
 
+    // Opening a piece from here stops whatever plays, as going back to the songbook would.
     function openInNotes(id) {
+      stopPiecePlayback();
       document.querySelector('.tab[data-panel="notes"]').click();
       const collection = collectionOf(id);
       if (collection) openCollection(collection);
@@ -8610,14 +8641,14 @@
       if (spot) {
         const chain = spotChain?.id === spot.id;
         rows.push(`<div class="accel-actions"><span class="accel-detail">${chain
-            ? `Backwards: from bar ${spotChain.first + 1} of ${spot.from}–${spot.to}. Clean adds the bar before.`
+            ? `Backwards: from ${barLabel(spot.piece, spotChain.first)} of ${barsLabel(spot.piece, spot.from - 1, spot.to - 1)}. ${spotChain.missed ? "Not yet: stay here until a time round is clean." : "Clean adds the bar before."}`
             : `Hard spot ♩ ${spot.bpm} / ${spot.target} · <span class="accel-runs">${runDots(spot.runs, ladder().runs)}</span>`}</span>
           <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="1">Clean</button>
           <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="0">Mistake</button></div>`);
       }
       if (accel.settings.extended) {
         const tools = [`<button type="button" class="accel-btn${runCheck ? " on" : ""}" data-action="check-run" title="Play along silently while the mic scores every note">${runCheck ? "Stop check" : "🎤 Check"}</button>`];
-        if (accel.heat[activePieceId]) tools.push(`<button type="button" class="accel-btn${heatShown(activePieceId) ? " on" : ""}" data-action="heat-toggle" title="Colour the notes by how in tune they have been">Heat map</button>`);
+        if (pieceHeat(activePieceId)) tools.push(`<button type="button" class="accel-btn${heatShown(activePieceId) ? " on" : ""}" data-action="heat-toggle" title="Colour the notes by how in tune they have been">Heat map</button>`);
         if (spot) {
           for (const [kind, variant] of Object.entries(VARIANTS)) {
             if (variant.applies(spot)) tools.push(`<button type="button" class="accel-btn" data-action="variant" data-kind="${kind}" data-id="${spot.id}" title="${variant.hint}">${variant.label}</button>`);
@@ -8636,6 +8667,7 @@
 
     // Backwards: each clean time round adds the bar before, until the loop is the whole spot.
     function extendChain(spot) {
+      spotChain.missed = false;
       spotChain.first = Math.max(spot.from - 1, spotChain.first - 1);
       loopBars = { first: spotChain.first, last: spot.to - 1 };
       if (spotChain.first === spot.from - 1) spotChain = null;
@@ -8680,7 +8712,8 @@
       return out;
     }
 
-    const hasEighthPairs = (spot) => spotBars(spot).some((measure) => dotPairs(measure, false).some((item, i) => item !== measure[i]));
+    const hasEighthPairs = (spot) => (PIECES[spot.piece].beamBeats ?? 2) % 1 === 0
+      && spotBars(spot).some((measure) => dotPairs(measure, false).some((item, i) => item !== measure[i]));
 
     function openVariant(spot, kind) {
       const piece = PIECES[spot.piece];
@@ -8701,6 +8734,7 @@
 
     // A made-up piece opens looped all through, at its own tempo.
     function openGenerated(id) {
+      stopPiecePlayback();
       document.querySelector('.tab[data-panel="notes"]').click();
       openPiece(id);
       loopBars = { first: 0, last: PIECES[id].measures.length - 1 };
@@ -8717,11 +8751,30 @@
     const IN_TUNE_CENTS = 20;
     const CLOSE_CENTS = 40;
     const HEAT_COLORS = ["#2f7d46", "#b7791f", "#c0392b"];
-    let runMuted = false;
     let runCheck = null; // the check under way: its mic, the pitches heard and when each note began
     let checkResult = null; // the last check's line under the controls, { piece, html }
 
-    const heatShown = (pieceId) => !!(accelReady && accel.settings.extended && accel.settings.heatMap !== false && accel.heat[pieceId]);
+    // A heat map belongs to the notes it measured: once the piece is changed, the old one is
+    // left out and the next check starts a new one.
+    const sigOf = new Map();
+
+    function noteSig(pieceId) {
+      if (!sigOf.has(pieceId)) {
+        const piece = PIECES[pieceId];
+        const text = flattenMeasures(piece.measures, piece.beamBeats).map((note) => `${note.pitch}:${note.beats}`).join(" ");
+        let hash = 5381;
+        for (let i = 0; i < text.length; i++) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+        sigOf.set(pieceId, `${text.length}-${hash >>> 0}`);
+      }
+      return sigOf.get(pieceId);
+    }
+
+    const pieceHeat = (pieceId) => {
+      const heat = accel.heat[pieceId];
+      return heat && PIECES[pieceId] && heat.sig === noteSig(pieceId) ? heat : null;
+    };
+
+    const heatShown = (pieceId) => !!(accelReady && accel.settings.extended && accel.settings.heatMap !== false && pieceHeat(pieceId));
 
     function heatColor(pieceId, index) {
       if (!heatShown(pieceId)) return null;
@@ -8753,28 +8806,16 @@
       show("Asking for the microphone…");
       let stream;
       try {
-        const rawAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
-        stream = await navigator.mediaDevices.getUserMedia({ audio: rawAudio, video: false }).catch((err) => {
-          if (err?.name === "OverconstrainedError" || err?.name === "ConstraintNotSatisfiedError" || err?.name === "TypeError") {
-            return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          }
-          throw err;
-        });
+        stream = await openMic();
       } catch (err) {
         return show(describeMicError(err));
       }
-      if (activePieceId !== pieceId || runCheck) {
+      if (activePieceId !== pieceId || runCheck || piecePlayback) {
         stream.getTracks().forEach((track) => track.stop());
+        if (activePieceId === pieceId && !runCheck) show("The check didn&rsquo;t start, because something began playing. Tap 🎤 Check again.");
         return;
       }
-      // As in listen mode: on iOS the mic can run at another sample rate than the audio context.
-      getCtx();
-      const trackRate = stream.getAudioTracks()[0]?.getSettings?.().sampleRate;
-      if (trackRate && ctx.sampleRate !== trackRate) {
-        try { ctx.close(); } catch {}
-        ctx = new AudioContext({ sampleRate: trackRate });
-      }
-      const audio = getCtx();
+      const audio = matchMicRate(stream);
       const analyser = audio.createAnalyser();
       analyser.fftSize = 2048; // 46 ms, short enough for sixteenths
       const source = audio.createMediaStreamSource(stream);
@@ -8785,8 +8826,7 @@
       sink.connect(audio.destination);
       const buf = new Float32Array(analyser.fftSize);
 
-      runMuted = true;
-      startPiecePlayback();
+      startPiecePlayback({ silent: true });
       const check = { piece: pieceId, stream, source, sink, notes: [], frames: [], pass: -1, round: 0 };
       // The violin's range only (G3 is 196 Hz), which keeps the pitch search cheap.
       check.timer = setInterval(() => {
@@ -8802,9 +8842,9 @@
       if (!runCheck) return;
       const check = runCheck;
       runCheck = null;
-      runMuted = false;
       clearInterval(check.timer);
       if (check.notes.length) scoreRound(check, performance.now());
+      if (!check.scored) checkResult = { piece: check.piece, html: "The check stopped before a note was played through." };
       check.stream.getTracks().forEach((track) => track.stop());
       try {
         check.source.disconnect();
@@ -8817,24 +8857,38 @@
       const piece = PIECES[check.piece];
       const notes = flattenMeasures(piece.measures, piece.beamBeats);
       const beatMs = 60000 / pieceBpm();
-      const results = check.notes.map(({ index, at }, k) => {
-        const note = notes[index];
-        const next = check.notes[k + 1]?.at ?? endAt;
-        const length = Math.min(next - at, heldBeats(index, notes) * beatMs);
-        const target = midiToFreq(pitchToMidi(note.pitch));
+      // A note cut off by Stop before most of it was played isn't judged.
+      const timed = check.notes.flatMap(({ index, at }, k) => {
+        const held = heldBeats(index, notes) * beatMs;
+        const next = check.notes[k + 1]?.at;
+        if (next === undefined && endAt - at < held * 0.9) return [];
+        return [{ index, at, note: notes[index], length: Math.min((next ?? endAt) - at, held), target: midiToFreq(pitchToMidi(notes[index].pitch)) }];
+      });
+      const judge = (lag) => timed.map(({ index, at, note, length, target }) => {
         const heard = check.frames
-          .filter((frame) => frame.hz && frame.at >= at + length * 0.25 && frame.at <= at + length * 0.9)
+          .filter((frame) => frame.hz && frame.at >= at + lag + length * 0.25 && frame.at <= at + lag + length * 0.9)
           .map((frame) => centsOff(alignPitchToTarget(frame.hz, target), target));
         return { index, note, cents: heard.length >= 2 ? median(heard) : null };
       });
+      // How well a judging fits: the notes in tune, then the smaller total of cents off.
+      const fit = (results) => results.reduce((sum, { cents }) => sum + (cents === null ? -100 : Math.abs(cents) <= IN_TUNE_CENTS ? 1000 - Math.abs(cents) : -Math.min(Math.abs(cents), 100)), 0);
+      // A player follows the highlight a little late (or early): the round is judged at the
+      // delay, from 0.04 s early to 0.24 s late, that fits it best.
+      let lag = 0;
+      let results = judge(0);
+      for (let tryLag = -40; tryLag <= 240; tryLag += 40) {
+        const tried = judge(tryLag);
+        if (fit(tried) > fit(results)) [lag, results] = [tryLag, tried];
+      }
       check.round++;
       check.notes = [];
       check.frames = check.frames.filter((frame) => frame.at > endAt - 500);
       if (!results.length) return;
+      check.scored = true;
 
       // The heat map is a running average, so one bad round shows but doesn't stick.
       if (!isGenerated(check.piece)) {
-        const heat = accel.heat[check.piece] ?? { piece: check.piece, notes: {} };
+        const heat = pieceHeat(check.piece) ?? { piece: check.piece, sig: noteSig(check.piece), notes: {} };
         results.forEach(({ index, cents }) => {
           const err = cents === null ? 50 : Math.abs(cents);
           const before = heat.notes[index];
@@ -8847,20 +8901,22 @@
       const worst = results.filter(({ cents }) => cents === null || Math.abs(cents) > IN_TUNE_CENTS)
         .sort((a, b) => (b.cents === null ? 999 : Math.abs(b.cents)) - (a.cents === null ? 999 : Math.abs(a.cents)))
         .slice(0, 2)
-        .map(({ note, cents }) => `${noteName(note.pitch)} in bar ${note.measure + 1}, ${cents === null ? "not heard" : `${Math.round(Math.abs(cents))} cents ${cents < 0 ? "flat" : "sharp"}`}`);
+        .map(({ note, cents }) => `${noteName(note.pitch)} in ${barLabel(check.piece, note.measure)}, ${cents === null ? "not heard" : `${Math.round(Math.abs(cents))} cents ${cents < 0 ? "flat" : "sharp"}`}`);
+      const late = lag >= 120 ? ` You played about ${(lag / 1000).toFixed(1)} s behind the highlight.` : "";
       const bar = worstBar(check.piece);
       const spotLink = bar && !isGenerated(check.piece) && !activeSpots().some((spot) => spot.piece === check.piece && spot.from <= bar && bar <= spot.to)
-        ? ` <button type="button" class="accel-btn" data-action="heat-spot" data-bar="${bar}">Make bar ${bar} a hard spot</button>` : "";
+        ? ` <button type="button" class="accel-btn" data-action="heat-spot" data-bar="${bar}">Make ${barLabel(check.piece, bar - 1)} a hard spot</button>` : "";
       checkResult = {
         piece: check.piece,
-        html: `<strong>${check.round > 1 || check.pass > 0 ? `Round ${check.round}: ` : ""}${good} of ${results.length} notes in tune.</strong>${worst.length ? ` Furthest off: ${worst.join("; ")}.` : ""}${spotLink}`,
+        html: `<strong>${check.round > 1 || check.pass > 0 ? `Round ${check.round}: ` : ""}${good} of ${results.length} notes in tune.</strong>${worst.length ? ` Furthest off: ${worst.join("; ")}.` : ""}${late}${spotLink}`,
       };
       renderPracticeBar();
     }
 
-    // The bar whose notes the heat map has furthest off on average, if any is off at all.
+    // The bar whose notes the heat map has furthest off on average, if any is off at all, as a
+    // bar number from 1 for the first measure (as hard spots count them).
     function worstBar(pieceId) {
-      const heat = accel.heat[pieceId];
+      const heat = pieceHeat(pieceId);
       if (!heat) return null;
       const notes = flattenMeasures(PIECES[pieceId].measures, PIECES[pieceId].beamBeats);
       const bars = {};
@@ -8912,7 +8968,10 @@
       return { ids, current: Math.max(-1, ...ids.map((id, i) => (accel.pieces[id]?.bpm > 0 ? i : -1))) + 1 };
     }
 
+    const movesOf = new Map();
+
     function pieceMoves(id) {
+      if (movesOf.has(id)) return movesOf.get(id);
       const notes = flattenMeasures(PIECES[id].measures, PIECES[id].beamBeats);
       const moves = [];
       for (let i = 1; i < notes.length; i++) {
@@ -8925,6 +8984,7 @@
         const weight = sameFinger && from.string === to.string ? 3 : sameFinger || Math.abs(from.string - to.string) >= 2 ? 2 : 1;
         moves.push({ key: `${a.pitch}-${b.pitch}`, a: a.pitch, b: b.pitch, weight });
       }
+      movesOf.set(id, moves);
       return moves;
     }
 
@@ -9013,7 +9073,7 @@
     }
 
     function softTone(pitch, at, length, out) {
-      const audio = getCtx();
+      const audio = out.context;
       const osc = audio.createOscillator();
       const gain = audio.createGain();
       const level = volume() * 0.08;
@@ -9040,11 +9100,15 @@
       replay.endsAt = replay.startsAt + NIGHT_LENGTH_MIN * 60000;
       nightReplay = replay;
       try { replay.lock = await navigator.wakeLock?.request("screen"); } catch {}
+      if (nightReplay !== replay) {
+        replay.lock?.release().catch(() => {});
+        return;
+      }
       // Each spot at its tempo with 4 seconds between them, then 20 seconds' quiet, round again.
       const round = () => {
         if (nightReplay !== replay) return;
         if (Date.now() >= replay.endsAt) return stopNightReplay();
-        let at = audio.currentTime + 0.1;
+        let at = bus.context.currentTime + 0.1;
         for (const spot of spots) {
           const notes = flattenMeasures(spotBars(spot), PIECES[spot.piece].beamBeats);
           const beat = 60 / spot.bpm;
@@ -9054,7 +9118,7 @@
           const last = notes[notes.length - 1];
           at += (last ? last.start + last.beats + last.restsAfter.reduce((sum, r) => sum + r, 0) : 0) * beat + 4;
         }
-        replay.timers.push(setTimeout(round, (at - audio.currentTime + 16) * 1000));
+        replay.timers.push(setTimeout(round, (at - bus.context.currentTime + 16) * 1000));
         renderOutside();
       };
       replay.timers.push(setTimeout(round, replay.startsAt - Date.now()));
@@ -9066,11 +9130,11 @@
       const replay = nightReplay;
       nightReplay = null;
       replay.timers.forEach(clearTimeout);
-      const t = getCtx().currentTime;
+      const t = replay.bus.context.currentTime;
       replay.bus.gain.setValueAtTime(replay.bus.gain.value, t);
       replay.bus.gain.linearRampToValueAtTime(0, t + 0.3);
       setTimeout(() => replay.bus.disconnect(), 400);
-      try { replay.lock?.release(); } catch {}
+      replay.lock?.release().catch(() => {});
       const minutes = Math.round((Math.min(Date.now(), replay.endsAt) - replay.startsAt) / 60000);
       if (minutes > 0) {
         const day = dayOf(replay.date);
@@ -9092,11 +9156,11 @@
       const doneThisWeek = Object.values(accel.spots).filter((spot) => spot.done && spot.done >= week[0] && PIECES[spot.piece]);
       const next = nextMilestone();
       const offNotes = (id) => {
-        const heat = accel.heat[id];
+        const heat = pieceHeat(id);
         if (!heat) return [];
         const notes = flattenMeasures(PIECES[id].measures, PIECES[id].beamBeats);
-        return Object.entries(heat.notes).filter(([, { err }]) => err > IN_TUNE_CENTS).sort((a, b) => b[1].err - a[1].err).slice(0, 3)
-          .map(([index, { err }]) => `${noteName(notes[index].pitch)} in bar ${notes[index].measure + 1} (${Math.round(err)} cents)`);
+        return Object.entries(heat.notes).filter(([index, { err }]) => notes[index] && err > IN_TUNE_CENTS).sort((a, b) => b[1].err - a[1].err).slice(0, 3)
+          .map(([index, { err }]) => `${noteName(notes[index].pitch)} in ${barLabel(id, notes[index].measure)} (${Math.round(err)} cents)`);
       };
       return [
         `Violin practice, ${showDay(week[0])} – ${showDay(date)}`,
@@ -9322,8 +9386,12 @@
       const spot = accel.spots[id];
       if (action === "info") toggleInfo(el.dataset.key);
       else if (action === "spot-run") {
-        if (spotChain?.id === id && el.dataset.clean === "1") extendChain(spot);
-        else if (spotChain?.id !== id) recordRun(id, el.dataset.clean === "1");
+        if (spotChain?.id !== id) recordRun(id, el.dataset.clean === "1");
+        else if (el.dataset.clean === "1") extendChain(spot);
+        else {
+          spotChain.missed = true;
+          renderPracticeBar();
+        }
       } else if (action === "spot-open") openSpot(spot);
       else if (action === "check-run") {
         if (runCheck) stopPiecePlayback();
@@ -9336,7 +9404,7 @@
       else if (action === "backwards") openSpot(spot, { backwards: true });
       else if (action === "heat-spot") {
         saveSpot(activePieceId, Number(el.dataset.bar), Number(el.dataset.bar));
-        checkResult.html = checkResult.html.replace(/ <button[^]*<\/button>/, ` Bar ${el.dataset.bar} is a hard spot now ✓`);
+        checkResult.html = checkResult.html.replace(/ <button[^]*<\/button>/, ` Now a hard spot: ${barLabel(activePieceId, Number(el.dataset.bar) - 1)} ✓`);
         renderPracticeBar();
       }
     });
@@ -9351,6 +9419,7 @@
         setSetting("extended", ev.target.checked);
         if (!ev.target.checked) {
           if (runCheck) stopPiecePlayback();
+          stopNightReplay();
           spotChain = null;
         }
         renderAccel();
