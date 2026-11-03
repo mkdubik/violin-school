@@ -1228,6 +1228,45 @@
     .accel-info-text[hidden] { display: none; }
     .accel-info-text p + p { margin-top: 0.5rem; }
     .accel-info-text strong { color: #f5f0e8; font-weight: 600; }
+    .accel-toggle { display: flex; align-items: center; margin: -0.75rem 0 1rem; }
+    .accel-toggle .check-row { margin: 0; color: #c8c0b4; }
+    .accel-toggle + .accel-info-text { margin-top: -0.5rem; margin-bottom: 1rem; }
+    .accel-ext { display: none; }
+    #panel-accelerator.extended .accel-ext { display: block; }
+    .accel-stats { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .accel-stats th, .accel-stats td { padding: 0.3rem 0.4rem; text-align: right; border-top: 1px solid #262320; font-weight: 400; }
+    .accel-stats th:first-child, .accel-stats td:first-child { text-align: left; color: #8a8278; }
+    .accel-stats thead th { border-top: none; color: #5a5650; font-size: 0.72rem; }
+    .accel-report-text {
+      width: 100%;
+      min-height: 12rem;
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      border: 1px solid #3a3632;
+      border-radius: 8px;
+      background: #0f0e0d;
+      color: #c8c0b4;
+      font: 0.75rem/1.5 ui-monospace, Menlo, monospace;
+      resize: vertical;
+    }
+
+    /* Notes: the hard spot being looped and the Extended tools under the controls. */
+    .piece-practice {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      background: #1c1a18;
+      font-size: 0.82rem;
+      color: #c8c0b4;
+    }
+    .piece-practice[hidden] { display: none; }
+    .piece-practice .accel-actions { margin-top: 0.4rem; }
+    .piece-practice .accel-actions:first-child { margin-top: 0; }
+    .piece-practice .accel-actions .accel-detail { flex-basis: 100%; }
+    .piece-practice .check-result { margin-top: 0.45rem; font-size: 0.78rem; line-height: 1.45; color: #8a8278; }
+    .piece-practice .check-result strong { color: #f5f0e8; font-weight: 600; }
+    .heat-key { display: inline-flex; gap: 0.6rem; font-size: 0.72rem; color: #8a8278; }
+    .heat-key i { display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: 0.25rem; border-radius: 50%; vertical-align: -1px; }
     .card-btn .practice-line { margin-top: 0.15rem; font-size: 0.75rem; color: #5a5650; }
     .card-btn .practice-line.today { color: #7bc492; }
 
@@ -1352,6 +1391,7 @@
       .piece-controls .slider-row { grid-column: 2; margin: 0; }
       .piece-controls .slider-row label { white-space: nowrap; }
       .piece-controls .slider-row input { min-width: 0; }
+      .piece-controls .piece-practice { grid-column: 1; grid-row: 3 / span 2; align-self: start; margin: 0; }
       .piece-view > .sheet-wrap { grid-column: 1 / -1; grid-row: 4; min-height: 0; }
       .piece-view > .sheet-wrap svg { height: 100%; }
       .piece-panels {
@@ -1658,6 +1698,9 @@
     <!-- Accelerator -->
     <div class="panel" id="panel-accelerator">
       <p class="subtitle">An hour a day, half in the morning and half in the evening</p>
+      <div class="accel-toggle" data-info="extended">
+        <label class="check-row"><input type="checkbox" id="accel-extended"> Extended: methods beyond the studies</label>
+      </div>
       <div class="accel-grid">
         <div class="accel-col">
           <div class="accel-card"><div id="accel-summary"></div></div>
@@ -1673,6 +1716,14 @@
             <div class="accel-label" data-info="listening">Listening</div>
             <div id="accel-listening"></div>
           </div>
+          <div class="accel-card accel-ext">
+            <div class="accel-label" data-info="outside">Outside the hour</div>
+            <div id="accel-outside"></div>
+          </div>
+          <div class="accel-card accel-ext">
+            <div class="accel-label" data-info="experiment">Experiment</div>
+            <div id="accel-experiment"></div>
+          </div>
         </div>
         <div class="accel-col">
           <div class="accel-card">
@@ -1680,14 +1731,22 @@
             <div id="accel-spots"></div>
           </div>
           <div class="accel-card">
-            <div class="accel-label" data-info="review">Review rotation</div>
+            <div class="accel-label" data-info="review">Review rotation <span class="count" id="accel-review-count"></span></div>
             <div id="accel-review"></div>
+          </div>
+          <div class="accel-card accel-ext">
+            <div class="accel-label" data-info="skills">Skills ahead</div>
+            <div id="accel-skills"></div>
           </div>
           <div class="accel-card">
             <div class="accel-label" data-info="milestones">Milestones</div>
             <label class="accel-start">Started <input type="date" class="accel-input" id="accel-start"></label>
             <div id="accel-milestones"></div>
             <div class="accel-actions"><button type="button" class="accel-btn" data-action="milestone-add">Add milestone</button></div>
+          </div>
+          <div class="accel-card accel-ext">
+            <div class="accel-label" data-info="report">Lesson report</div>
+            <div id="accel-report"></div>
           </div>
           <div class="accel-backup" data-info="backup">
             <button type="button" class="accel-btn" data-action="export">Export</button>
@@ -1771,6 +1830,7 @@
             <button type="button" id="piece-loop" title="Repeat a passage: tap its first and last note">Loop</button>
             <button type="button" id="piece-spot" title="Work this passage up to tempo in the Accelerator" hidden>Hard spot</button>
           </div>
+          <div class="piece-practice" id="piece-practice" hidden></div>
           <div class="slider-row" title="Speed / full tempo (♩ per minute)">
             <label for="piece-bpm">Tempo</label>
             <input type="range" id="piece-bpm" min="40" max="144" value="72" step="1">
@@ -2204,17 +2264,18 @@
       return Math.sqrt(energy / buf.length);
     }
 
-    function autoCorrelatePitch(buf, sampleRate) {
+    function autoCorrelatePitch(buf, sampleRate, lowHz = 55, highHz = 1400) {
       const SIZE = buf.length;
       let energy = 0;
       for (let i = 0; i < SIZE; i++) energy += buf[i] * buf[i];
       const rms = Math.sqrt(energy / SIZE);
       if (rms < MIN_RMS) return null;
 
-      // Only correlate over lags that correspond to 55–1400 Hz. This is far cheaper than a full
-      // autocorrelation (the old version did ~8M multiplies per frame and stalled phones).
-      const minLag = Math.max(2, Math.floor(sampleRate / 1400));
-      const maxLag = Math.min(Math.ceil(sampleRate / 55), (SIZE >> 1) - 2);
+      // Only correlate over lags that correspond to 55–1400 Hz (or the range asked for). This is
+      // far cheaper than a full autocorrelation (the old version did ~8M multiplies per frame and
+      // stalled phones).
+      const minLag = Math.max(2, Math.floor(sampleRate / highHz));
+      const maxLag = Math.min(Math.ceil(sampleRate / lowHz), (SIZE >> 1) - 2);
       if (maxLag <= minLag) return null;
 
       const c = new Float32Array(maxLag + 2);
@@ -2247,7 +2308,7 @@
       if (a) period = T0 - b / (2 * a);
 
       const freq = sampleRate / period;
-      if (freq < 55 || freq > 1400) return null;
+      if (freq < lowHz || freq > highHz) return null;
       return freq;
     }
 
@@ -4754,6 +4815,8 @@
     const pieceVoices = { first: true, second: false, piano: false, drone: true };
 
     function voiceOn(piece, voice) {
+      // A mic check plays the passage silently, so the mic hears only the violin.
+      if (runMuted) return false;
       if (voice === "piano") return !!piece.piano && pieceVoices.piano;
       if (voice === "second") return !!secondPart(piece) && pieceVoices.second;
       if (voice === "drone") return !!piece.drone && pieceVoices.drone;
@@ -5346,7 +5409,7 @@
         const { top, y } = hd;
         const hit = gi === highlightIndex;
         const accent = accentForPitch(note.pitch, note.finger);
-        const color = hit ? accent : noteInk;
+        const color = hit ? accent : heatColor(pieceId, gi) ?? noteInk;
         const isHalf = note.beats >= 2;
         // Half notes are hollow; a highlighted half note gets a translucent accent fill.
         const fill = isHalf ? (hit ? `${accent}55` : "none") : color;
@@ -5769,6 +5832,7 @@
 
     // Stop clears everything: the position, the highlighted note and any pause.
     function stopPiecePlayback() {
+      endRunCheck();
       silenceNoteTones();
       if (!piecePlayback && !pausedPlayback) return;
       cancelPlaybackTimers();
@@ -5781,6 +5845,7 @@
     // Pause keeps the current note highlighted. Resume continues from the highlighted note,
     // so tapping another note while paused resumes from there.
     function pausePiecePlayback() {
+      endRunCheck();
       silenceNoteTones();
       if (!piecePlayback) return;
       const { pass, index, slot } = piecePlayback;
@@ -5879,6 +5944,7 @@
             playback.pass = pass;
             playback.index = i;
             playback.slot = slot;
+            noteStarted(i, pass);
             setNowPlaying(i, true);
             renderSheet(activePieceId, i);
           }, secAt(beat));
@@ -6110,8 +6176,9 @@
       btn.textContent = loopPick ? "Cancel" : loopBars ? "Clear loop" : "Loop";
       btn.classList.toggle("on", !!(loopPick || loopBars));
       const spotBtn = document.getElementById("piece-spot");
-      spotBtn.hidden = !loopBars || !accelReady;
+      spotBtn.hidden = !loopBars || !accelReady || isGenerated(activePieceId);
       spotBtn.textContent = "Hard spot";
+      renderPracticeBar();
     }
 
     // Play or Stop while Loop waits for notes leaves the picking, as tapping Cancel does.
@@ -7880,11 +7947,13 @@
         <p><strong>Adding one.</strong> In Notes, tap Loop, tap the first and last note of the passage that trips you up, set the Tempo slider to a speed you can play it clean, and tap Hard spot. If the slider is still at full tempo, the spot starts at 60% of it. Saving the same bars again sets a new tempo.</p>
         <p><strong>The ladder.</strong> Play the spot, then press Clean or Mistake. Three clean runs in a row (the ●●○ dots) raise it 4 bpm. A mistake starts the count again at that tempo. At full tempo, three more clean runs and the spot is done. Loop opens it in Notes looped at its tempo.</p>
         <p><strong>Why this way.</strong> Your hands learn what they repeat, mistakes included, so each repetition should be a correct one. Slow enough to be clean, and up in small steps once it stays clean, is how to get fast without learning the mistake. Short pauses between repetitions help too: in early learning much of the gain happens during the rest seconds between tries (Bönstrup and colleagues, 2019).</p>
-        <p><strong>Stop at the first error.</strong> When a run goes wrong, stop, find the one note or shift that failed, play just that slowly a few times, then run the spot again.</p>`,
+        <p><strong>Stop at the first error.</strong> When a run goes wrong, stop, find the one note or shift that failed, play just that slowly a few times, then run the spot again.</p>
+        <p><strong>With Extended on.</strong> The tempo floats: four clean runs in a row raise it 2 bpm, and a mistake takes it down 2. That settles where about 84% of runs are clean, because four clean in a row then happen about half the time, as often as a mistake (0.84 × 0.84 × 0.84 × 0.84 ≈ 0.5). It is the staircase method of hearing tests (Levitt, 1971). Learning seems to go fastest when you succeed most of the time but not always, around 85% (Wilson and colleagues, 2019, worked this out for learning machines and simple tasks; for the violin it is a guess).</p>`,
       review: `
         <p><strong>What it is.</strong> Up to four things to rotate through in the evening&rsquo;s review: two hard spots and two pieces, the ones untouched longest, leaving out anything you already did today. Spend a couple of minutes on each, switch, and go round again.</p>
         <p><strong>Why switching.</strong> Practising A, B and C mixed (interleaved) feels harder than finishing A before starting B, and you seem to improve less during the session. But tests a day later show much better retention, because each switch makes you recall the passage again from scratch (Shea and Morgan, 1979, the contextual interference effect). Use straight repetition for brand-new passages, and mixing once you know them.</p>
-        <p><strong>Why review at all.</strong> Suzuki students keep playing their old pieces. They keep the technique those pieces taught, and an old piece played well, with good tone, builds skill the new piece is too hard to build yet.</p>`,
+        <p><strong>Why review at all.</strong> Suzuki students keep playing their old pieces. They keep the technique those pieces taught, and an old piece played well, with good tone, builds skill the new piece is too hard to build yet.</p>
+        <p><strong>With Extended on.</strong> Review works like flashcards. Each hard spot and piece has a day it is due, and you mark its first try that day. Clean sends it away for 2 days, then 4, 8, 16 and on up to 60. Not clean brings it back tomorrow. The cold try schedules its spot the same way. Memory lasts longer when each review comes just as it starts to fade (the spacing effect, known since Ebbinghaus in 1885), and this spends review time on what is slipping, not on what you already know.</p>`,
       milestones: `
         <p><strong>The plan.</strong> The milestones are an accelerated route to framhaldspróf, the advanced exam of Icelandic music schools, in about six and a half years from the start, against the usual 8–10. It assumes this hour every day, a weekly lesson and the review and theory alongside.</p>
         <p><strong>The Icelandic stages.</strong> Music schools follow the national curriculum (Aðalnámskrá tónlistarskóla) in three stages, each ending in an exam: grunnnám with grunnpróf, roughly the old 1st–3rd stig; miðnám with miðpróf, the old 4th–5th; and framhaldsnám with framhaldspróf, the old 6th–7th. Each stage also has its own theory exam (tónfræði). Prófanefnd tónlistarskóla runs the exams, mostly in March or May, and you sit them through a music school. Without a school, ABRSM Performance Grades and Trinity&rsquo;s digital exams accept private candidates by video: Grade 5 is about grunnpróf to miðpróf, Grade 8 close to framhaldspróf. The Suzuki book for each exam is a rough guide; the exam pieces decide.</p>
@@ -7917,6 +7986,33 @@
       theory: `
         <p><strong>What.</strong> The Learn tab&rsquo;s lessons and quizzes: note names, note values, the signs on the page, intervals by ear, the fingerboard and naming rhythms.</p>
         <p><strong>Why.</strong> Each Icelandic exam stage has its own theory exam (tónfræði), and grunnpróf in theory comes with grunnpróf on the violin. Adults usually get through theory fast, and hearing intervals and knowing what the page says makes the playing faster to learn.</p>`,
+      extended: `
+        <p><strong>What it is.</strong> The plain Accelerator is built on studies of how skills are learned. Extended goes past them: it adds methods that follow from that research but haven&rsquo;t been tested for the violin. They are hypotheses, and the Experiment card is there to test them on you.</p>
+        <p><strong>What it adds.</strong> In Hard spots, a tempo that floats up and down with your clean runs. In Review rotation, flashcard scheduling. In Notes: a mic check that scores every note and keeps a heat map of the piece, variations of a hard spot (bow only, dotted, snapped) and backwards practice. Then Skills ahead, drills for the moves of the next pieces; Outside the hour, silent practice and night replay; a Lesson report for your teacher; and the Experiment. Each has its own ⓘ.</p>
+        <p><strong>Left out.</strong> Watching your bow and posture with the camera. It would need a large add-on that the app doesn&rsquo;t load.</p>
+        <p>Turn it off at any time. What it has recorded stays, and comes back when you turn it on again.</p>`,
+      practice: `
+        <p><strong>Clean and Mistake.</strong> When the loop is one of your hard spots, its runs can be counted here while you play, without going to the Accelerator. A tempo step up or down moves the Tempo slider with it, so the next time round plays at the new speed.</p>
+        <p><strong>🎤 Check.</strong> Plays the piece or loop with the highlight but silently, so the mic hears only you, and scores every note: in tune within 20 cents (a fifth of a half step), close within 40, otherwise off, or not heard. The result shows after each time round, not during it. Studies of motor learning found that feedback on every movement while it happens makes you depend on it (the guidance hypothesis, Salmoni and colleagues, 1984), so you listen for yourself while playing. A quiet room and the device near the violin help. The mic judges pitch roughly, and it can be wrong on fast notes, so Clean and Mistake stay your call.</p>
+        <p><strong>Heat map.</strong> Every check goes into a map of the piece: each note coloured by how far off it has been on average (green in tune, amber close, red off or missed). One bad round shows, but doesn&rsquo;t stick. The worst bar can be made a hard spot in one tap, so practice goes to the notes that need it.</p>
+        <p><strong>Bow only.</strong> The spot with every note on its open string, keeping the rhythm and the string crossings: the bow alone, while the left hand rests. Splitting a hard skill into parts and putting them back together is called part practice; it helps most when the parts are hard each on their own.</p>
+        <p><strong>Dotted and Snapped.</strong> Each pair of eighths long–short, or short–long. The fingers have to land each note of the pair in half the time, and the passage feels steadier when you go back to the written rhythm. Teachers have used this for a long time; the idea that varied practice builds a more flexible memory comes from schema theory (Schmidt, 1975).</p>
+        <p><strong>Backwards.</strong> Loops the last bar, and each clean time round adds the bar before, until the loop is the whole spot. You always play into what you know best, so the end, usually the weakest part, gets the most repetitions (backward chaining).</p>`,
+      outside: `
+        <p><strong>Silent practice.</strong> Playing the piece in your head: singing it, or fingering it on your forearm along with the playback in Notes, on the bus or away from the violin. In a study at the piano (Pascual-Leone and colleagues, 1995), five days of practising a five-finger exercise only in the mind changed the brain&rsquo;s map for the fingers much as real practice did. The playing improved less than with real practice, but one real session afterwards brought it level. Count the minutes here; they don&rsquo;t take time from the hour.</p>
+        <p><strong>Night replay.</strong> In a lab study (Antony and colleagues, 2012), people learned to play two melodies by pressing keys in time. During a nap, one of them was played very quietly while they were in deep sleep, and afterwards they played that one better. The idea is that the sound prompts the sleeping brain to go over what was learned. Here, tap Start at bedtime: after 20 minutes, today&rsquo;s hard spots play barely audibly, round and round, for an hour, when the first deep sleep of the night usually comes.</p>
+        <p><strong>Honestly.</strong> The study used a nap, measured sleep to time the sounds, and wasn&rsquo;t about the violin; nobody has shown this works for it. Keep the volume barely audible, the screen on and the phone plugged in (a phone that locks stops the page). Stop at once if it disturbs your sleep: sleep does more for learning than any cue.</p>`,
+      skills: `
+        <p><strong>What it is.</strong> The app reads the piece you are working on and the two after it, and finds the moves in them, one note to the next by string and finger, that none of the pieces you have played yet has. The ones that come up most are at the top. A finger moving between high and low on its string counts three times, since that is the hardest; a skipped string or the same finger on another string counts twice.</p>
+        <p><strong>Drill.</strong> Opens the move back and forth in eighths, two bars at ♩ 60, looped. Thirty seconds of it is enough, and it gets a ✓ for today once played through.</p>
+        <p><strong>Why.</strong> Suzuki orders the pieces so each adds a little that is new. Drilling the new moves before you reach a piece should make it arrive half-learned, so less of its time goes on the notes and more on the music. That is the hypothesis; the Experiment card can show whether new pieces reach tempo faster.</p>
+        <p><strong>Working on.</strong> Choose the piece you are learning now. Until you do, it is the one after the furthest piece you have played through from the start; a loop doesn&rsquo;t count.</p>`,
+      report: `
+        <p><strong>What it is.</strong> The last 7 days in plain text: days and minutes practised, cold tries, hard-spot runs, listening and silent practice, each hard spot&rsquo;s tempo and where it started, the pieces played, and the notes the mic check found furthest off. Copy it into a message, or show it on the phone at the lesson.</p>
+        <p><strong>Why.</strong> A teacher hears you for half an hour a week and has to guess the rest. The report tells them what the week was, so the lesson can go on what only a teacher can judge: tone, bow hold and posture, and how the music sounds.</p>`,
+      experiment: `
+        <p><strong>What it is.</strong> An experiment on yourself: change one thing (night replay, the drills, Backwards, a different time of day), give it a name and start it. The card compares the 14 days before it began with the days since: days practised, minutes a day, cold tries that were clean, hard-spot runs that were clean, and the bpm the spots gained per day of practice.</p>
+        <p><strong>How to read it.</strong> Other things change too (a new piece is harder, a busy week is shorter), so change one thing at a time, run it for two weeks or more, and trust a big difference more than a small one. Ending an experiment keeps its numbers under the card. Clean cold tries are the best measure of what actually stays learned.</p>`,
     };
     const openInfo = new Set();
 
@@ -7943,11 +8039,14 @@
     });
 
     // A hard spot goes up 4 bpm after 3 clean runs in a row, and is done after 3 at full tempo.
+    // Extended floats the tempo instead: 4 clean in a row raise it 2 bpm and a mistake lowers it
+    // 2, which settles where about 84% of runs are clean (0.84⁴ ≈ ½: as many steps up as down).
     const SPOT_RUNS = 3;
     const SPOT_STEP = 4;
+    const ladder = () => (accel.settings.extended ? { runs: 4, up: 2, down: 2 } : { runs: SPOT_RUNS, up: SPOT_STEP, down: 0 });
 
-    const ACCEL_STORES = { days: "date", pieces: "id", spots: "id", milestones: "id", settings: "key" };
-    const accel = { days: {}, pieces: {}, spots: {}, milestones: {}, settings: {} };
+    const ACCEL_STORES = { days: "date", pieces: "id", spots: "id", milestones: "id", settings: "key", heat: "piece" };
+    const accel = { days: {}, pieces: {}, spots: {}, milestones: {}, settings: {}, heat: {} };
     let accelDb = null;
     let accelReady = false;
     let blockTimer = null; // the plan block being timed, { id, end, interval }
@@ -7994,7 +8093,7 @@
     function openAccelDb() {
       return new Promise((resolve) => {
         try {
-          const request = indexedDB.open("violin-school", 1);
+          const request = indexedDB.open("violin-school", 2);
           request.onupgradeneeded = () => {
             for (const [name, keyPath] of Object.entries(ACCEL_STORES)) {
               if (!request.result.objectStoreNames.contains(name)) request.result.createObjectStore(name, { keyPath });
@@ -8034,7 +8133,9 @@
 
     const setSetting = (key, value) => store("settings", { key, value });
 
-    const newDay = (date) => ({ date, seconds: 0, pieces: [], blocks: {}, listening: 0, cold: null });
+    // `runs`, `clean` and `gain` count the hard-spot runs, the clean ones and the bpm they gained;
+    // `mental`, `replay` and `drills` are Extended's silent practice, night replay and drills.
+    const newDay = (date) => ({ date, seconds: 0, pieces: [], blocks: {}, listening: 0, cold: null, runs: 0, clean: 0, gain: 0, mental: 0, replay: 0, drills: [] });
     const dayOf = (date) => accel.days[date] ?? newDay(date);
     const today = () => dayOf(dayKey());
 
@@ -8065,12 +8166,24 @@
 
     function logPiecePlayed(id, bpm = 0) {
       const day = today();
+      // Extended's drills and spot variations are made up on the spot, not pieces to review.
+      if (isGenerated(id)) {
+        const drill = id.startsWith("drill:") && id.slice(6);
+        if (drill && !day.drills.includes(drill)) {
+          day.drills.push(drill);
+          store("days", day);
+          renderSkills();
+          renderSummary();
+        }
+        return;
+      }
       if (!day.pieces.includes(id)) day.pieces.push(id);
       store("days", day);
       const record = accel.pieces[id] ?? { id, last: "", bpm: 0 };
       store("pieces", { ...record, last: day.date, bpm: Math.max(record.bpm, bpm) });
       renderSummary();
       renderReview();
+      renderSkills();
       document.querySelectorAll("[data-piece-id]").forEach(showPracticeLine);
     }
 
@@ -8253,9 +8366,11 @@
       day.cold = { spot: id, bpm: accel.spots[id].bpm, clean };
       day.blocks.cold = true;
       store("days", day);
+      if (accel.settings.extended) scheduleReview("spots", accel.spots[id], clean);
       renderCold();
       renderPlan();
       renderSummary();
+      renderReview();
     }
 
     function renderListening() {
@@ -8274,54 +8389,58 @@
       const done = Object.values(accel.spots).filter((spot) => spot.done).length;
       const box = document.getElementById("accel-spots");
       box.innerHTML = spots.map((spot) => {
-        const progress = spot.target > spot.startBpm ? (spot.bpm - spot.startBpm) / (spot.target - spot.startBpm) : 1;
+        const progress = spot.target > spot.startBpm ? Math.max(0, (spot.bpm - spot.startBpm) / (spot.target - spot.startBpm)) : 1;
+        const { runs } = ladder();
         return `<div class="accel-spot">
           <div class="accel-top"><span class="accel-name">${escapeText(spotName(spot))}</span><span class="accel-time">♩ ${spot.bpm} / ${spot.target}</span></div>
           <div class="accel-meter"><span style="width: ${Math.round(progress * 100)}%"></span></div>
           <div class="accel-actions">
-            <span class="accel-detail" title="Clean runs in a row at this tempo"><span class="accel-runs">${"●".repeat(spot.runs)}${"○".repeat(SPOT_RUNS - spot.runs)}</span>${spot.last ? ` · ${playedAgo(daysSince(spot.last))}` : ""}</span>
+            <span class="accel-detail" title="Clean runs in a row at this tempo"><span class="accel-runs">${runDots(spot.runs, runs)}</span>${spot.last ? ` · ${playedAgo(daysSince(spot.last))}` : ""}</span>
             <button type="button" class="accel-btn" data-action="spot-open" data-id="${spot.id}">Loop</button>
             <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="1">Clean</button>
             <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="0">Mistake</button>
             <button type="button" class="accel-btn" data-action="spot-remove" data-id="${spot.id}" aria-label="Remove this spot" title="Remove">×</button>
           </div>
         </div>`;
-      }).join("") || `<p class="accel-empty">In Notes, Loop a passage that trips you up and tap Hard spot. It starts slow here and goes up ${SPOT_STEP} bpm after ${SPOT_RUNS} clean runs in a row.</p>`;
+      }).join("") || `<p class="accel-empty">In Notes, Loop a passage that trips you up and tap Hard spot. It starts slow here and goes up ${ladder().up} bpm after ${ladder().runs} clean runs in a row.</p>`;
       if (done) box.insertAdjacentHTML("beforeend", `<p class="accel-detail" style="margin-top: 0.6rem">${done} ${done === 1 ? "spot" : "spots"} up to full tempo ✓</p>`);
     }
 
-    // A clean run counts towards the next step up; a mistake starts the count again.
+    const runDots = (done, of) => `${"●".repeat(Math.min(done, of))}${"○".repeat(Math.max(0, of - done))}`;
+
+    // A clean run counts towards the next step up; a mistake starts the count again (and with
+    // Extended, takes the tempo down a step). The day keeps count, for the Experiment card.
     function recordRun(id, clean) {
       const old = accel.spots[id];
+      const { runs, up, down } = ladder();
       const spot = { ...old, last: dayKey(), before: old.last === dayKey() ? old.before : old.last };
       spot.runs = clean ? spot.runs + 1 : 0;
-      if (spot.runs >= SPOT_RUNS) {
+      if (!clean && down) spot.bpm = Math.max(40, spot.bpm - down);
+      if (spot.runs >= runs) {
         spot.runs = 0;
         if (spot.bpm >= spot.target) spot.done = dayKey();
-        else spot.bpm = Math.min(spot.target, spot.bpm + SPOT_STEP);
+        else spot.bpm = Math.min(spot.target, spot.bpm + up);
       }
       store("spots", spot);
+      const day = today();
+      store("days", { ...day, runs: day.runs + 1, clean: day.clean + (clean ? 1 : 0), gain: day.gain + spot.bpm - old.bpm });
+      // Looping it in Notes, the next time round plays at the new tempo.
+      if (activePieceId === spot.piece && spot.bpm !== old.bpm) {
+        document.getElementById("piece-bpm").value = spot.bpm;
+        showPieceBpm();
+      }
       renderSpots();
       renderCold();
       renderReview();
+      renderPracticeBar();
     }
 
-    // From Notes: the looped bars become a hard spot, starting at the tempo on the slider, or at
-    // 60% of full tempo when the slider is still at full tempo. Saving the same bars again
-    // updates the tempo.
+    // From Notes: the looped bars become a hard spot.
     function addHardSpot() {
-      if (!activePieceId || !loopBars || !accelReady) return;
-      const target = fullTempo(activePieceId) ?? pieceBpm();
-      const bpm = pieceBpm() < target ? pieceBpm() : Math.max(40, Math.round(target * 0.6));
-      const from = loopBars.first + 1;
-      const to = loopBars.last + 1;
-      const same = activeSpots().find((spot) => spot.piece === activePieceId && spot.from === from && spot.to === to);
-      store("spots", same
-        ? { ...same, bpm, startBpm: Math.min(same.startBpm, bpm), runs: 0 }
-        : { id: newId(), piece: activePieceId, from, to, bpm, startBpm: bpm, target, runs: 0, created: new Date().toISOString(), last: "", done: "" });
+      if (!activePieceId || !loopBars || !accelReady || isGenerated(activePieceId)) return;
+      spotChain = null;
+      const bpm = saveSpot(activePieceId, loopBars.first + 1, loopBars.last + 1);
       document.getElementById("piece-spot").textContent = `Hard spot ✓ ♩ ${bpm}`;
-      renderSpots();
-      renderReview();
     }
 
     document.getElementById("piece-spot").addEventListener("click", addHardSpot);
@@ -8333,11 +8452,14 @@
       openPiece(id);
     }
 
-    // Opens the spot's piece with its bars looped and the slider at the spot's tempo.
-    function openSpot(spot) {
+    // Opens the spot's piece with its bars looped and the slider at the spot's tempo; backwards,
+    // only its last bar is looped at first.
+    function openSpot(spot, { backwards = false } = {}) {
       openInNotes(spot.piece);
       const bars = PIECES[spot.piece].measures.length;
-      loopBars = { first: Math.min(spot.from, bars) - 1, last: Math.min(spot.to, bars) - 1 };
+      const last = Math.min(spot.to, bars) - 1;
+      spotChain = backwards ? { id: spot.id, first: last } : null;
+      loopBars = { first: backwards ? last : Math.min(spot.from, bars) - 1, last };
       updateLoopUi();
       document.getElementById("piece-bpm").value = spot.bpm;
       showPieceBpm();
@@ -8358,7 +8480,29 @@
       return [...picked, ...[...spots.slice(2), ...pieces.slice(2)].slice(0, 4 - picked.length)];
     }
 
+    // With Extended, review works like flashcards: every spot and piece has a day it is due, and
+    // its first try that day moves the next one further out when clean (2, 4, 8… days, up to 60)
+    // or back to tomorrow when not. One never scheduled is due the day after it was last played.
+    const dueOn = (record) => record.due || (record.last ? shiftDay(record.last, 1) : dayKey());
+
+    function dueReview() {
+      const date = dayKey();
+      return [
+        ...activeSpots().map((spot) => ({ spot, last: spot.last, due: dueOn(spot), interval: spot.interval ?? 0 })),
+        ...Object.values(accel.pieces).filter((record) => PIECES[record.id] && collectionOf(record.id))
+          .map((record) => ({ piece: record.id, last: record.last, due: dueOn(record), interval: record.interval ?? 0 })),
+      ].filter((item) => item.due <= date).sort((a, b) => a.due.localeCompare(b.due) || a.interval - b.interval);
+    }
+
+    function scheduleReview(name, record, clean) {
+      const interval = clean ? Math.min(60, Math.max(1, record.interval ?? 1) * 2) : 1;
+      store(name, { ...record, interval, due: shiftDay(dayKey(), interval) });
+    }
+
     function renderReview() {
+      const count = document.getElementById("accel-review-count");
+      if (accel.settings.extended) return renderDueReview(count);
+      count.textContent = "";
       const items = reviewRotation();
       document.getElementById("accel-review").innerHTML = items.map(({ spot, piece, last }) => `
         <div class="accel-row">
@@ -8367,6 +8511,25 @@
           <button type="button" class="accel-btn" data-action="${spot ? "spot-open" : "piece-open"}" data-id="${spot ? spot.id : piece}">Open</button>
         </div>`).join("")
         || '<p class="accel-empty">Hard spots and pieces you have played come back here on later days, to rotate through a couple of minutes each.</p>';
+    }
+
+    function renderDueReview(count) {
+      const due = dueReview();
+      count.textContent = due.length ? `${due.length} due` : "";
+      const every = (interval) => (interval ? `every ${interval} ${interval === 1 ? "day" : "days"}` : "new");
+      document.getElementById("accel-review").innerHTML = due.slice(0, 6).map(({ spot, piece, last, interval }) => `
+        <div class="accel-spot">
+          <div class="accel-top"><span class="accel-name">${escapeText(spot ? spotName(spot) : PIECES[piece].title)}</span>
+            <span class="accel-time">${every(interval)}</span></div>
+          <div class="accel-actions">
+            <span class="accel-detail">${spot ? `Hard spot · ♩ ${spot.bpm}` : "Piece"}${last ? ` · ${playedAgo(daysSince(last))}` : ""}</span>
+            <button type="button" class="accel-btn" data-action="${spot ? "spot-open" : "piece-open"}" data-id="${spot ? spot.id : piece}">Open</button>
+            <button type="button" class="accel-btn" data-action="first-try" data-kind="${spot ? "spots" : "pieces"}" data-id="${spot ? spot.id : piece}" data-clean="1" title="The first try today was clean">Clean</button>
+            <button type="button" class="accel-btn" data-action="first-try" data-kind="${spot ? "spots" : "pieces"}" data-id="${spot ? spot.id : piece}" data-clean="0" title="The first try today wasn't clean">Not clean</button>
+          </div>
+        </div>`).join("")
+        || '<p class="accel-empty">Nothing due today. A clean first try sends a spot or piece away for 2 days, then 4, 8 and so on; one that isn&rsquo;t clean comes back tomorrow.</p>';
+      if (due.length > 6) document.getElementById("accel-review").insertAdjacentHTML("beforeend", `<p class="accel-detail" style="margin-top: 0.6rem">${due.length - 6} more due after these</p>`);
     }
 
     function renderMilestones() {
@@ -8413,6 +8576,629 @@
       renderSummary();
     });
 
+    // --- Extended: methods beyond the studies ---
+    // Hypotheses rather than findings, switched on by the Extended box: the floating tempo and the
+    // flashcard review above, and here a mic check with a heat map of the notes, variations of a
+    // hard spot, drills for the moves of the pieces coming next, silent practice and night
+    // replay, a report for the teacher, and an experiment to measure whether any of it helps.
+    const isGenerated = (id) => !!id && (id.startsWith("variant:") || id.startsWith("drill:"));
+    let spotChain = null; // practising a spot backwards: { id, first }, the bar its loop starts from
+
+    // The hard spot whose bars are looped in Notes, if any (backwards, the loop ends where it does).
+    function loopedSpot() {
+      if (!activePieceId || !loopBars || !accelReady) return null;
+      return activeSpots().find((spot) => spot.piece === activePieceId && spot.to - 1 === loopBars.last
+        && (spot.from - 1 === loopBars.first || (spotChain?.id === spot.id && spotChain.first === loopBars.first)));
+    }
+
+    // Under the Notes controls: the looped hard spot with its Clean and Mistake buttons, and with
+    // Extended the mic check, the heat map and the spot's variations.
+    function renderPracticeBar() {
+      const bar = document.getElementById("piece-practice");
+      if (!accelReady || !activePieceId) {
+        bar.hidden = true;
+        return;
+      }
+      if (spotChain && accel.spots[spotChain.id]?.piece !== activePieceId) spotChain = null;
+      const piece = PIECES[activePieceId];
+      const spot = loopedSpot();
+      const rows = [];
+      if (piece.variantOf && accel.spots[piece.variantOf]) {
+        rows.push(`<div class="accel-actions"><span class="accel-detail">${VARIANTS[piece.variant].hint}</span>
+          <button type="button" class="accel-btn" data-action="spot-open" data-id="${piece.variantOf}">Back to the spot</button></div>`);
+      }
+      if (spot) {
+        const chain = spotChain?.id === spot.id;
+        rows.push(`<div class="accel-actions"><span class="accel-detail">${chain
+            ? `Backwards: from bar ${spotChain.first + 1} of ${spot.from}–${spot.to}. Clean adds the bar before.`
+            : `Hard spot ♩ ${spot.bpm} / ${spot.target} · <span class="accel-runs">${runDots(spot.runs, ladder().runs)}</span>`}</span>
+          <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="1">Clean</button>
+          <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="0">Mistake</button></div>`);
+      }
+      if (accel.settings.extended) {
+        const tools = [`<button type="button" class="accel-btn${runCheck ? " on" : ""}" data-action="check-run" title="Play along silently while the mic scores every note">${runCheck ? "Stop check" : "🎤 Check"}</button>`];
+        if (accel.heat[activePieceId]) tools.push(`<button type="button" class="accel-btn${heatShown(activePieceId) ? " on" : ""}" data-action="heat-toggle" title="Colour the notes by how in tune they have been">Heat map</button>`);
+        if (spot) {
+          for (const [kind, variant] of Object.entries(VARIANTS)) {
+            if (variant.applies(spot)) tools.push(`<button type="button" class="accel-btn" data-action="variant" data-kind="${kind}" data-id="${spot.id}" title="${variant.hint}">${variant.label}</button>`);
+          }
+          if (spot.to > spot.from && spotChain?.id !== spot.id) tools.push(`<button type="button" class="accel-btn" data-action="backwards" data-id="${spot.id}" title="Loop the last bar, then add one bar before it at a time">Backwards</button>`);
+        }
+        tools.push(infoButton("practice"));
+        rows.push(`<div class="accel-actions">${tools.join("")}</div>`);
+        if (checkResult?.piece === activePieceId) rows.push(`<div class="check-result">${checkResult.html}</div>`);
+        if (heatShown(activePieceId)) rows.push(`<div class="heat-key"><span><i style="background: ${HEAT_COLORS[0]}"></i>in tune</span><span><i style="background: ${HEAT_COLORS[1]}"></i>close</span><span><i style="background: ${HEAT_COLORS[2]}"></i>off or missed</span></div>`);
+        rows.push(infoText("practice"));
+      }
+      bar.innerHTML = rows.join("");
+      bar.hidden = !rows.length;
+    }
+
+    // Backwards: each clean time round adds the bar before, until the loop is the whole spot.
+    function extendChain(spot) {
+      spotChain.first = Math.max(spot.from - 1, spotChain.first - 1);
+      loopBars = { first: spotChain.first, last: spot.to - 1 };
+      if (spotChain.first === spot.from - 1) spotChain = null;
+      updateLoopUi();
+      renderSheet(activePieceId, sheetHighlight);
+    }
+
+    // --- Variations of a hard spot, made as pieces of their own and looped in Notes ---
+    const VARIANTS = {
+      bow: { label: "Bow only", hint: "The rhythm and string crossings on open strings: the bow alone.", applies: () => true },
+      dotted: { label: "Dotted", hint: "Each pair of eighths long–short.", applies: (spot) => hasEighthPairs(spot) },
+      snapped: { label: "Snapped", hint: "Each pair of eighths short–long.", applies: (spot) => hasEighthPairs(spot) },
+    };
+
+    const spotBars = (spot) => PIECES[spot.piece].measures.slice(spot.from - 1, spot.to);
+
+    // Every note on the open string it is played on, keeping its rhythm.
+    const bowOnly = (measure) => measure.map((item) => {
+      const note = noteSpec(item);
+      if (note.rest) return item;
+      const place = fingerPlacement(note.pitch, note.finger);
+      return { ...note, pitch: place ? FB_STRINGS[place.string] : note.pitch, finger: undefined };
+    });
+
+    // Pairs of plain eighths on the beat, as dotted eighth + sixteenth, or the other way round.
+    function dotPairs(measure, snapped) {
+      const plain = (note) => note && !note.rest && !note.tie && !note.triplet && !note.dotted && note.beats === 0.5;
+      const out = [];
+      let beat = 0;
+      for (let i = 0; i < measure.length; i++) {
+        const a = noteSpec(measure[i]);
+        const b = i + 1 < measure.length ? noteSpec(measure[i + 1]) : null;
+        if (plain(a) && plain(b) && beat % 1 === 0) {
+          out.push(...(snapped ? [s(a.pitch), dotted(e(b.pitch))] : [dotted(e(a.pitch)), s(b.pitch)]));
+          i++;
+          beat = snapBeat(beat + 1);
+        } else {
+          out.push(measure[i]);
+          beat = snapBeat(beat + a.beats);
+        }
+      }
+      return out;
+    }
+
+    const hasEighthPairs = (spot) => spotBars(spot).some((measure) => dotPairs(measure, false).some((item, i) => item !== measure[i]));
+
+    function openVariant(spot, kind) {
+      const piece = PIECES[spot.piece];
+      const id = `variant:${spot.id}:${kind}`;
+      PIECES[id] = {
+        ...piece,
+        title: `${spotName(spot)}, ${VARIANTS[kind].label.toLowerCase()}`,
+        meta: `${VARIANTS[kind].hint} Loops until Stop.`,
+        measures: spotBars(spot).map((measure) => (kind === "bow" ? bowOnly(measure) : dotPairs(measure, kind === "snapped"))),
+        tempo: [{ bar: 1, bpm: spot.bpm }],
+        sections: undefined, labels: undefined, piano: undefined, second: false, drone: undefined, repeat: false,
+        pickup: spot.from === 1 && !!piece.pickup,
+        variantOf: spot.id,
+        variant: kind,
+      };
+      openGenerated(id);
+    }
+
+    // A made-up piece opens looped all through, at its own tempo.
+    function openGenerated(id) {
+      document.querySelector('.tab[data-panel="notes"]').click();
+      openPiece(id);
+      loopBars = { first: 0, last: PIECES[id].measures.length - 1 };
+      updateLoopUi();
+      renderSheet(activePieceId, sheetHighlight);
+    }
+
+    // --- Mic check and heat map ---
+    // Check plays the piece or loop silently while the mic listens. Each note is judged by the
+    // pitch heard in the middle of its time on the highlight (from a quarter of the way in, so the
+    // attack and a late finger don't count against it), and every round goes into a heat map of
+    // the piece: a running average of how far off each note has been.
+    const MIC_LAG_MS = 50; // a frame is heard about this long before it is read
+    const IN_TUNE_CENTS = 20;
+    const CLOSE_CENTS = 40;
+    const HEAT_COLORS = ["#2f7d46", "#b7791f", "#c0392b"];
+    let runMuted = false;
+    let runCheck = null; // the check under way: its mic, the pitches heard and when each note began
+    let checkResult = null; // the last check's line under the controls, { piece, html }
+
+    const heatShown = (pieceId) => !!(accelReady && accel.settings.extended && accel.settings.heatMap !== false && accel.heat[pieceId]);
+
+    function heatColor(pieceId, index) {
+      if (!heatShown(pieceId)) return null;
+      const note = accel.heat[pieceId].notes[index];
+      if (!note) return null;
+      return HEAT_COLORS[note.err <= IN_TUNE_CENTS ? 0 : note.err <= CLOSE_CENTS ? 1 : 2];
+    }
+
+    function noteStarted(index, pass) {
+      if (!runCheck) return;
+      const now = performance.now();
+      if (runCheck.notes.length && pass !== runCheck.pass) scoreRound(runCheck, now);
+      runCheck.pass = pass;
+      runCheck.notes.push({ index, at: now });
+    }
+
+    async function startRunCheck() {
+      if (runCheck || !activePieceId) return;
+      const pieceId = activePieceId;
+      stopPitchListener();
+      stopPiecePlayback();
+      const show = (html) => {
+        checkResult = { piece: pieceId, html };
+        renderPracticeBar();
+      };
+      if (!navigator.mediaDevices?.getUserMedia) {
+        return show("<strong>Microphone unavailable</strong> — the browser allows it only on a secure page (https:// or localhost).");
+      }
+      show("Asking for the microphone…");
+      let stream;
+      try {
+        const rawAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+        stream = await navigator.mediaDevices.getUserMedia({ audio: rawAudio, video: false }).catch((err) => {
+          if (err?.name === "OverconstrainedError" || err?.name === "ConstraintNotSatisfiedError" || err?.name === "TypeError") {
+            return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          }
+          throw err;
+        });
+      } catch (err) {
+        return show(describeMicError(err));
+      }
+      if (activePieceId !== pieceId || runCheck) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      // As in listen mode: on iOS the mic can run at another sample rate than the audio context.
+      getCtx();
+      const trackRate = stream.getAudioTracks()[0]?.getSettings?.().sampleRate;
+      if (trackRate && ctx.sampleRate !== trackRate) {
+        try { ctx.close(); } catch {}
+        ctx = new AudioContext({ sampleRate: trackRate });
+      }
+      const audio = getCtx();
+      const analyser = audio.createAnalyser();
+      analyser.fftSize = 2048; // 46 ms, short enough for sixteenths
+      const source = audio.createMediaStreamSource(stream);
+      source.connect(analyser);
+      const sink = audio.createGain();
+      sink.gain.value = 0;
+      analyser.connect(sink);
+      sink.connect(audio.destination);
+      const buf = new Float32Array(analyser.fftSize);
+
+      runMuted = true;
+      startPiecePlayback();
+      const check = { piece: pieceId, stream, source, sink, notes: [], frames: [], pass: -1, round: 0 };
+      // The violin's range only (G3 is 196 Hz), which keeps the pitch search cheap.
+      check.timer = setInterval(() => {
+        analyser.getFloatTimeDomainData(buf);
+        check.frames.push({ at: performance.now() - MIC_LAG_MS, hz: autoCorrelatePitch(buf, audio.sampleRate, 180, 1400) });
+      }, 20);
+      runCheck = check;
+      show("Listening. Play along with the highlight: the play-along is silent, so the mic hears only you.");
+    }
+
+    // Play to the end, Stop or Pause ends a check, scoring the notes played so far.
+    function endRunCheck() {
+      if (!runCheck) return;
+      const check = runCheck;
+      runCheck = null;
+      runMuted = false;
+      clearInterval(check.timer);
+      if (check.notes.length) scoreRound(check, performance.now());
+      check.stream.getTracks().forEach((track) => track.stop());
+      try {
+        check.source.disconnect();
+        check.sink.disconnect();
+      } catch {}
+      renderPracticeBar();
+    }
+
+    function scoreRound(check, endAt) {
+      const piece = PIECES[check.piece];
+      const notes = flattenMeasures(piece.measures, piece.beamBeats);
+      const beatMs = 60000 / pieceBpm();
+      const results = check.notes.map(({ index, at }, k) => {
+        const note = notes[index];
+        const next = check.notes[k + 1]?.at ?? endAt;
+        const length = Math.min(next - at, heldBeats(index, notes) * beatMs);
+        const target = midiToFreq(pitchToMidi(note.pitch));
+        const heard = check.frames
+          .filter((frame) => frame.hz && frame.at >= at + length * 0.25 && frame.at <= at + length * 0.9)
+          .map((frame) => centsOff(alignPitchToTarget(frame.hz, target), target));
+        return { index, note, cents: heard.length >= 2 ? median(heard) : null };
+      });
+      check.round++;
+      check.notes = [];
+      check.frames = check.frames.filter((frame) => frame.at > endAt - 500);
+      if (!results.length) return;
+
+      // The heat map is a running average, so one bad round shows but doesn't stick.
+      if (!isGenerated(check.piece)) {
+        const heat = accel.heat[check.piece] ?? { piece: check.piece, notes: {} };
+        results.forEach(({ index, cents }) => {
+          const err = cents === null ? 50 : Math.abs(cents);
+          const before = heat.notes[index];
+          heat.notes[index] = { err: before ? before.err * 0.6 + err * 0.4 : err, n: (before?.n ?? 0) + 1 };
+        });
+        store("heat", heat);
+      }
+
+      const good = results.filter(({ cents }) => cents !== null && Math.abs(cents) <= IN_TUNE_CENTS).length;
+      const worst = results.filter(({ cents }) => cents === null || Math.abs(cents) > IN_TUNE_CENTS)
+        .sort((a, b) => (b.cents === null ? 999 : Math.abs(b.cents)) - (a.cents === null ? 999 : Math.abs(a.cents)))
+        .slice(0, 2)
+        .map(({ note, cents }) => `${noteName(note.pitch)} in bar ${note.measure + 1}, ${cents === null ? "not heard" : `${Math.round(Math.abs(cents))} cents ${cents < 0 ? "flat" : "sharp"}`}`);
+      const bar = worstBar(check.piece);
+      const spotLink = bar && !isGenerated(check.piece) && !activeSpots().some((spot) => spot.piece === check.piece && spot.from <= bar && bar <= spot.to)
+        ? ` <button type="button" class="accel-btn" data-action="heat-spot" data-bar="${bar}">Make bar ${bar} a hard spot</button>` : "";
+      checkResult = {
+        piece: check.piece,
+        html: `<strong>${check.round > 1 || check.pass > 0 ? `Round ${check.round}: ` : ""}${good} of ${results.length} notes in tune.</strong>${worst.length ? ` Furthest off: ${worst.join("; ")}.` : ""}${spotLink}`,
+      };
+      renderPracticeBar();
+    }
+
+    // The bar whose notes the heat map has furthest off on average, if any is off at all.
+    function worstBar(pieceId) {
+      const heat = accel.heat[pieceId];
+      if (!heat) return null;
+      const notes = flattenMeasures(PIECES[pieceId].measures, PIECES[pieceId].beamBeats);
+      const bars = {};
+      for (const [index, { err }] of Object.entries(heat.notes)) {
+        const bar = notes[index]?.measure;
+        if (bar === undefined) continue;
+        (bars[bar] ??= []).push(err);
+      }
+      const [bar, errs] = Object.entries(bars).sort((a, b) => avg(b[1]) - avg(a[1]))[0] ?? [];
+      return errs && avg(errs) > IN_TUNE_CENTS ? Number(bar) + 1 : null;
+    }
+
+    const avg = (values) => values.reduce((sum, v) => sum + v, 0) / values.length;
+
+    // From Notes, Accelerator or a heat map: the bars become a hard spot, starting at the tempo
+    // on the slider, or at 60% of full tempo when the slider is still at full tempo. Saving the
+    // same bars again updates the tempo.
+    function saveSpot(pieceId, from, to) {
+      const target = fullTempo(pieceId) ?? pieceBpm();
+      const bpm = pieceBpm() < target ? pieceBpm() : Math.max(40, Math.round(target * 0.6));
+      const same = activeSpots().find((spot) => spot.piece === pieceId && spot.from === from && spot.to === to);
+      store("spots", same
+        ? { ...same, bpm, startBpm: Math.min(same.startBpm, bpm), runs: 0 }
+        : { id: newId(), piece: pieceId, from, to, bpm, startBpm: bpm, target, runs: 0, created: new Date().toISOString(), last: "", done: "" });
+      renderSpots();
+      renderReview();
+      renderPracticeBar();
+      return bpm;
+    }
+
+    // --- Skills ahead: the moves of the next pieces, drilled before you get to them ---
+    // The piece being worked on is the one chosen on the card, or else the one after the furthest
+    // played through from the start (a loop doesn't count) in the songbook played last. A move is
+    // one note to the next, named by where both are played; the ones that piece and the two after
+    // it have and the pieces before it don't are the new skills. A finger moving between high and
+    // low on its string counts three times, a string skipped or the same finger on another string
+    // twice.
+    const songbookIds = (collection) => collection.pieces.flatMap((entry) => (typeof entry === "string" ? [entry] : entry.pieces)).filter((id) => PIECES[id]);
+
+    function bookProgress() {
+      const chosen = accel.settings.workingOn;
+      if (chosen && PIECES[chosen] && collectionOf(chosen)) {
+        const ids = songbookIds(collectionOf(chosen));
+        return { ids, current: ids.indexOf(chosen) };
+      }
+      const played = Object.values(accel.pieces).filter((record) => PIECES[record.id] && collectionOf(record.id))
+        .sort((a, b) => (b.bpm > 0) - (a.bpm > 0) || b.last.localeCompare(a.last));
+      const ids = songbookIds(played.length ? collectionOf(played[0].id) : COLLECTIONS[0]);
+      return { ids, current: Math.max(-1, ...ids.map((id, i) => (accel.pieces[id]?.bpm > 0 ? i : -1))) + 1 };
+    }
+
+    function pieceMoves(id) {
+      const notes = flattenMeasures(PIECES[id].measures, PIECES[id].beamBeats);
+      const moves = [];
+      for (let i = 1; i < notes.length; i++) {
+        const [a, b] = [notes[i - 1], notes[i]];
+        if (a.pitch === b.pitch) continue;
+        const from = fingerPlacement(a.pitch, a.fourth ? 4 : undefined);
+        const to = fingerPlacement(b.pitch, b.fourth ? 4 : undefined);
+        if (!from || !to) continue;
+        const sameFinger = from.finger === to.finger && from.offset && to.offset;
+        const weight = sameFinger && from.string === to.string ? 3 : sameFinger || Math.abs(from.string - to.string) >= 2 ? 2 : 1;
+        moves.push({ key: `${a.pitch}-${b.pitch}`, a: a.pitch, b: b.pitch, weight });
+      }
+      return moves;
+    }
+
+    function skillsAhead() {
+      const { ids, current } = bookProgress();
+      const known = new Set(ids.slice(0, current).flatMap((id) => pieceMoves(id).map((move) => move.key)));
+      const upcoming = ids.slice(current, current + 3);
+      const found = new Map();
+      for (const id of upcoming) {
+        for (const move of pieceMoves(id)) {
+          if (known.has(move.key)) continue;
+          const skill = found.get(move.key) ?? { ...move, count: 0, pieces: [] };
+          skill.count++;
+          if (!skill.pieces.includes(id)) skill.pieces.push(id);
+          found.set(move.key, skill);
+        }
+      }
+      return { upcoming, skills: [...found.values()].sort((x, y) => y.count * y.weight - x.count * x.weight).slice(0, 4) };
+    }
+
+    const moveText = ({ a, b }) => `${fingeringText(a)} → ${fingeringText(b)}`;
+
+    let shownSkills = []; // the drills on the card, so Drill opens the one shown
+
+    function renderSkills() {
+      if (!accelReady || !accel.settings.extended) return;
+      const { upcoming, skills } = skillsAhead();
+      shownSkills = skills;
+      const drilled = accel.days[dayKey()]?.drills ?? [];
+      const current = upcoming[0] ?? "";
+      const options = COLLECTIONS.map((collection) => `<optgroup label="${escapeText(collection.title)}">${songbookIds(collection)
+        .map((id) => `<option value="${id}"${id === current ? " selected" : ""}>${escapeText(PIECES[id].title)}</option>`).join("")}</optgroup>`).join("");
+      document.getElementById("accel-skills").innerHTML = `<label class="accel-start">Working on <select class="accel-input" id="accel-working">${current ? "" : '<option value="" selected>—</option>'}${options}</select></label>` + (!upcoming.length
+        ? '<p class="accel-empty">You have played every piece in this songbook.</p>'
+        : `<p class="accel-detail">New moves in ${upcoming.map((id) => escapeText(PIECES[id].title)).join(", ")}:</p>` + (skills.map((skill) => `
+          <div class="accel-row">
+            <span class="accel-check"><span><span class="accel-name">${noteName(skill.a)} → ${noteName(skill.b)}${drilled.includes(skill.key) ? " ✓" : ""}</span>
+              <span class="accel-detail">${escapeText(moveText(skill))} · ${skill.count}× in ${skill.pieces.map((id) => escapeText(PIECES[id].title)).join(", ")}</span></span></span>
+            <button type="button" class="accel-btn" data-action="drill" data-key="${skill.key}">Drill</button>
+          </div>`).join("") || '<p class="accel-empty">Nothing new: the pieces so far have every move these have.</p>'));
+    }
+
+    // A drill is the move back and forth in eighths for two bars at ♩ 60, looped.
+    function openDrill(key) {
+      const skill = shownSkills.find((found) => found.key === key);
+      if (!skill) return;
+      const { a, b } = skill;
+      const from = PIECES[skill.pieces[0]];
+      const id = `drill:${key}`;
+      PIECES[id] = {
+        title: `Drill: ${noteName(a)} → ${noteName(b)}`,
+        detail: "",
+        meta: `${moveText(skill)}, from ${from.title}. Loops until Stop.`,
+        accent: from.accent,
+        tempo: [{ bar: 1, bpm: 60 }],
+        measures: [[e(a), e(b), e(a), e(b), e(a), e(b), e(a), e(b)], [e(a), e(b), e(a), e(b), h(a)]],
+      };
+      openGenerated(id);
+    }
+
+    // --- Outside the hour: silent practice and night replay ---
+    // Night replay plays the day's hard spots very quietly, starting a while after the tap and
+    // going on for an hour, for the first deep sleep of the night. The screen is kept on, since a
+    // phone that locks stops the page.
+    const NIGHT_DELAY_MIN = 20;
+    const NIGHT_LENGTH_MIN = 60;
+    let nightReplay = null; // { timers, bus, lock, startsAt, endsAt, date }
+
+    function renderOutside() {
+      if (!accelReady || !accel.settings.extended) return;
+      const day = accel.days[dayKey()] ?? newDay(dayKey());
+      const time = (ms) => new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      document.getElementById("accel-outside").innerHTML = `
+        <span class="accel-name">Silent practice</span>
+        <div class="accel-stepper" style="margin-top: 0.35rem">
+          <button type="button" class="accel-btn" data-action="mental" data-step="-5" aria-label="5 minutes less">−5</button>
+          <strong>${day.mental} min</strong>
+          <button type="button" class="accel-btn" data-action="mental" data-step="5" aria-label="5 minutes more">+5</button>
+        </div>
+        <span class="accel-detail">Singing tomorrow&rsquo;s piece, or fingering it on your forearm along with the playback.</span>
+        <span class="accel-name" style="margin-top: 0.9rem">Night replay</span>
+        <span class="accel-detail">${nightReplay
+          ? (Date.now() < nightReplay.startsAt ? `Starts at ${time(nightReplay.startsAt)}` : "Playing") + `, until ${time(nightReplay.endsAt)}. Keep the screen on and the volume low.`
+          : `Today&rsquo;s hard spots, very quietly, from ${NIGHT_DELAY_MIN} minutes after you start it, for an hour.${day.replay ? ` Played ${day.replay} min today.` : ""}`}</span>
+        <div class="accel-actions"><button type="button" class="accel-btn${nightReplay ? " on" : ""}" data-action="night">${nightReplay ? "Stop night replay" : "Start night replay"}</button></div>`;
+    }
+
+    function softTone(pitch, at, length, out) {
+      const audio = getCtx();
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      const level = volume() * 0.08;
+      osc.type = "sine";
+      osc.frequency.value = midiToFreq(pitchToMidi(pitch));
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(level, at + 0.04);
+      gain.gain.setValueAtTime(level, at + Math.max(0.05, length - 0.08));
+      gain.gain.linearRampToValueAtTime(0, at + length);
+      osc.connect(gain).connect(out);
+      osc.start(at);
+      osc.stop(at + length + 0.02);
+    }
+
+    async function startNightReplay() {
+      const date = dayKey();
+      const todays = activeSpots().filter((spot) => spot.last === date);
+      const spots = todays.length ? todays : activeSpots();
+      if (!spots.length) return alert("Add a hard spot first: night replay plays the day's hard spots.");
+      const audio = getCtx();
+      const bus = audio.createGain();
+      bus.connect(output());
+      const replay = { timers: [], bus, date, startsAt: Date.now() + NIGHT_DELAY_MIN * 60000 };
+      replay.endsAt = replay.startsAt + NIGHT_LENGTH_MIN * 60000;
+      nightReplay = replay;
+      try { replay.lock = await navigator.wakeLock?.request("screen"); } catch {}
+      // Each spot at its tempo with 4 seconds between them, then 20 seconds' quiet, round again.
+      const round = () => {
+        if (nightReplay !== replay) return;
+        if (Date.now() >= replay.endsAt) return stopNightReplay();
+        let at = audio.currentTime + 0.1;
+        for (const spot of spots) {
+          const notes = flattenMeasures(spotBars(spot), PIECES[spot.piece].beamBeats);
+          const beat = 60 / spot.bpm;
+          notes.forEach((note, i) => {
+            if (!notes[i - 1]?.tie) softTone(note.pitch, at + note.start * beat, heldBeats(i, notes) * beat * 0.9, bus);
+          });
+          const last = notes[notes.length - 1];
+          at += (last ? last.start + last.beats + last.restsAfter.reduce((sum, r) => sum + r, 0) : 0) * beat + 4;
+        }
+        replay.timers.push(setTimeout(round, (at - audio.currentTime + 16) * 1000));
+        renderOutside();
+      };
+      replay.timers.push(setTimeout(round, replay.startsAt - Date.now()));
+      renderOutside();
+    }
+
+    function stopNightReplay() {
+      if (!nightReplay) return;
+      const replay = nightReplay;
+      nightReplay = null;
+      replay.timers.forEach(clearTimeout);
+      const t = getCtx().currentTime;
+      replay.bus.gain.setValueAtTime(replay.bus.gain.value, t);
+      replay.bus.gain.linearRampToValueAtTime(0, t + 0.3);
+      setTimeout(() => replay.bus.disconnect(), 400);
+      try { replay.lock?.release(); } catch {}
+      const minutes = Math.round((Math.min(Date.now(), replay.endsAt) - replay.startsAt) / 60000);
+      if (minutes > 0) {
+        const day = dayOf(replay.date);
+        store("days", { ...day, replay: day.replay + minutes });
+      }
+      renderOutside();
+    }
+
+    // --- Lesson report: the week in plain text, to show the teacher ---
+    function lessonReport() {
+      const date = dayKey();
+      const week = Array.from({ length: 7 }, (_, k) => shiftDay(date, k - 6));
+      const days = week.map(dayOf);
+      const total = (field) => days.reduce((sum, day) => sum + (day[field] ?? 0), 0);
+      const minutes = Math.round(total("seconds") / 60);
+      const colds = days.filter((day) => day.cold);
+      const played = [...new Set(days.flatMap((day) => day.pieces))].filter((id) => PIECES[id]);
+      const spots = activeSpots();
+      const doneThisWeek = Object.values(accel.spots).filter((spot) => spot.done && spot.done >= week[0] && PIECES[spot.piece]);
+      const next = nextMilestone();
+      const offNotes = (id) => {
+        const heat = accel.heat[id];
+        if (!heat) return [];
+        const notes = flattenMeasures(PIECES[id].measures, PIECES[id].beamBeats);
+        return Object.entries(heat.notes).filter(([, { err }]) => err > IN_TUNE_CENTS).sort((a, b) => b[1].err - a[1].err).slice(0, 3)
+          .map(([index, { err }]) => `${noteName(notes[index].pitch)} in bar ${notes[index].measure + 1} (${Math.round(err)} cents)`);
+      };
+      return [
+        `Violin practice, ${showDay(week[0])} – ${showDay(date)}`,
+        "",
+        `Practised ${week.filter(practisedOn).length} of 7 days, ${minutes} minutes in all (${Math.round(minutes / 7)} a day).`,
+        colds.length ? `Cold tries: ${colds.filter((day) => day.cold.clean).length} of ${colds.length} clean.` : "No cold tries this week.",
+        `Hard-spot runs: ${total("clean")} clean of ${total("runs")}.`,
+        `Listening ${total("listening")} min, silent practice ${total("mental")} min.`,
+        "",
+        spots.length ? "Hard spots (tempo now / full tempo, and where it started):" : "No hard spots in progress.",
+        ...spots.map((spot) => `- ${spotName(spot)}: ♩ ${spot.bpm} / ${spot.target}, from ${spot.startBpm}${spot.last ? `, last ${playedAgo(daysSince(spot.last))}` : ""}`),
+        ...(doneThisWeek.length ? ["Up to full tempo this week:", ...doneThisWeek.map((spot) => `- ${spotName(spot)}`)] : []),
+        "",
+        played.length ? "Pieces played:" : "No pieces played to the end.",
+        ...played.map((id) => {
+          const off = offNotes(id);
+          return `- ${PIECES[id].title}${accel.pieces[id]?.bpm ? `, best ♩ ${accel.pieces[id].bpm} / ${fullTempo(id) ?? "?"}` : ""}${off.length ? `. Furthest off on the mic: ${off.join(", ")}` : ""}`;
+        }),
+        "",
+        next ? `Next milestone: ${next.title}, ${showDay(next.due, { month: "long", year: "numeric" })}.` : "",
+        "",
+        "To work on in the lesson: tone, bow hold and posture, and how the pieces sound.",
+      ].join("\n");
+    }
+
+    let reportShown = false;
+
+    function renderReport() {
+      if (!accelReady || !accel.settings.extended) return;
+      document.getElementById("accel-report").innerHTML = `
+        <span class="accel-detail">The last 7 days as text: practice, cold tries, hard spots and the notes the mic heard off.</span>
+        <div class="accel-actions">
+          <button type="button" class="accel-btn" data-action="report-make">${reportShown ? "Update" : "Make the report"}</button>
+          ${reportShown ? '<button type="button" class="accel-btn" data-action="report-copy">Copy</button>' : ""}
+        </div>
+        ${reportShown ? `<textarea class="accel-report-text" readonly aria-label="Lesson report">${escapeText(lessonReport())}</textarea>` : ""}`;
+    }
+
+    async function copyReport(btn) {
+      const text = document.querySelector("#accel-report textarea");
+      try {
+        await navigator.clipboard.writeText(text.value);
+      } catch {
+        text.select();
+        document.execCommand("copy");
+      }
+      btn.textContent = "Copied ✓";
+    }
+
+    // --- Experiment: does a change help? ---
+    // The 14 days before it began against the days since, on what the record measures: days
+    // practised, minutes, clean cold tries, clean hard-spot runs and tempo gained.
+    function windowStats(from, to) {
+      const days = [];
+      for (let date = from; date <= to; date = shiftDay(date, 1)) days.push(dayOf(date));
+      const total = (field) => days.reduce((sum, day) => sum + (day[field] ?? 0), 0);
+      const practised = days.filter((day) => practisedOn(day.date)).length;
+      const colds = days.filter((day) => day.cold);
+      const percent = (part, whole) => (whole ? `${Math.round((100 * part) / whole)}%` : "–");
+      return {
+        practised: `${practised} of ${days.length}`,
+        minutes: days.length ? Math.round(total("seconds") / 60 / days.length) : "–",
+        cold: percent(colds.filter((day) => day.cold.clean).length, colds.length),
+        clean: percent(total("clean"), total("runs")),
+        gain: practised ? (total("gain") / practised).toFixed(1) : "–",
+      };
+    }
+
+    const STAT_ROWS = [
+      ["practised", "Days practised"],
+      ["minutes", "Minutes a day"],
+      ["cold", "Cold tries clean"],
+      ["clean", "Hard-spot runs clean"],
+      ["gain", "bpm gained a practice day"],
+    ];
+
+    const statsTable = (before, since) => `<table class="accel-stats">
+      <thead><tr><th></th><th>14 days before</th><th>Since</th></tr></thead>
+      <tbody>${STAT_ROWS.map(([key, label]) => `<tr><td>${label}</td><td>${before[key]}</td><td>${since[key]}</td></tr>`).join("")}</tbody>
+    </table>`;
+
+    function renderExperiment() {
+      if (!accelReady || !accel.settings.extended) return;
+      const experiment = accel.settings.experiment;
+      const past = accel.settings.experiments ?? [];
+      const date = dayKey();
+      document.getElementById("accel-experiment").innerHTML = (experiment
+        ? `<span class="accel-name">${escapeText(experiment.name)}</span>
+          <span class="accel-detail">Since ${showDay(experiment.start)}, day ${daysSince(experiment.start) + 1}. Two weeks or more says more than a few days.</span>
+          ${statsTable(windowStats(shiftDay(experiment.start, -14), shiftDay(experiment.start, -1)), windowStats(experiment.start, date))}
+          <div class="accel-actions"><button type="button" class="accel-btn" data-action="experiment-end">End the experiment</button></div>`
+        : `<span class="accel-detail">Change one thing, say night replay or the drills, and see whether the numbers move.</span>
+          <div class="accel-actions">
+            <input type="text" class="accel-input" id="accel-experiment-name" placeholder="What are you changing?" aria-label="What are you changing?">
+            <button type="button" class="accel-btn" data-action="experiment-start">Start</button>
+          </div>`)
+        + past.slice(-3).reverse().map((done) => `<div class="accel-row"><span class="accel-check"><span>
+            <span class="accel-name">${escapeText(done.name)}</span>
+            <span class="accel-detail">${showDay(done.start)} – ${showDay(done.end)} · cold tries clean ${done.before.cold} → ${done.since.cold} · runs clean ${done.before.clean} → ${done.since.clean} · bpm a day ${done.before.gain} → ${done.since.gain}</span>
+          </span></span></div>`).join("");
+    }
+
     function renderAccel() {
       renderSummary();
       if (!accelReady) return;
@@ -8422,6 +9208,16 @@
       renderSpots();
       renderReview();
       renderMilestones();
+      const extended = !!accel.settings.extended;
+      document.getElementById("panel-accelerator").classList.toggle("extended", extended);
+      document.getElementById("accel-extended").checked = extended;
+      if (extended) {
+        renderOutside();
+        renderSkills();
+        renderReport();
+        renderExperiment();
+      }
+      renderPracticeBar();
       document.getElementById("accel-storage").textContent = accelDb
         ? "Everything here is saved in this browser only. Export keeps a copy as a file, to bring back with Import on another device."
         : "This browser is not keeping the record (a private window, or site storage turned off), so it is gone when the page closes. Export saves it as a file.";
@@ -8488,12 +9284,77 @@
         renderSummary();
       } else if (action === "export") exportAccel();
       else if (action === "import") document.getElementById("accel-import").click();
+      else if (action === "first-try") {
+        scheduleReview(el.dataset.kind, accel[el.dataset.kind][id], el.dataset.clean === "1");
+        renderReview();
+      } else if (action === "drill") openDrill(el.dataset.key);
+      else if (action === "mental") {
+        const day = today();
+        store("days", { ...day, mental: Math.max(0, day.mental + Number(el.dataset.step)) });
+        renderOutside();
+      } else if (action === "night") {
+        if (nightReplay) stopNightReplay();
+        else startNightReplay();
+      } else if (action === "report-make") {
+        reportShown = true;
+        renderReport();
+      } else if (action === "report-copy") copyReport(el);
+      else if (action === "experiment-start") {
+        const name = document.getElementById("accel-experiment-name").value.trim();
+        if (!name) return document.getElementById("accel-experiment-name").focus();
+        setSetting("experiment", { name, start: dayKey() });
+        renderExperiment();
+      } else if (action === "experiment-end") {
+        const { name, start } = accel.settings.experiment;
+        const before = windowStats(shiftDay(start, -14), shiftDay(start, -1));
+        const since = windowStats(start, dayKey());
+        setSetting("experiments", [...(accel.settings.experiments ?? []), { name, start, end: dayKey(), before, since }]);
+        setSetting("experiment", null);
+        renderExperiment();
+      }
+    });
+
+    // Under the controls in Notes: the looped spot's runs and the Extended tools.
+    document.getElementById("piece-practice").addEventListener("click", (ev) => {
+      const el = ev.target.closest("button[data-action]");
+      if (!el) return;
+      const { action, id } = el.dataset;
+      const spot = accel.spots[id];
+      if (action === "info") toggleInfo(el.dataset.key);
+      else if (action === "spot-run") {
+        if (spotChain?.id === id && el.dataset.clean === "1") extendChain(spot);
+        else if (spotChain?.id !== id) recordRun(id, el.dataset.clean === "1");
+      } else if (action === "spot-open") openSpot(spot);
+      else if (action === "check-run") {
+        if (runCheck) stopPiecePlayback();
+        else startRunCheck();
+      } else if (action === "heat-toggle") {
+        setSetting("heatMap", accel.settings.heatMap === false);
+        renderPracticeBar();
+        renderSheet(activePieceId, sheetHighlight);
+      } else if (action === "variant") openVariant(spot, el.dataset.kind);
+      else if (action === "backwards") openSpot(spot, { backwards: true });
+      else if (action === "heat-spot") {
+        saveSpot(activePieceId, Number(el.dataset.bar), Number(el.dataset.bar));
+        checkResult.html = checkResult.html.replace(/ <button[^]*<\/button>/, ` Bar ${el.dataset.bar} is a hard spot now ✓`);
+        renderPracticeBar();
+      }
     });
 
     panel.addEventListener("change", (ev) => {
       const { action, id } = ev.target.dataset;
       if (!accelReady) return;
-      if (action === "block-done") setBlockDone(id, ev.target.checked);
+      if (ev.target.id === "accel-working") {
+        setSetting("workingOn", ev.target.value);
+        renderSkills();
+      } else if (ev.target.id === "accel-extended") {
+        setSetting("extended", ev.target.checked);
+        if (!ev.target.checked) {
+          if (runCheck) stopPiecePlayback();
+          spotChain = null;
+        }
+        renderAccel();
+      } else if (action === "block-done") setBlockDone(id, ev.target.checked);
       else if (action === "milestone-done") {
         store("milestones", { ...accel.milestones[id], done: ev.target.checked ? dayKey() : "" });
         renderMilestones();
