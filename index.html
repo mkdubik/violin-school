@@ -1194,7 +1194,40 @@
     .accel-start .accel-input { flex: 0 1 11rem; }
     .accel-stepper { display: flex; align-items: center; gap: 0.5rem; }
     .accel-stepper strong { min-width: 4.5rem; text-align: center; font-weight: 600; }
-    .accel-backup { display: flex; gap: 0.5rem; }
+    .accel-backup { display: flex; align-items: center; gap: 0.5rem; }
+    .accel-info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 1.3rem;
+      height: 1.3rem;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+      border: 1px solid #3a3632;
+      border-radius: 50%;
+      background: transparent;
+      color: #8a8278;
+      font: italic 600 0.75rem Georgia, serif;
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+    .accel-info:hover { color: #f5f0e8; border-color: #8a8278; }
+    .accel-info[aria-expanded="true"] { color: #f5f0e8; border-color: #d4a574; background: color-mix(in srgb, #d4a574 14%, transparent); }
+    .accel-info-text {
+      margin: 0.4rem 0 0.6rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 8px;
+      background: #151412;
+      font-size: 0.8rem;
+      font-weight: 400;
+      line-height: 1.55;
+      color: #c8c0b4;
+    }
+    .accel-info-text[hidden] { display: none; }
+    .accel-info-text p + p { margin-top: 0.5rem; }
+    .accel-info-text strong { color: #f5f0e8; font-weight: 600; }
     .card-btn .practice-line { margin-top: 0.15rem; font-size: 0.75rem; color: #5a5650; }
     .card-btn .practice-line.today { color: #7bc492; }
 
@@ -1629,34 +1662,34 @@
         <div class="accel-col">
           <div class="accel-card" id="accel-summary"></div>
           <div class="accel-card">
-            <div class="accel-label">Today&rsquo;s hour <span class="count" id="accel-plan-count"></span></div>
+            <div class="accel-label" data-info="plan">Today&rsquo;s hour <span class="count" id="accel-plan-count"></span></div>
             <div id="accel-plan"></div>
           </div>
           <div class="accel-card">
-            <div class="accel-label">Cold try</div>
+            <div class="accel-label" data-info="cold">Cold try</div>
             <div id="accel-cold"></div>
           </div>
           <div class="accel-card">
-            <div class="accel-label">Listening</div>
+            <div class="accel-label" data-info="listening">Listening</div>
             <div id="accel-listening"></div>
           </div>
         </div>
         <div class="accel-col">
           <div class="accel-card">
-            <div class="accel-label">Hard spots</div>
+            <div class="accel-label" data-info="spots">Hard spots</div>
             <div id="accel-spots"></div>
           </div>
           <div class="accel-card">
-            <div class="accel-label">Review rotation</div>
+            <div class="accel-label" data-info="review">Review rotation</div>
             <div id="accel-review"></div>
           </div>
           <div class="accel-card">
-            <div class="accel-label">Milestones</div>
+            <div class="accel-label" data-info="milestones">Milestones</div>
             <label class="accel-start">Started <input type="date" class="accel-input" id="accel-start"></label>
             <div id="accel-milestones"></div>
             <div class="accel-actions"><button type="button" class="accel-btn" data-action="milestone-add">Add milestone</button></div>
           </div>
-          <div class="accel-backup">
+          <div class="accel-backup" data-info="backup">
             <button type="button" class="accel-btn" data-action="export">Export</button>
             <button type="button" class="accel-btn" data-action="import">Import</button>
             <input type="file" id="accel-import" accept="application/json,.json" hidden>
@@ -7823,6 +7856,89 @@
       { months: 80, title: "Framhaldspróf" },
     ];
 
+    // What each part of the Accelerator does and why, behind its ⓘ button.
+    const ACCEL_INFO = {
+      summary: `
+        <p><strong>What counts as practice.</strong> Every 5 seconds the app is on screen with a sound playing (a piece, the metronome, a rhythm, a reference tone, a Learn sound), the mic listening or a block timer running, 5 seconds go on today&rsquo;s minutes. Practice without the app isn&rsquo;t counted, so tick the blocks or run their timers.</p>
+        <p><strong>The streak.</strong> A day counts once it has a minute of practice, a piece played to the end or a block ticked off. The streak is the days in a row up to today. Until you practise today it counts up to yesterday, so it isn&rsquo;t broken yet. The week shows the last seven days; hold the pointer over a day for its minutes and pieces.</p>
+        <p><strong>Day and next milestone.</strong> The day number counts from the Started date under Milestones. Next is the first milestone not yet ticked off, with how long until its target date.</p>
+        <p><strong>Why a streak.</strong> Skill comes from steady repetition more than long sessions. Thirty minutes every day beats three and a half hours on Sunday, because each night&rsquo;s sleep consolidates what you practised that day.</p>`,
+      plan: `
+        <p><strong>Why two halves.</strong> The hour is split into a morning half and an evening half because spaced practice beats one long session. Motor learning keeps consolidating between sessions, and studies of finger sequences (Walker and colleagues, 2002) found skills improved after a night&rsquo;s sleep with no further practice. Two sessions, with sleep between the evening and the next morning, give that consolidation twice a day.</p>
+        <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down, chimes at the end and ticks the block for you. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. Timed minutes count as practice.</p>
+        <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening does the études and review, then reading and theory, which need less fresh hands.</p>
+        <p>Tap ⓘ on a block for what it is for.</p>`,
+      cold: `
+        <p><strong>What it is.</strong> The first thing in the morning, before any warm-up, you play yesterday&rsquo;s hard spot once, at the tempo it had reached, and say honestly whether it was clean.</p>
+        <p><strong>Why.</strong> Practice that goes well in the moment can still be gone the next day. A cold try is a test of what you actually kept, the way a lesson, concert or exam gives you one first attempt. Retrieving something from memory also strengthens it: testing is itself a way to learn.</p>
+        <p><strong>Which spot.</strong> The hard spot you worked on most recently before today. Working on it again today doesn&rsquo;t change the pick. If it isn&rsquo;t clean cold, it isn&rsquo;t learned yet, so it stays in the review rotation. Open plays it in Notes with its bars looped at its tempo.</p>`,
+      listening: `
+        <p><strong>What it is.</strong> Time listening to recordings of the pieces you are learning and the ones coming next, outside the practice hour: on the bus, cooking, walking. Add 5 minutes at a time.</p>
+        <p><strong>Why.</strong> It is the core of the Suzuki method, which Suzuki called the mother-tongue approach: children learn to speak by hearing a language long before they speak it. Knowing exactly how a piece should sound, its intonation, rhythm and phrasing, lets you hear your own mistakes and fix them. Adults usually skip it, and it costs none of the hour.</p>
+        <p>15–20 minutes a day is the aim. Listen to the next piece in the book before you start it.</p>`,
+      spots: `
+        <p><strong>Adding one.</strong> In Notes, tap Loop, tap the first and last note of the passage that trips you up, set the Tempo slider to a speed you can play it clean, and tap Hard spot. If the slider is still at full tempo, the spot starts at 60% of it. Saving the same bars again sets a new tempo.</p>
+        <p><strong>The ladder.</strong> Play the spot, then press Clean or Mistake. Three clean runs in a row (the ●●○ dots) raise it 4 bpm. A mistake starts the count again at that tempo. At full tempo, three more clean runs and the spot is done. Loop opens it in Notes looped at its tempo.</p>
+        <p><strong>Why this way.</strong> Your hands learn what they repeat, mistakes included, so each repetition should be a correct one. Slow enough to be clean, and up in small steps once it stays clean, is how to get fast without learning the mistake. Short pauses between repetitions help too: in early learning much of the gain happens during the rest seconds between tries (Bönstrup and colleagues, 2019).</p>
+        <p><strong>Stop at the first error.</strong> When a run goes wrong, stop, find the one note or shift that failed, play just that slowly a few times, then run the spot again.</p>`,
+      review: `
+        <p><strong>What it is.</strong> Up to four things to rotate through in the evening&rsquo;s review: two hard spots and two pieces, the ones untouched longest, leaving out anything you already did today. Spend a couple of minutes on each, switch, and go round again.</p>
+        <p><strong>Why switching.</strong> Practising A, B and C mixed (interleaved) feels harder than finishing A before starting B, and you seem to improve less during the session. But tests a day later show much better retention, because each switch makes you recall the passage again from scratch (Shea and Morgan, 1979, the contextual interference effect). Use straight repetition for brand-new passages, and mixing once you know them.</p>
+        <p><strong>Why review at all.</strong> Suzuki students keep playing their old pieces. They keep the technique those pieces taught, and an old piece played well, with good tone, builds skill the new piece is too hard to build yet.</p>`,
+      milestones: `
+        <p><strong>The plan.</strong> The milestones are an accelerated route to framhaldspróf, the advanced exam of Icelandic music schools, in about six and a half years from the start, against the usual 8–10. It assumes this hour every day, a weekly lesson and the review and theory alongside.</p>
+        <p><strong>The Icelandic stages.</strong> Music schools follow the national curriculum (Aðalnámskrá tónlistarskóla) in three stages, each ending in an exam: grunnnám with grunnpróf, roughly the old 1st–3rd stig; miðnám with miðpróf, the old 4th–5th; and framhaldsnám with framhaldspróf, the old 6th–7th. Each stage also has its own theory exam (tónfræði). Prófanefnd tónlistarskóla runs the exams, mostly in March or May, and you sit them through a music school. Without a school, ABRSM Performance Grades and Trinity&rsquo;s digital exams accept private candidates by video: Grade 5 is about grunnpróf to miðpróf, Grade 8 close to framhaldspróf. The Suzuki book for each exam is a rough guide; the exam pieces decide.</p>
+        <p><strong>Changing them.</strong> Started is the day you count from. Moving it moves every milestone not yet reached by the same amount, keeping the pace. Change a milestone&rsquo;s text or date with ✎, tick it when it is reached, and add your own. Exam milestones are best in March or May, when the exams are held.</p>
+        <p><strong>Done means done.</strong> A book counts as finished when every piece in it is clean and at its full tempo, from the sheet.</p>`,
+      backup: `
+        <p><strong>Where it is kept.</strong> Everything here is saved in this browser on this device (its IndexedDB), and nowhere else: not on a server, not with the app. Each person who opens the app has their own record. Clearing the site&rsquo;s data, or a private window, loses it.</p>
+        <p><strong>Export and Import.</strong> Export saves the whole record as a file (violin-practice-date.json). Import reads such a file and replaces this browser&rsquo;s record with it, so you can move to another device or recover after clearing the browser. Export now and then to keep a copy.</p>
+        <p><strong>One tab at a time.</strong> With the app open in two tabs, each saves its own copy of the day and one can overwrite the other&rsquo;s minutes. Keep it in one tab.</p>`,
+      cold_block: `
+        <p>Five minutes for yesterday&rsquo;s hard spot, played once cold, before anything else. The Cold try card below says which spot and records how it went. Recording it ticks this block. After the one cold run, use the rest of the time on that spot properly, slowly.</p>`,
+      tone: `
+        <p><strong>What.</strong> Open strings with long, slow, whole bows, from the frog to the tip and back, keeping the bow parallel to the bridge and at the same contact point. Listen for an even sound from start to end, with no crunch and no fade at the tip.</p>
+        <p><strong>Why.</strong> With the left hand out of the way, all your attention goes to the bow: its weight, speed and contact point, which make the sound. Tone is the first thing an examiner or audience hears, and bow habits are hard to fix later. A mirror shows whether the bow stays straight.</p>`,
+      scales: `
+        <p><strong>What.</strong> The scale and arpeggio of the key you are working in, with the drone on (the key note and its 5th under the scale, in the Scales songbook). At the moment: G major from the open G string, two octaves, then one octave as a warm-down.</p>
+        <p><strong>Why.</strong> Scales are the finger patterns of every piece in that key, in their simplest form, so they make the pieces easier. The drone gives a steady reference to tune each note against: a note in tune rings with it, out of tune it beats. G major from open G uses both finger patterns: high 2 on the G and D strings, low 2 on the A and E strings, which the minuets and the Gavotte need.</p>`,
+      new: `
+        <p><strong>What.</strong> The next piece in the book, and only its hard parts: loop the bars that go wrong, slowly, and save them as hard spots so they climb to tempo over the days. Play the whole piece through only when its spots are close to clean.</p>
+        <p><strong>Why.</strong> Playing a piece top to bottom over and over spends most of the time on the bars you can already play. Work at the spots is where the piece actually improves. For brand-new material, plain repetition is the right method; mixing it in with other things comes later, in review.</p>
+        <p>One new piece at a time, in book order. A piece is done when it is clean at full tempo from the sheet.</p>`,
+      etude: `
+        <p><strong>What.</strong> An étude (a study) from Wohlfahrt&rsquo;s 60 Studies, Op. 45, in the Wohlfahrt songbook in Notes: the usual first étude book, in first position. Until you are ready for it, the finger-pattern drills in Learn.</p>
+        <p><strong>Why.</strong> Each étude works one technique, a bowing, a string crossing or a finger pattern, much harder and longer than a piece would, which pieces alone don&rsquo;t do. The exams ask for études as well as pieces. Play them slower than marked and clean, and use hard spots for the bars that trip you up.</p>`,
+      review_block: `
+        <p>Ten minutes on the Review rotation card: a couple of minutes on each item, switching between them, then round again. Tap ⓘ on the Review rotation card for why switching works better than finishing one thing first.</p>`,
+      reading: `
+        <p><strong>What.</strong> Something you have never played, a little easier than your current piece, read straight through. Keep the pulse going and don&rsquo;t stop for mistakes; look a little ahead of the note you are playing. A songbook you haven&rsquo;t opened yet, or the Learn quizzes for reading notes, will do.</p>
+        <p><strong>Why.</strong> Reading improves with the amount of new music you read, not with practising the same pages. The exams test sight-reading, and good reading makes every new piece faster to learn.</p>`,
+      theory: `
+        <p><strong>What.</strong> The Learn tab&rsquo;s lessons and quizzes: note names, note values, the signs on the page, intervals by ear, the fingerboard and naming rhythms.</p>
+        <p><strong>Why.</strong> Each Icelandic exam stage has its own theory exam (tónfræði), and grunnpróf in theory comes with grunnpróf on the violin. Adults usually get through theory fast, and hearing intervals and knowing what the page says makes the playing faster to learn.</p>`,
+    };
+    const openInfo = new Set();
+
+    // An ⓘ button and the text it opens, which stays open across re-renders.
+    const infoButton = (key) =>
+      `<button type="button" class="accel-info" data-action="info" data-key="${key}" aria-expanded="${openInfo.has(key)}" aria-label="What this is and why" title="What this is and why">i</button>`;
+    const infoText = (key) => `<div class="accel-info-text" data-info-text="${key}"${openInfo.has(key) ? "" : " hidden"}>${ACCEL_INFO[key]}</div>`;
+
+    function toggleInfo(key) {
+      if (openInfo.has(key)) openInfo.delete(key);
+      else openInfo.add(key);
+      document.querySelectorAll(`[data-info-text="${key}"]`).forEach((text) => { text.hidden = !openInfo.has(key); });
+      document.querySelectorAll(`.accel-info[data-key="${key}"]`).forEach((btn) => btn.setAttribute("aria-expanded", openInfo.has(key)));
+    }
+
+    // The sections in the page's markup get theirs here; the summary and plan blocks when they render.
+    document.querySelectorAll("#panel-accelerator [data-info]").forEach((el) => {
+      const key = el.dataset.info;
+      el.insertAdjacentHTML("beforeend", infoButton(key));
+      el.insertAdjacentHTML("afterend", infoText(key));
+    });
+
     // A hard spot goes up 4 bpm after 3 clean runs in a row, and is done after 3 at full tempo.
     const SPOT_RUNS = 3;
     const SPOT_STEP = 4;
@@ -8010,9 +8126,10 @@
         <div class="accel-top">
           <span class="accel-streak">${streak
             ? `<span class="star">★</span> ${streak} ${streak === 1 ? "day" : "days"} in a row${practisedOn(date) ? "" : " · practise today to keep it going"}`
-            : "Practise today to start a streak"}</span>
+            : "Practise today to start a streak"} ${infoButton("summary")}</span>
           <span class="accel-time">${minutes} / ${PLAN_MINUTES} min today</span>
         </div>
+        ${infoText("summary")}
         <div class="accel-week">${week.join("")}</div>
         <div class="accel-next">Day ${daysSince(start) + 1}${next ? ` · next: ${escapeText(next.title)}, ${until > 0 ? `in ${timeSpan(until)}` : until === 0 ? "due today" : `${timeSpan(-until)} overdue`}` : ""}</div>`;
     }
@@ -8024,11 +8141,15 @@
         const head = block.part === part ? "" : `<div class="accel-part">${(part = block.part)}</div>`;
         const done = !!day?.blocks[block.id];
         const timing = blockTimer?.id === block.id;
+        // The cold try and review blocks share a name with a card that has its own ⓘ.
+        const info = ACCEL_INFO[`${block.id}_block`] ? `${block.id}_block` : block.id;
         return `${head}<div class="accel-row${done ? " done" : ""}">
           <label class="accel-check"><input type="checkbox" data-action="block-done" data-id="${block.id}"${done ? " checked" : ""}>
             <span><span class="accel-name">${block.name}</span><span class="accel-detail">${block.detail}</span></span></label>
+          ${infoButton(info)}
           <button type="button" class="accel-btn accel-timer${timing ? " on" : ""}" data-action="block-timer" data-id="${block.id}" title="${timing ? "Stop the timer" : `Time ${block.min} minutes`}">${timing ? clock(blockTimer.end - Date.now()) : `▶ ${block.min} min`}</button>
-        </div>`;
+        </div>
+        ${infoText(info)}`;
       }).join("");
       const done = ACCEL_PLAN.filter((block) => day?.blocks[block.id]);
       document.getElementById("accel-plan-count").textContent = `${done.length} of ${ACCEL_PLAN.length} done`;
@@ -8314,6 +8435,7 @@
 
     panel.addEventListener("click", (ev) => {
       const el = ev.target.closest("button[data-action]");
+      if (el?.dataset.action === "info") return toggleInfo(el.dataset.key);
       if (!el || !accelReady) return;
       const { action, id } = el.dataset;
       if (action === "block-timer") toggleBlockTimer(id);
