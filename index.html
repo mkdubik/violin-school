@@ -1824,6 +1824,7 @@
   </div>
 
   <!-- Local-only songbooks (not published); see local/songbooks.js. -->
+  <script src="wohlfahrt.js"></script>
   <script src="local/songbooks.js"></script>
   <script src="recordings.js"></script>
   <script>
@@ -3125,6 +3126,9 @@
 
     // --- Notes / sheet music ---
     const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    // The sign a note is written with: "#", "b" or "".
+    const accidentalOf = (pitch) => pitch.match(/^[A-G]([#b]?)/)?.[1] ?? "";
+    const ACCIDENTAL_GLYPH = { "#": "♯", b: "♭" };
 
     const OPEN_STRING = {
       G3: { string: "g", label: "G string · open" },
@@ -3158,14 +3162,31 @@
       B3: "2nd finger (G string)",
       C4: "3rd finger (G string)",
       "C#4": "High 3rd finger (G string)",
+      // The flats of F, B\u266D and E\u266D major, and the rarer sharps.
+      Bb4: "Low 1st finger (A string)",
+      Eb5: "Low 4th finger (A string)",
+      Ab5: "2nd finger (E string)",
+      Bb5: "Low 4th finger (E string)",
+      Eb4: "Low 1st finger (D string)",
+      Ab4: "Low 4th finger (D string)",
+      Ab3: "Low 1st finger (G string)",
+      Bb3: "Low 2nd finger (G string)",
+      "A#4": "Low 1st finger (A string)",
+      "A#5": "High 3rd finger (E string)",
+      "D#4": "Low 1st finger (D string)",
+      "E#5": "Low 1st finger (E string)",
+      "G#3": "Low 1st finger (G string)",
     };
 
     // A measure is a list of notes: "A4" = quarter note, h("A4") = half note, w("A4") = whole
     // note, e("A4") = eighth note, s("A4") = sixteenth note, t("A4") = one of a triplet (three
-    // to a beat), REST = quarter rest, rest(beats) = any other rest (4 whole, 2 half, ½ eighth,
-    // ¼ sixteenth), dotted("A4") / dotted(h("A4")) = dotted, tied(...) = held on into the next
-    // note (same pitch, not played again). A measure can be any length: a pickup bar is just
-    // a short first measure (`pickup: true` numbers the bars from the next one).
+    // to a beat), t6("A4") = one of a sixteenth-note triplet (six to a beat), REST = quarter
+    // rest, rest(beats) = any other rest (4 whole, 2 half, ½ eighth, ¼ sixteenth),
+    // dotted("A4") / dotted(h("A4")) = dotted, tied(...) = held on into the next note (same
+    // pitch, not played again), f4(...) = played with the 4th finger instead of the open string
+    // above it, as the book marks it. "F#4" is a sharp and "Bb4" a flat. A measure can be any
+    // length: a pickup bar is just a short first measure (`pickup: true` numbers the bars from
+    // the next one).
     // `detail` is the songbook card line; `meta` shows under the title on the sheet.
     // `piano` is the accompaniment, one entry per measure naming its PIANO_CHORDS ("D A"
     // splits the measure in half, "-" is silence); the chord sounds on every beat.
@@ -3180,6 +3201,7 @@
     const e = (pitch) => ({ pitch, beats: 0.5 });
     const s = (pitch) => ({ pitch, beats: 0.25 });
     const t = (pitch) => ({ pitch, beats: 1 / 3, triplet: true });
+    const t6 = (pitch) => ({ pitch, beats: 1 / 6, triplet: true });
     // Beat positions snapped to 48ths, so triplets add up exactly.
     const snapBeat = (beat) => Math.round(beat * 48) / 48;
     const dotted = (item) => {
@@ -3187,6 +3209,7 @@
       return { ...note, beats: note.beats * 1.5, dotted: true };
     };
     const tied = (item) => ({ ...noteSpec(item), tie: true });
+    const f4 = (item) => ({ ...noteSpec(item), finger: 4 });
     const rest = (beats) => ({ rest: true, beats });
     const REST = rest(1);
 
@@ -4323,10 +4346,11 @@
       },
     ];
 
-    // Songbooks kept on this computer only: local/songbooks.js is never published, and
-    // without it the Notes tab shows just the songbooks above.
-    for (const songbook of window.LOCAL_SONGBOOKS ?? []) {
-      const { pieces, collection } = songbook({ h, w, e, s, dotted, tied, rest, REST });
+    // Songbooks in files of their own (wohlfahrt.js), then those kept on this computer only:
+    // local/songbooks.js is never published, and without it the Notes tab shows just the
+    // songbooks above.
+    for (const songbook of [...(window.SONGBOOKS ?? []), ...(window.LOCAL_SONGBOOKS ?? [])]) {
+      const { pieces, collection } = songbook({ h, w, e, s, t, t6, dotted, tied, f4, rest, REST });
       Object.assign(PIECES, pieces);
       COLLECTIONS.push(collection);
     }
@@ -4338,13 +4362,13 @@
     let loopBars = null; // the bars Loop repeats, { first, last } as bar indexes
     let loopPick = null; // "first" while Loop waits for the passage's first note, then { first }
 
+    // "F#4" is F sharp and "Bb4" B flat; the half steps above C can run past the octave (E#, Cb).
     function parsePitch(pitch) {
-      const m = pitch.match(/^([A-G])(#?)(\d)$/);
+      const m = pitch.match(/^([A-G])([#b]?)(\d)$/);
       if (!m) return null;
       const letter = m[1];
-      const sharp = m[2] === "#" ? 1 : 0;
       const octave = parseInt(m[3], 10);
-      const idx = NOTE_NAMES.indexOf(letter + (sharp ? "#" : ""));
+      const idx = NOTE_NAMES.indexOf(letter) + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
       return { idx, octave, label: pitch };
     }
 
@@ -4372,13 +4396,15 @@
     // Letter name without the octave, e.g. "C♯", "B", "A".
     function noteName(pitch) {
       const p = parsePitch(pitch);
-      return p ? NOTE_NAMES[p.idx].replace("#", "\u266F") : pitch;
+      return p ? pitch[0] + (ACCIDENTAL_GLYPH[accidentalOf(pitch)] ?? "") : pitch;
     }
 
-    // Icelandic name: H for B, and -\u00EDs for a sharp, e.g. "H", "F\u00EDs". Takes "F#4" or just "F#".
+    // Icelandic name: H for B, -\u00EDs for a sharp and -es for a flat (B, Es and As for B\u266D, E\u266D
+    // and A\u266D), e.g. "H", "F\u00EDs", "Es". Takes "F#4" or just "F#".
     function icelandicName(pitch) {
-      const m = pitch.match(/^([A-G])(#?)/);
+      const m = pitch.match(/^([A-G])([#b]?)/);
       if (!m) return pitch;
+      if (m[2] === "b") return { B: "B", E: "Es", A: "As" }[m[1]] ?? `${m[1]}es`;
       return (m[1] === "B" ? "H" : m[1]) + (m[2] ? "\u00EDs" : "");
     }
 
@@ -4407,7 +4433,7 @@
 
     function noteSpec(item) {
       if (typeof item === "string") return { pitch: item, beats: 1 };
-      return { pitch: item.pitch, beats: item.beats || 1, rest: !!item.rest, dotted: !!item.dotted, tie: !!item.tie, triplet: !!item.triplet };
+      return { pitch: item.pitch, beats: item.beats || 1, rest: !!item.rest, dotted: !!item.dotted, tie: !!item.tie, triplet: !!item.triplet, finger: item.finger };
     }
 
     function pieceBeats(piece) {
@@ -4608,17 +4634,22 @@
 
     // Rests take time (`start` counts them) but are not notes you can tap or play; each note
     // keeps the lengths of the rests that follow it (`restsAfter`).
-    // A sharp holds to the end of its bar, so a plain note after the same note was sharpened
-    // earlier in the bar gets a natural sign. Returns the indices in the measure that need one.
+    // A sharp or flat holds to the end of its bar, so a plain note after the same note was
+    // sharpened or flattened earlier in the bar gets a natural sign. Maps the indices in the
+    // measure that need one to the sign it cancels ("#" or "b").
     function naturalsIn(measure) {
-      const sharpened = new Set();
-      const naturals = new Set();
+      const altered = new Map();
+      const naturals = new Map();
       measure.forEach((item, i) => {
         const spec = noteSpec(item);
         if (spec.rest) return;
-        const plain = spec.pitch.replace("#", "");
-        if (spec.pitch.includes("#")) sharpened.add(plain);
-        else if (sharpened.delete(plain)) naturals.add(i);
+        const plain = spec.pitch.replace(/[#b]/, "");
+        const sign = accidentalOf(spec.pitch);
+        if (sign) altered.set(plain, sign);
+        else if (altered.has(plain)) {
+          naturals.set(i, altered.get(plain));
+          altered.delete(plain);
+        }
       });
       return naturals;
     }
@@ -4641,7 +4672,7 @@
           return snapBeat(at + spec.beats);
         }, 0);
         measure.forEach((item, ni) => {
-          const { pitch, beats, rest, dotted, tie, triplet } = noteSpec(item);
+          const { pitch, beats, rest, dotted, tie, triplet, finger } = noteSpec(item);
           const wide = Math.floor(beat / beamBeats);
           const span = sixteenthSpans.has(wide) ? `${wide}:${Math.floor(beat)}` : wide;
           if (!rest && (dotted ? beats / 1.5 : beats) <= 0.5) {
@@ -4655,18 +4686,19 @@
           if (rest) {
             out[out.length - 1]?.restsAfter.push(beats);
           } else {
-            out.push({ pitch, beats, dotted, tie, triplet, natural: naturals.has(ni), start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
+            out.push({ pitch, beats, dotted, tie, triplet, natural: naturals.get(ni) ?? false, fourth: finger === 4, start, beatInBar: beat, beam, measure: mi, indexInMeasure: ni, globalIndex: out.length, restsAfter: [] });
           }
           start = snapBeat(start + beats);
           beat = snapBeat(beat + beats);
         });
       });
-      if (showFourthFinger) fourthFingerEs(out).forEach((n) => { n.finger = 4; });
+      if (showFourthFinger) fourthFingers(out).forEach((n) => { n.finger = 4; });
       return out;
     }
 
     // The Es between two notes on the A string: played with the 4th finger there, the bow
-    // doesn't cross to the E string for one note. The "4th finger" box marks them with a 4.
+    // doesn't cross to the E string for one note. The "4th finger" box marks them with a 4,
+    // or, in a piece whose book marks its own 4th fingers (f4), those.
     let showFourthFinger = false;
     try { showFourthFinger = localStorage.getItem("fidluaefing-fourth-finger") === "1"; } catch {}
 
@@ -4680,6 +4712,11 @@
     function fourthFingerEs(notes) {
       const onA = (n) => n && pitchToMidi(n.pitch) >= pitchToMidi("A4") && pitchToMidi(n.pitch) < pitchToMidi("E5");
       return notes.filter((n, i) => n.pitch === "E5" && onA(notes[i - 1]) && onA(notes[i + 1]));
+    }
+
+    function fourthFingers(notes) {
+      const marked = notes.filter((n) => n.fourth);
+      return marked.length ? marked : fourthFingerEs(notes);
     }
 
     // Beats a note is held for, counting the notes it is tied into.
@@ -4749,7 +4786,7 @@
             if (spec.rest) {
               rests.push({ x: x + layout.noteRx, beats: spec.beats, dotted: spec.dotted });
             } else {
-              if (spec.pitch.includes("#") || naturals.has(ni)) x += layout.accW;
+              if (accidentalOf(spec.pitch) || naturals.has(ni)) x += layout.accW;
               notes.push({ x: x + layout.noteRx, pitch: spec.pitch });
             }
             x += noteAdvance(spec, layout);
@@ -5017,9 +5054,11 @@
         const up = y > top + 20;
         const base = note.dotted ? note.beats / 1.5 : note.beats;
         const whole = base >= 4;
-        // A sixteenth's stem is longer, to fit two flags if it ends up alone.
-        const len = base === 0.25 ? stemLen + 5 : stemLen;
-        return { x: pos.x, y, top, up, stemEnd: whole ? y : up ? y - len : y + len, flag: false, whole, sixteenth: base === 0.25, triplet: note.triplet };
+        // A sixteenth's stem is longer, to fit two flags if it ends up alone. Sixteenth-note
+        // triplets (⅙ beat) are drawn as sixteenths.
+        const sixteenth = base === 0.25 || base === 1 / 6;
+        const len = sixteenth ? stemLen + 5 : stemLen;
+        return { x: pos.x, y, top, up, stemEnd: whole ? y : up ? y - len : y + len, flag: false, whole, sixteenth, triplet: note.triplet };
       });
       const stemXFor = (hd) => (hd.up ? hd.x + noteRx - 0.8 : hd.x - noteRx + 0.8);
 
@@ -5062,7 +5101,8 @@
         if (group.some((hd) => hd.triplet)) {
           const mx = (x0 + x1) / 2;
           const my = base + slope * (mx - x0) + (up ? -4 : 12);
-          beams += `<text x="${mx}" y="${my}" font-size="9" font-style="italic" font-weight="700" fill="${ink}" text-anchor="middle" font-family="serif">3</text>`;
+          const count = group.some((hd) => hd.triplet && hd.sixteenth) ? 6 : 3;
+          beams += `<text x="${mx}" y="${my}" font-size="9" font-style="italic" font-weight="700" fill="${ink}" text-anchor="middle" font-family="serif">${count}</text>`;
         }
         const inset = t + (up ? 2.5 : -2.5);
         group.forEach((hd, i) => {
@@ -5116,7 +5156,7 @@
         const stemX = stemXFor(hd);
         const stemY1 = stemUp ? y - 1 : y + 1;
         const stemY2 = hd.stemEnd;
-        const accGlyph = note.pitch.includes("#") ? "\u266F" : note.natural ? "\u266E" : "";
+        const accGlyph = ACCIDENTAL_GLYPH[accidentalOf(note.pitch)] ?? (note.natural ? "\u266E" : "");
         const acc = accGlyph
           ? `<text x="${pos.x - noteRx - 10}" y="${y + 4}" font-size="13" fill="${color}" font-family="serif">${accGlyph}</text>`
           : "";
@@ -5224,13 +5264,16 @@
 
     // --- What the current note's symbol means ---
     const NOTE_VALUE_NAMES = { 0.25: "sixteenth note", 0.5: "eighth note", 1: "quarter note", 2: "half note", 4: "whole note" };
-    const BEAT_WORDS = { 0.25: "¼ beat", 0.5: "½ beat", 1: "1 beat", 1.5: "1½ beats" };
+    const BEAT_WORDS = { [1 / 6]: "⅙ beat", 0.25: "¼ beat", [1 / 3]: "⅓ beat", 0.5: "½ beat", 0.75: "¾ beat", 1: "1 beat", 1.5: "1½ beats" };
     const BEAT_FRACTIONS = { 0.25: "¼", 0.5: "½", 0.75: "¾" };
     const beatsText = (beats) => BEAT_WORDS[beats] || `${BEAT_FRACTIONS[beats % 1] ? Math.floor(beats) + BEAT_FRACTIONS[beats % 1] : beats} beats`;
     // Counting eighths as "1 & 2 &" and sixteenths as "1 e & a": a note on the second half of
     // a beat starts on "&".
-    const countText = (beatInBar, triplet = false) => (triplet
-      ? `${Math.floor(beatInBar) + 1}${["", " trip", " let"][Math.round((beatInBar % 1) * 3)]}`
+    // `triplet` is the notes to a beat in a triplet: 3, or 6 for sixteenth-note triplets
+    // (counted "1 trip let & trip let"); 0 for none.
+    const TRIPLET_COUNTS = { 3: ["", " trip", " let"], 6: ["", " trip", " let", " &", " trip", " let"] };
+    const countText = (beatInBar, triplet = 0) => (triplet
+      ? `${Math.floor(beatInBar) + 1}${TRIPLET_COUNTS[triplet][Math.round((beatInBar % 1) * triplet)]}`
       : `${Math.floor(beatInBar) + 1}${["", " e", " &", " a"][(beatInBar % 1) * 4] ?? " &"}`);
 
     // One short line for each part of the symbol (and the marks around it) on the sheet.
@@ -5244,7 +5287,9 @@
       const fact = (term, text) => facts.push(`<strong>${term}</strong> — ${text}`);
 
       const beamed = note.beam >= 0 && (prev?.beam === note.beam || next?.beam === note.beam);
-      if (note.triplet) {
+      if (note.triplet && base === 1 / 6) {
+        fact("Sixteenth-note triplet", "the 6 over the double beam: six notes share one beat, two triplets of ⅙ beat each (count “1 trip let & trip let”).");
+      } else if (note.triplet) {
         fact("Triplet", "the 3 over the beam: three notes share one beat, ⅓ beat each (count “1 trip let”).");
       } else if (base === 0.25) {
         if (beamed) fact("Double beam", "two thick bars join sixteenth notes. Each lasts ¼ beat, so four fit in one beat (count “1 e & a”).");
@@ -5263,18 +5308,23 @@
         fact("Dot", `adds half the note's length: ${beatsText(base)} + ${beatsText(base / 2)} = ${beatsText(note.beats)}.`);
       }
       const barNo = note.measure + (piece.pickup ? 0 : 1);
-      fact("Count", `${barNo ? `bar ${barNo}` : "the pickup bar"}, starting on “${countText(note.beatInBar, note.triplet)}”.`);
-      if (note.pitch.includes("#")) {
+      fact("Count", `${barNo ? `bar ${barNo}` : "the pickup bar"}, starting on “${countText(note.beatInBar, note.triplet ? (base === 1 / 6 ? 6 : 3) : 0)}”.`);
+      if (accidentalOf(note.pitch)) {
         const letters = "CDEFGAB";
         const letter = note.pitch[0];
-        const above = letters[(letters.indexOf(letter) + 1) % 7];
-        fact("Sharp ♯", `raises the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(letter)} and ${noteLabel(above)}, so the finger goes a little closer to the bridge.`);
+        if (accidentalOf(note.pitch) === "#") {
+          const above = letters[(letters.indexOf(letter) + 1) % 7];
+          fact("Sharp ♯", `raises the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(letter)} and ${noteLabel(above)}, so the finger goes a little closer to the bridge.`);
+        } else {
+          const below = letters[(letters.indexOf(letter) + 6) % 7];
+          fact("Flat ♭", `lowers the note a half step: ${noteLabel(note.pitch)} sits between ${noteLabel(below)} and ${noteLabel(letter)}, so the finger goes a little closer to the scroll.`);
+        }
       }
       if (note.finger === 4) {
         fact("4", `the fingering: 4th finger on the ${FB_STRINGS[fingerPlacement(note.pitch, 4).string][0]} string. It sounds the same as the open string, but the bow stays on one string between the notes around it.`);
       }
       if (note.natural) {
-        fact("Natural ♮", `cancels the sharp from earlier in the bar: play plain ${noteLabel(note.pitch)}, not ${noteLabel(`${note.pitch[0]}#${note.pitch.slice(1)}`)}.`);
+        fact("Natural ♮", `cancels the ${note.natural === "b" ? "flat" : "sharp"} from earlier in the bar: play plain ${noteLabel(note.pitch)}, not ${noteLabel(`${note.pitch[0]}${note.natural}${note.pitch.slice(1)}`)}.`);
       }
       const y = pitchToStaffY(note.pitch, 0);
       const ledgers = y < 0 ? Math.floor(-y / 10) : y > 40 ? Math.floor((y - 40) / 10) : 0;
@@ -5317,7 +5367,7 @@
       const y = pitchToStaffY(note.pitch, top);
       for (let ly = top - 10; ly >= y; ly -= 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
       for (let ly = top + 50; ly <= y; ly += 10) svg += `<line x1="${x - 10}" y1="${ly}" x2="${x + 10}" y2="${ly}" stroke="#2a2724" stroke-width="1"/>`;
-      if (note.pitch.includes("#") || note.natural) svg += `<text x="${x - rx - 10}" y="${y + 4}" font-size="13" fill="${ink}" font-family="serif">${note.natural ? "♮" : "♯"}</text>`;
+      if (accidentalOf(note.pitch) || note.natural) svg += `<text x="${x - rx - 10}" y="${y + 4}" font-size="13" fill="${ink}" font-family="serif">${note.natural ? "♮" : ACCIDENTAL_GLYPH[accidentalOf(note.pitch)]}</text>`;
       const base = note.dotted ? note.beats / 1.5 : note.beats;
       const hollow = note.beats >= 2;
       svg += base >= 4
@@ -5377,7 +5427,8 @@
 
     // Open string when possible, otherwise the one string where the note is 1\u20136 half steps up
     // (the E string also takes the 4th finger, 7 up). Null outside first position.
-    // `finger` 4 asks for the 4th finger instead of the open string above it.
+    // `finger` 4 asks for the 4th finger instead of the open string above it. A flat 6 half
+    // steps up (E\u266D on the A string) is a low 4th finger rather than a high 3rd.
     function fingerPlacement(pitch, finger) {
       const midi = pitchToMidi(pitch);
       const offsets = FB_STRINGS.map((open) => midi - pitchToMidi(open));
@@ -5385,7 +5436,8 @@
       if (string < 0) string = offsets.findIndex((o) => o >= 1 && o <= 6);
       if (string < 0 && offsets[3] === 7) string = 3;
       if (string < 0) return null;
-      return { string, offset: offsets[string], finger: FB_FINGER[offsets[string]] };
+      const offset = offsets[string];
+      return { string, offset, finger: offset === 6 && accidentalOf(pitch) === "b" ? 4 : FB_FINGER[offset] };
     }
 
     function renderFingerboard(pitch, accent, el = document.getElementById("np-fingerboard"), finger) {
@@ -5722,12 +5774,16 @@
       document.getElementById("piece-meta").textContent = piece.meta;
       document.getElementById("piece-view").style.setProperty("--accent", piece.accent);
       showPartChips(piece);
-      // The box stays in place on every piece, greyed out where no E falls between A-string notes.
-      const hasFourthFingerEs = fourthFingerEs(flatNotes).length > 0;
+      // The box stays in place on every piece, greyed out where no E falls between A-string notes
+      // and the book marks no 4th finger.
+      const bookFourths = flatNotes.some((n) => n.fourth);
+      const hasFourthFingerEs = bookFourths || fourthFingerEs(flatNotes).length > 0;
       document.getElementById("fourth-finger").disabled = !hasFourthFingerEs;
-      document.getElementById("fourth-finger-row").title = hasFourthFingerEs
-        ? "Mark the Es played with the 4th finger on the A string"
-        : "No E in this piece falls between two notes on the A string";
+      document.getElementById("fourth-finger-row").title = bookFourths
+        ? "Mark the notes the book plays with the 4th finger instead of the open string"
+        : hasFourthFingerEs
+          ? "Mark the Es played with the 4th finger on the A string"
+          : "No E in this piece falls between two notes on the A string";
       // Every piece opens at full tempo, its first tempo mark; the slider shows it next to the speed.
       if (piece.tempo?.length) {
         const slider = document.getElementById("piece-bpm");
@@ -5960,7 +6016,7 @@
       if (!place) return "";
       const string = `${FB_STRINGS[place.string][0]} string`;
       if (place.offset === 0) return `open ${string}`;
-      const low = place.offset === 1 || place.offset === 3 ? "low " : "";
+      const low = place.offset === 1 || place.offset === 3 || (place.offset === 6 && place.finger === 4) ? "low " : "";
       return `${string}, ${low}${ORDINALS[place.finger - 1]} finger`;
     }
 
@@ -7405,7 +7461,7 @@
     const tuneQuiz = { pool: "vol1", id: null, missed: false, done: false, timer: null };
 
     const tunePool = () => COLLECTIONS
-      .filter((collection) => (tuneQuiz.pool === "vol1" ? collection.id === "vol1" : collection.id !== "scales"))
+      .filter((collection) => (tuneQuiz.pool === "vol1" ? collection.id === "vol1" : !["scales", "wohlfahrt"].includes(collection.id)))
       .flatMap((collection) => collection.pieces.filter((entry) => typeof entry === "string"));
 
     // The melody's first bars at its own tempo: the pickup, then whole bars until there are at
