@@ -60,6 +60,12 @@
       color: #f5f0e8;
     }
 
+    /* Six tabs don't fit across a phone, so they go in two rows of three. */
+    @media (max-width: 520px) {
+      .tabs { flex-wrap: wrap; gap: 0.35rem; }
+      .tab { flex: 1 0 30%; }
+    }
+
     .subtabs {
       display: flex;
       gap: 0.35rem;
@@ -1082,6 +1088,114 @@
 
     .sign-group-chips { display: none; }
 
+    /* --- Accelerator --- */
+    #panel-accelerator { text-align: left; }
+    .accel-grid { display: grid; gap: 1rem; }
+    .accel-col { display: grid; gap: 1rem; align-content: start; }
+    .accel-card {
+      padding: 0.9rem 1.1rem 1rem;
+      background: #1c1a18;
+      border-radius: 12px;
+    }
+    .accel-label {
+      margin-bottom: 0.5rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5a5650;
+    }
+    .accel-label .count { float: right; text-transform: none; letter-spacing: 0; }
+    .accel-empty { font-size: 0.8rem; color: #5a5650; line-height: 1.45; }
+    .accel-name { display: block; font-size: 0.9rem; color: #f5f0e8; }
+    .accel-detail { display: block; margin-top: 0.1rem; font-size: 0.75rem; color: #8a8278; }
+    .accel-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    .accel-streak { font-weight: 600; }
+    .accel-streak .star { color: #d4a574; }
+    .accel-time { font-size: 0.8rem; color: #8a8278; white-space: nowrap; }
+    .accel-next { margin-top: 0.4rem; font-size: 0.8rem; color: #8a8278; }
+    .accel-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.35rem; margin-top: 0.75rem; }
+    .accel-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem 0;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      color: #5a5650;
+    }
+    .accel-day .mark { font-size: 1rem; line-height: 1; color: #3a3632; }
+    .accel-day.done .mark { color: #d4a574; }
+    .accel-day.today { background: #262320; color: #c8c0b4; }
+    .accel-part {
+      margin: 0.75rem 0 0.25rem;
+      font-size: 0.72rem;
+      color: #8a8278;
+    }
+    .accel-part:first-child { margin-top: 0; }
+    .accel-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0;
+      border-top: 1px solid #262320;
+    }
+    .accel-check {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      cursor: pointer;
+    }
+    .accel-check input { margin-top: 0.2rem; accent-color: #c47a3a; }
+    .accel-row.done .accel-name { color: #8a8278; text-decoration: line-through; text-decoration-color: #5a5650; }
+    .accel-row.next .accel-name { color: #f0d2ac; }
+    .accel-btn {
+      padding: 0.35rem 0.7rem;
+      border: 1px solid #3a3632;
+      border-radius: 8px;
+      background: transparent;
+      color: #c8c0b4;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .accel-btn:hover { background: #262320; }
+    .accel-btn.on {
+      border-color: #d4a574;
+      color: #f5f0e8;
+      background: color-mix(in srgb, #d4a574 14%, transparent);
+    }
+    .accel-timer { min-width: 4.2rem; font-variant-numeric: tabular-nums; }
+    .accel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
+    .accel-actions .accel-detail { margin: 0 auto 0 0; }
+    .accel-spot { padding: 0.6rem 0; border-top: 1px solid #262320; }
+    .accel-spot:first-child { border-top: none; padding-top: 0; }
+    .accel-meter { height: 4px; margin-top: 0.4rem; border-radius: 2px; background: #2a2724; overflow: hidden; }
+    .accel-meter span { display: block; height: 100%; background: #d4a574; }
+    .accel-runs { letter-spacing: 0.15em; color: #d4a574; }
+    .accel-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid #3a3632;
+      border-radius: 8px;
+      background: #0f0e0d;
+      color: #f5f0e8;
+      font: inherit;
+      font-size: 0.85rem;
+      color-scheme: dark;
+    }
+    .accel-edit { display: grid; gap: 0.4rem; width: 100%; }
+    .accel-edit .accel-actions { margin-top: 0; }
+    .accel-start { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; font-size: 0.8rem; color: #8a8278; }
+    .accel-start .accel-input { flex: 0 1 11rem; }
+    .accel-stepper { display: flex; align-items: center; gap: 0.5rem; }
+    .accel-stepper strong { min-width: 4.5rem; text-align: center; font-weight: 600; }
+    .accel-backup { display: flex; gap: 0.5rem; }
+    .card-btn .practice-line { margin-top: 0.15rem; font-size: 0.75rem; color: #5a5650; }
+    .card-btn .practice-line.today { color: #7bc492; }
+
     /* --- Laptops and desktops: one screen, no page scroll ---
        Phones keep the single scrolling column above. On a wide and tall enough screen the
        title, tabs and volume share a header row, each tab lays its parts out side by side in
@@ -1299,6 +1413,10 @@
       #read-settings { grid-column: 1; grid-row: 2; }
       #learn-quiz .quiz-mode { grid-column: 2; grid-row: 1 / -1; }
       #progress-reset { grid-column: 1; grid-row: 4; justify-self: start; }
+
+      /* Accelerator: today on the left, what carries over between days on the right. */
+      #panel-accelerator.active { max-width: 920px; margin: 0 auto; }
+      .accel-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 2rem; }
     }
   </style>
 </head>
@@ -1312,6 +1430,7 @@
       <button class="tab" data-panel="notes">Notes</button>
       <button class="tab" data-panel="learn">Learn</button>
       <button class="tab" data-panel="metronome">Metronome</button>
+      <button class="tab" data-panel="accelerator">Accelerator</button>
     </div>
 
     <!-- Tuner -->
@@ -1500,6 +1619,50 @@
       <p class="hint">The first beat of each bar is accented. Tap &ldquo;Tap tempo&rdquo; in time to set the speed. Space starts and stops.</p>
     </div>
 
+    <!-- Accelerator -->
+    <div class="panel" id="panel-accelerator">
+      <p class="subtitle">An hour a day, half in the morning and half in the evening</p>
+      <div class="accel-grid">
+        <div class="accel-col">
+          <div class="accel-card" id="accel-summary"></div>
+          <div class="accel-card">
+            <div class="accel-label">Today&rsquo;s hour <span class="count" id="accel-plan-count"></span></div>
+            <div id="accel-plan"></div>
+          </div>
+          <div class="accel-card">
+            <div class="accel-label">Cold try</div>
+            <div id="accel-cold"></div>
+          </div>
+          <div class="accel-card">
+            <div class="accel-label">Listening</div>
+            <div id="accel-listening"></div>
+          </div>
+        </div>
+        <div class="accel-col">
+          <div class="accel-card">
+            <div class="accel-label">Hard spots</div>
+            <div id="accel-spots"></div>
+          </div>
+          <div class="accel-card">
+            <div class="accel-label">Review rotation</div>
+            <div id="accel-review"></div>
+          </div>
+          <div class="accel-card">
+            <div class="accel-label">Milestones</div>
+            <label class="accel-start">Started <input type="date" class="accel-input" id="accel-start"></label>
+            <div id="accel-milestones"></div>
+            <div class="accel-actions"><button type="button" class="accel-btn" data-action="milestone-add">Add milestone</button></div>
+          </div>
+          <div class="accel-backup">
+            <button type="button" class="accel-btn" data-action="export">Export</button>
+            <button type="button" class="accel-btn" data-action="import">Import</button>
+            <input type="file" id="accel-import" accept="application/json,.json" hidden>
+          </div>
+        </div>
+      </div>
+      <p class="hint" id="accel-storage"></p>
+    </div>
+
     <!-- Notes -->
     <div class="panel" id="panel-notes">
       <div id="notes-catalog">
@@ -1565,6 +1728,7 @@
             <button type="button" id="piece-play">Play</button>
             <button type="button" id="piece-stop">Stop</button>
             <button type="button" id="piece-loop" title="Repeat a passage: tap its first and last note">Loop</button>
+            <button type="button" id="piece-spot" title="Work this passage up to tempo in the Accelerator" hidden>Hard spot</button>
           </div>
           <div class="slider-row" title="Speed / full tempo (♩ per minute)">
             <label for="piece-bpm">Tempo</label>
@@ -5491,8 +5655,8 @@
       else startPiecePlayback();
     }
 
-    // For local additions (local/extras.js): a "piece-played" event when the play-along reaches
-    // the end of a piece, with the tempo when it was played from the start, or a loop goes round.
+    // A "piece-played" event, which the Accelerator logs, when the play-along reaches the end of
+    // a piece, with the tempo when it was played from the start, or a loop goes round.
     const announcePlayed = (id, bpm = 0) => document.dispatchEvent(new CustomEvent("piece-played", { detail: { id, bpm } }));
 
     function startPiecePlayback({ fromIndex = 0, fromPass = 0, fromSlot = -1, countdown = true } = {}) {
@@ -5726,6 +5890,7 @@
       const piece = PIECES[id];
       const card = catalogCard({ icon: "♪", name: piece.title, detail: piece.detail, accent: piece.accent }, () => openPiece(id));
       card.dataset.pieceId = id;
+      showPracticeLine(card);
       return card;
     }
 
@@ -5784,6 +5949,9 @@
       const btn = document.getElementById("piece-loop");
       btn.textContent = loopPick ? "Cancel" : loopBars ? "Clear loop" : "Loop";
       btn.classList.toggle("on", !!(loopPick || loopBars));
+      const spotBtn = document.getElementById("piece-spot");
+      spotBtn.hidden = !loopBars;
+      spotBtn.textContent = "Hard spot";
     }
 
     // Play or Stop while Loop waits for notes leaves the picking, as tapping Cancel does.
@@ -7496,6 +7664,664 @@
     nextFind();
     nextTune();
     renderProgress();
+
+    // --- Accelerator: the daily plan and everything tracked about practice ---
+    // Kept in this browser's IndexedDB, so everyone who opens the app has their own record: the
+    // minutes practised each day (while a sound, the mic or a block timer is on), the pieces
+    // played, the plan blocks done, the cold try, listening minutes, the hard spots working up to
+    // tempo and the milestones with their target dates. Nothing leaves the browser; Export saves
+    // a copy as a file and Import brings one back.
+    const ACCEL_PLAN = [
+      { id: "cold", part: "Morning", min: 5, name: "Cold try", detail: "Yesterday's hard spot once, before warming up" },
+      { id: "tone", part: "Morning", min: 5, name: "Tone", detail: "Open strings, long slow bows, a straight bow" },
+      { id: "scales", part: "Morning", min: 10, name: "Scales", detail: "With the drone, from the Scales songbook" },
+      { id: "new", part: "Morning", min: 10, name: "New piece", detail: "Its hard spots, again and again" },
+      { id: "etude", part: "Evening", min: 10, name: "Étude", detail: "Or the finger patterns in Learn" },
+      { id: "review", part: "Evening", min: 10, name: "Review", detail: "The rotation, a couple of minutes each" },
+      { id: "reading", part: "Evening", min: 5, name: "Sight-reading", detail: "Something you have never played" },
+      { id: "theory", part: "Evening", min: 5, name: "Theory and ear", detail: "The quizzes in Learn" },
+    ];
+    const PLAN_MINUTES = ACCEL_PLAN.reduce((sum, block) => sum + block.min, 0);
+
+    // The accelerated plan to framhaldspróf, as months from the start. Each date can be changed.
+    const DEFAULT_MILESTONES = [
+      { months: 6, title: "Suzuki Book 1, clean at tempo from the sheet" },
+      { months: 15, title: "Book 2; vibrato and 3rd position begun" },
+      { months: 20, title: "Grunnpróf (≈ Book 3) and grunnpróf in theory" },
+      { months: 32, title: "Book 4; shifting between 1st and 3rd position" },
+      { months: 44, title: "Miðpróf (≈ Books 5–6)" },
+      { months: 72, title: "Books 7–8; three-octave scales" },
+      { months: 80, title: "Framhaldspróf" },
+    ];
+
+    // A hard spot goes up 4 bpm after 3 clean runs in a row, and is done after 3 at full tempo.
+    const SPOT_RUNS = 3;
+    const SPOT_STEP = 4;
+
+    const ACCEL_STORES = { days: "date", pieces: "id", spots: "id", milestones: "id", settings: "key" };
+    const accel = { days: {}, pieces: {}, spots: {}, milestones: {}, settings: {} };
+    let accelDb = null;
+    let accelReady = false;
+    let blockTimer = null; // the plan block being timed, { id, end, interval }
+    let editingMilestone = null;
+
+    // Days go by their local date, "2026-11-04".
+    const dayKey = (date = new Date()) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+    function parseDay(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    const daysBetween = (from, to) => Math.round((parseDay(to) - parseDay(from)) / 86400000);
+    const daysSince = (key) => daysBetween(key, dayKey());
+
+    function shiftDay(key, days) {
+      const date = parseDay(key);
+      date.setDate(date.getDate() + days);
+      return dayKey(date);
+    }
+
+    function addMonths(key, months) {
+      const date = parseDay(key);
+      date.setMonth(date.getMonth() + months);
+      return dayKey(date);
+    }
+
+    const showDay = (key, options = { day: "numeric", month: "short", year: "numeric" }) =>
+      parseDay(key).toLocaleDateString("en-GB", options);
+    const playedAgo = (days) => (days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`);
+    const escapeText = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+    // "4 months", "2 weeks", "3.5 years".
+    function timeSpan(days) {
+      if (days < 14) return `${days} ${days === 1 ? "day" : "days"}`;
+      if (days < 60) return `${Math.round(days / 7)} weeks`;
+      const months = Math.round(days / 30.44);
+      return months < 24 ? `${months} months` : `${Math.round(months / 6) / 2} years`;
+    }
+
+    function openAccelDb() {
+      return new Promise((resolve) => {
+        try {
+          const request = indexedDB.open("violin-school", 1);
+          request.onupgradeneeded = () => {
+            for (const [name, keyPath] of Object.entries(ACCEL_STORES)) {
+              if (!request.result.objectStoreNames.contains(name)) request.result.createObjectStore(name, { keyPath });
+            }
+          };
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = request.onblocked = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      });
+    }
+
+    function readStore(name) {
+      return new Promise((resolve) => {
+        try {
+          const request = accelDb.transaction(name).objectStore(name).getAll();
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => resolve([]);
+        } catch {
+          resolve([]);
+        }
+      });
+    }
+
+    // The record lives in memory and every change is written through to IndexedDB.
+    function store(name, record) {
+      if (name === "settings") accel.settings[record.key] = record.value;
+      else accel[name][record[ACCEL_STORES[name]]] = record;
+      try { accelDb?.transaction(name, "readwrite").objectStore(name).put(record); } catch {}
+    }
+
+    function unstore(name, key) {
+      delete accel[name][key];
+      try { accelDb?.transaction(name, "readwrite").objectStore(name).delete(key); } catch {}
+    }
+
+    const setSetting = (key, value) => store("settings", { key, value });
+
+    const newDay = (date) => ({ date, seconds: 0, pieces: [], blocks: {}, listening: 0, cold: null });
+    const dayOf = (date) => accel.days[date] ?? newDay(date);
+    const today = () => dayOf(dayKey());
+
+    // A day counts once it has a minute of practice, a piece played or a plan block done.
+    function practisedOn(date) {
+      const day = accel.days[date];
+      return !!day && (day.seconds >= 60 || day.pieces.length > 0 || Object.values(day.blocks).some(Boolean));
+    }
+
+    // Days in a row up to today, or up to yesterday while today has no practice yet.
+    function practiceStreak() {
+      let date = dayKey();
+      if (!practisedOn(date)) date = shiftDay(date, -1);
+      let streak = 0;
+      while (practisedOn(date)) {
+        streak++;
+        date = shiftDay(date, -1);
+      }
+      return streak;
+    }
+
+    const collectionOf = (id) => COLLECTIONS.find((collection) => collection.pieces.some((entry) => entry === id || entry.pieces?.includes(id)));
+    const activeSpots = () => Object.values(accel.spots).filter((spot) => !spot.done && PIECES[spot.piece]);
+    const spotName = (spot) => `${PIECES[spot.piece].title}, ${spot.from === spot.to ? `bar ${spot.from}` : `bars ${spot.from}–${spot.to}`}`;
+    const fullTempo = (id) => PIECES[id]?.tempo?.[0].bpm;
+    const nextMilestone = () => sortedMilestones().find((milestone) => !milestone.done);
+    const sortedMilestones = () => Object.values(accel.milestones).sort((a, b) => a.due.localeCompare(b.due));
+
+    function logPiecePlayed(id, bpm = 0) {
+      const day = today();
+      if (!day.pieces.includes(id)) day.pieces.push(id);
+      store("days", day);
+      const record = accel.pieces[id] ?? { id, last: "", bpm: 0 };
+      store("pieces", { ...record, last: day.date, bpm: Math.max(record.bpm, bpm) });
+      renderSummary();
+      renderReview();
+      document.querySelectorAll("[data-piece-id]").forEach(showPracticeLine);
+    }
+
+    document.addEventListener("piece-played", (ev) => {
+      if (accelReady) logPiecePlayed(ev.detail.id, ev.detail.bpm);
+    });
+
+    // Every 5 seconds with a sound, the mic or a block timer on, while the app is on screen, is practice.
+    setInterval(() => {
+      if (!accelReady || document.visibilityState !== "visible") return;
+      if (!(piecePlayback || metro.running || rhythmLoop || activeTone || pitchListener || learnSound || blockTimer)) return;
+      const day = today();
+      day.seconds += 5;
+      store("days", day);
+      renderSummary();
+    }, 5000);
+
+    // "Played 3 days ago · best ♩ 92 / 104" under a piece in its songbook.
+    function showPracticeLine(card) {
+      const record = accel.pieces[card.dataset.pieceId];
+      const full = fullTempo(card.dataset.pieceId);
+      let line = card.querySelector(".practice-line");
+      if (!line) {
+        line = document.createElement("div");
+        line.className = "practice-line";
+        card.querySelector(".info").append(line);
+      }
+      line.textContent = !record ? ""
+        : `Played ${playedAgo(daysSince(record.last))}${record.bpm ? ` · best ♩ ${record.bpm}${full ? ` / ${full}` : ""}` : ""}`;
+      line.classList.toggle("today", record?.last === dayKey());
+    }
+
+    function renderSummary() {
+      const box = document.getElementById("accel-summary");
+      if (!accelReady) {
+        box.innerHTML = '<p class="accel-empty">Loading your practice record…</p>';
+        return;
+      }
+      const date = dayKey();
+      const streak = practiceStreak();
+      const minutes = Math.floor(today().seconds / 60);
+      const week = [];
+      for (let back = 6; back >= 0; back--) {
+        const key = shiftDay(date, -back);
+        const day = accel.days[key];
+        const title = `${showDay(key, { weekday: "short", day: "numeric", month: "short" })}${day ? ` · ${Math.floor(day.seconds / 60)} min · ${day.pieces.length} ${day.pieces.length === 1 ? "piece" : "pieces"}` : ""}`;
+        week.push(`<div class="accel-day${practisedOn(key) ? " done" : ""}${back ? "" : " today"}" title="${title}"><span>${"SMTWTFS"[parseDay(key).getDay()]}</span><span class="mark">${practisedOn(key) ? "★" : "·"}</span></div>`);
+      }
+      const start = accel.settings.start;
+      const next = nextMilestone();
+      const until = next && daysBetween(date, next.due);
+      box.innerHTML = `
+        <div class="accel-top">
+          <span class="accel-streak">${streak
+            ? `<span class="star">★</span> ${streak} ${streak === 1 ? "day" : "days"} in a row${practisedOn(date) ? "" : " · practise today to keep it going"}`
+            : "Practise today to start a streak"}</span>
+          <span class="accel-time">${minutes} / ${PLAN_MINUTES} min today</span>
+        </div>
+        <div class="accel-week">${week.join("")}</div>
+        <div class="accel-next">Day ${daysSince(start) + 1}${next ? ` · next: ${escapeText(next.title)}, ${until > 0 ? `in ${timeSpan(until)}` : until === 0 ? "due today" : `${timeSpan(-until)} overdue`}` : ""}</div>`;
+    }
+
+    function renderPlan() {
+      const day = accel.days[dayKey()];
+      let part = "";
+      document.getElementById("accel-plan").innerHTML = ACCEL_PLAN.map((block) => {
+        const head = block.part === part ? "" : `<div class="accel-part">${(part = block.part)}</div>`;
+        const done = !!day?.blocks[block.id];
+        const timing = blockTimer?.id === block.id;
+        return `${head}<div class="accel-row${done ? " done" : ""}">
+          <label class="accel-check"><input type="checkbox" data-action="block-done" data-id="${block.id}"${done ? " checked" : ""}>
+            <span><span class="accel-name">${block.name}</span><span class="accel-detail">${block.detail}</span></span></label>
+          <button type="button" class="accel-btn accel-timer${timing ? " on" : ""}" data-action="block-timer" data-id="${block.id}" title="${timing ? "Stop the timer" : `Time ${block.min} minutes`}">${timing ? clock(blockTimer.end - Date.now()) : `▶ ${block.min} min`}</button>
+        </div>`;
+      }).join("");
+      const done = ACCEL_PLAN.filter((block) => day?.blocks[block.id]);
+      document.getElementById("accel-plan-count").textContent = `${done.length} of ${ACCEL_PLAN.length} done`;
+    }
+
+    const clock = (ms) => {
+      const seconds = Math.max(0, Math.ceil(ms / 1000));
+      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+    };
+
+    function setBlockDone(id, done) {
+      const day = today();
+      day.blocks[id] = done;
+      store("days", day);
+      renderPlan();
+      renderSummary();
+    }
+
+    // A block's timer counts its minutes down and rings at the end, ticking the block off. One
+    // runs at a time, and it keeps going in the other tabs.
+    function toggleBlockTimer(id) {
+      const was = blockTimer?.id;
+      stopBlockTimer();
+      if (was === id) return;
+      getCtx(); // made now, on the tap, so the chime may sound later
+      const block = ACCEL_PLAN.find((b) => b.id === id);
+      blockTimer = { id, end: Date.now() + block.min * 60000, interval: setInterval(tickBlockTimer, 250) };
+      renderPlan();
+    }
+
+    function stopBlockTimer() {
+      if (!blockTimer) return;
+      clearInterval(blockTimer.interval);
+      blockTimer = null;
+      renderPlan();
+    }
+
+    function tickBlockTimer() {
+      const left = blockTimer.end - Date.now();
+      if (left <= 0) {
+        const { id } = blockTimer;
+        stopBlockTimer();
+        chime();
+        setBlockDone(id, true);
+        return;
+      }
+      const btn = document.querySelector(`#accel-plan [data-action="block-timer"][data-id="${blockTimer.id}"]`);
+      if (btn) btn.textContent = clock(left);
+    }
+
+    function chime() {
+      const audio = getCtx();
+      [880, 1320].forEach((freq, i) => {
+        const at = audio.currentTime + i * 0.18;
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.exponentialRampToValueAtTime(0.25, at + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.7);
+        osc.connect(gain).connect(output());
+        osc.start(at);
+        osc.stop(at + 0.75);
+      });
+    }
+
+    // The cold try is the hard spot practised most recently before today, played once unwarmed:
+    // whether it comes out clean shows what stuck overnight.
+    function coldTrySpot() {
+      const date = dayKey();
+      return activeSpots().filter((spot) => spot.last && spot.last < date).sort((a, b) => b.last.localeCompare(a.last))[0];
+    }
+
+    function renderCold() {
+      const box = document.getElementById("accel-cold");
+      const cold = accel.days[dayKey()]?.cold;
+      if (cold) {
+        const spot = accel.spots[cold.spot];
+        box.innerHTML = `<span class="accel-name">${spot && PIECES[spot.piece] ? escapeText(spotName(spot)) : "Today's spot"} at ♩ ${cold.bpm}</span>
+          <span class="accel-detail">${cold.clean ? "Clean cold ✓ — it stuck overnight." : "Not clean cold yet. It stays in the rotation."}</span>`;
+        return;
+      }
+      const spot = coldTrySpot();
+      box.innerHTML = spot
+        ? `<span class="accel-name">${escapeText(spotName(spot))} at ♩ ${spot.bpm}</span>
+          <span class="accel-detail">Play it once before warming up, then say how it went.</span>
+          <div class="accel-actions">
+            <button type="button" class="accel-btn" data-action="cold-open" data-id="${spot.id}">Open</button>
+            <button type="button" class="accel-btn" data-action="cold" data-id="${spot.id}" data-clean="1">Clean</button>
+            <button type="button" class="accel-btn" data-action="cold" data-id="${spot.id}" data-clean="0">Not clean</button>
+          </div>`
+        : '<p class="accel-empty">Work on a hard spot today, and tomorrow morning it comes back here to try cold.</p>';
+    }
+
+    function recordCold(id, clean) {
+      const day = today();
+      day.cold = { spot: id, bpm: accel.spots[id].bpm, clean };
+      day.blocks.cold = true;
+      store("days", day);
+      renderCold();
+      renderPlan();
+      renderSummary();
+    }
+
+    function renderListening() {
+      const minutes = accel.days[dayKey()]?.listening ?? 0;
+      document.getElementById("accel-listening").innerHTML = `
+        <div class="accel-stepper">
+          <button type="button" class="accel-btn" data-action="listen" data-step="-5" aria-label="5 minutes less">−5</button>
+          <strong>${minutes} min</strong>
+          <button type="button" class="accel-btn" data-action="listen" data-step="5" aria-label="5 minutes more">+5</button>
+        </div>
+        <span class="accel-detail">Recordings of what you are learning, outside the hour: 15–20 minutes a day.</span>`;
+    }
+
+    function renderSpots() {
+      const spots = activeSpots().sort((a, b) => (a.created ?? "").localeCompare(b.created ?? ""));
+      const done = Object.values(accel.spots).filter((spot) => spot.done).length;
+      const box = document.getElementById("accel-spots");
+      box.innerHTML = spots.map((spot) => {
+        const progress = spot.target > spot.startBpm ? (spot.bpm - spot.startBpm) / (spot.target - spot.startBpm) : 1;
+        return `<div class="accel-spot">
+          <div class="accel-top"><span class="accel-name">${escapeText(spotName(spot))}</span><span class="accel-time">♩ ${spot.bpm} / ${spot.target}</span></div>
+          <div class="accel-meter"><span style="width: ${Math.round(progress * 100)}%"></span></div>
+          <div class="accel-actions">
+            <span class="accel-detail" title="Clean runs in a row at this tempo"><span class="accel-runs">${"●".repeat(spot.runs)}${"○".repeat(SPOT_RUNS - spot.runs)}</span>${spot.last ? ` · ${playedAgo(daysSince(spot.last))}` : ""}</span>
+            <button type="button" class="accel-btn" data-action="spot-open" data-id="${spot.id}">Loop</button>
+            <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="1">Clean</button>
+            <button type="button" class="accel-btn" data-action="spot-run" data-id="${spot.id}" data-clean="0">Mistake</button>
+            <button type="button" class="accel-btn" data-action="spot-remove" data-id="${spot.id}" aria-label="Remove this spot" title="Remove">×</button>
+          </div>
+        </div>`;
+      }).join("") || `<p class="accel-empty">In Notes, Loop a passage that trips you up and tap Hard spot. It starts slow here and goes up ${SPOT_STEP} bpm after ${SPOT_RUNS} clean runs in a row.</p>`;
+      if (done) box.insertAdjacentHTML("beforeend", `<p class="accel-detail" style="margin-top: 0.6rem">${done} ${done === 1 ? "spot" : "spots"} up to full tempo ✓</p>`);
+    }
+
+    // A clean run counts towards the next step up; a mistake starts the count again.
+    function recordRun(id, clean) {
+      const spot = { ...accel.spots[id], last: dayKey() };
+      spot.runs = clean ? spot.runs + 1 : 0;
+      if (spot.runs >= SPOT_RUNS) {
+        spot.runs = 0;
+        if (spot.bpm >= spot.target) spot.done = dayKey();
+        else spot.bpm = Math.min(spot.target, spot.bpm + SPOT_STEP);
+      }
+      store("spots", spot);
+      renderSpots();
+      renderCold();
+      renderReview();
+    }
+
+    // From Notes: the looped bars become a hard spot, starting at the tempo on the slider, or at
+    // 60% of full tempo when the slider is still at full tempo. Saving the same bars again
+    // updates the tempo.
+    function addHardSpot() {
+      if (!activePieceId || !loopBars || !accelReady) return;
+      const target = fullTempo(activePieceId) ?? pieceBpm();
+      const bpm = pieceBpm() < target ? pieceBpm() : Math.max(40, Math.round(target * 0.6));
+      const from = loopBars.first + 1;
+      const to = loopBars.last + 1;
+      const same = activeSpots().find((spot) => spot.piece === activePieceId && spot.from === from && spot.to === to);
+      store("spots", same
+        ? { ...same, bpm, startBpm: Math.min(same.startBpm, bpm), runs: 0 }
+        : { id: newId(), piece: activePieceId, from, to, bpm, startBpm: bpm, target, runs: 0, created: new Date().toISOString(), last: "", done: "" });
+      document.getElementById("piece-spot").textContent = `Hard spot ✓ ♩ ${bpm}`;
+      renderSpots();
+      renderReview();
+    }
+
+    document.getElementById("piece-spot").addEventListener("click", addHardSpot);
+
+    function openInNotes(id) {
+      document.querySelector('.tab[data-panel="notes"]').click();
+      const collection = collectionOf(id);
+      if (collection) openCollection(collection);
+      openPiece(id);
+    }
+
+    // Opens the spot's piece with its bars looped and the slider at the spot's tempo.
+    function openSpot(spot) {
+      openInNotes(spot.piece);
+      loopBars = { first: spot.from - 1, last: Math.min(spot.to, PIECES[spot.piece].measures.length) - 1 };
+      updateLoopUi();
+      document.getElementById("piece-bpm").value = spot.bpm;
+      showPieceBpm();
+      renderSheet(activePieceId, sheetHighlight);
+    }
+
+    // Review rotates through hard spots and pieces not touched today, the longest untouched first:
+    // a couple of minutes each, switching between them, rather than one at length.
+    function reviewRotation() {
+      const date = dayKey();
+      const spots = activeSpots().filter((spot) => spot.last !== date)
+        .sort((a, b) => a.last.localeCompare(b.last))
+        .map((spot) => ({ spot, last: spot.last }));
+      const pieces = Object.values(accel.pieces).filter((record) => PIECES[record.id] && collectionOf(record.id) && record.last !== date)
+        .sort((a, b) => a.last.localeCompare(b.last))
+        .map((record) => ({ piece: record.id, last: record.last }));
+      const picked = [...spots.slice(0, 2), ...pieces.slice(0, 2)];
+      return [...picked, ...[...spots.slice(2), ...pieces.slice(2)].slice(0, 4 - picked.length)];
+    }
+
+    function renderReview() {
+      const items = reviewRotation();
+      document.getElementById("accel-review").innerHTML = items.map(({ spot, piece, last }, i) => `
+        <div class="accel-row">
+          <span class="accel-check"><span><span class="accel-name">${escapeText(spot ? spotName(spot) : PIECES[piece].title)}</span>
+            <span class="accel-detail">${spot ? `Hard spot · ♩ ${spot.bpm}` : "Piece"}${last ? ` · ${playedAgo(daysSince(last))}` : ""}</span></span></span>
+          <button type="button" class="accel-btn" data-action="review-open" data-index="${i}">Open</button>
+        </div>`).join("")
+        || '<p class="accel-empty">Hard spots and pieces you have played come back here on later days, to rotate through a couple of minutes each.</p>';
+    }
+
+    function renderMilestones() {
+      const next = nextMilestone();
+      const date = dayKey();
+      document.getElementById("accel-start").value = accel.settings.start ?? "";
+      document.getElementById("accel-milestones").innerHTML = sortedMilestones().map((milestone) => {
+        if (milestone.id === editingMilestone) {
+          return `<div class="accel-row"><div class="accel-edit">
+            <input type="text" class="accel-input" data-field="title" value="${escapeText(milestone.title)}" aria-label="Milestone">
+            <div class="accel-actions">
+              <input type="date" class="accel-input" data-field="due" value="${milestone.due}" aria-label="Target date">
+              <button type="button" class="accel-btn on" data-action="milestone-save" data-id="${milestone.id}">Save</button>
+              <button type="button" class="accel-btn" data-action="milestone-cancel">Cancel</button>
+              <button type="button" class="accel-btn" data-action="milestone-delete" data-id="${milestone.id}">Delete</button>
+            </div>
+          </div></div>`;
+        }
+        const until = daysBetween(date, milestone.due);
+        const when = milestone.done ? `reached ${showDay(milestone.done)}`
+          : until > 0 ? `in ${timeSpan(until)}` : until === 0 ? "due today" : `${timeSpan(-until)} overdue`;
+        return `<div class="accel-row${milestone.done ? " done" : ""}${milestone === next ? " next" : ""}">
+          <label class="accel-check"><input type="checkbox" data-action="milestone-done" data-id="${milestone.id}"${milestone.done ? " checked" : ""}>
+            <span><span class="accel-name">${escapeText(milestone.title)}</span>
+            <span class="accel-detail">${showDay(milestone.due, { month: "short", year: "numeric" })} · ${when}</span></span></label>
+          <button type="button" class="accel-btn" data-action="milestone-edit" data-id="${milestone.id}" aria-label="Change this milestone" title="Change">✎</button>
+        </div>`;
+      }).join("") || '<p class="accel-empty">No milestones. Add one with a target date.</p>';
+    }
+
+    function seedMilestones(start) {
+      DEFAULT_MILESTONES.forEach(({ months, title }) => store("milestones", { id: newId(), title, due: addMonths(start, months), done: "" }));
+    }
+
+    // Moving the start date moves the milestones not yet reached with it, keeping the plan's pace.
+    document.getElementById("accel-start").addEventListener("change", (ev) => {
+      const start = ev.target.value;
+      if (!start) return renderMilestones();
+      const shift = daysBetween(accel.settings.start, start);
+      setSetting("start", start);
+      Object.values(accel.milestones).filter((milestone) => !milestone.done)
+        .forEach((milestone) => store("milestones", { ...milestone, due: shiftDay(milestone.due, shift) }));
+      renderMilestones();
+      renderSummary();
+    });
+
+    function renderAccel() {
+      renderSummary();
+      if (!accelReady) return;
+      renderPlan();
+      renderCold();
+      renderListening();
+      renderSpots();
+      renderReview();
+      renderMilestones();
+      document.getElementById("accel-storage").textContent = accelDb
+        ? "Everything here is saved in this browser only. Export keeps a copy as a file, to bring back with Import on another device."
+        : "This browser is not keeping the record (a private window, or site storage turned off), so it is gone when the page closes. Export saves it as a file.";
+    }
+
+    const panel = document.getElementById("panel-accelerator");
+
+    panel.addEventListener("click", (ev) => {
+      const el = ev.target.closest("button[data-action]");
+      if (!el || !accelReady) return;
+      const { action, id } = el.dataset;
+      if (action === "block-timer") toggleBlockTimer(id);
+      else if (action === "cold") recordCold(id, el.dataset.clean === "1");
+      else if (action === "cold-open" || action === "spot-open") openSpot(accel.spots[id]);
+      else if (action === "spot-run") recordRun(id, el.dataset.clean === "1");
+      else if (action === "spot-remove") {
+        if (!confirm(`Remove ${spotName(accel.spots[id])} from the hard spots?`)) return;
+        unstore("spots", id);
+        renderSpots();
+        renderCold();
+        renderReview();
+      } else if (action === "review-open") {
+        const item = reviewRotation()[el.dataset.index];
+        if (item?.spot) openSpot(item.spot);
+        else if (item) openInNotes(item.piece);
+      } else if (action === "listen") {
+        const day = today();
+        day.listening = Math.max(0, day.listening + Number(el.dataset.step));
+        store("days", day);
+        renderListening();
+      } else if (action === "milestone-add") {
+        const milestone = { id: newId(), title: "New milestone", due: addMonths(dayKey(), 3), done: "" };
+        store("milestones", milestone);
+        editingMilestone = milestone.id;
+        renderMilestones();
+        panel.querySelector('#accel-milestones [data-field="title"]')?.select();
+      } else if (action === "milestone-edit") {
+        editingMilestone = id;
+        renderMilestones();
+      } else if (action === "milestone-cancel") {
+        editingMilestone = null;
+        renderMilestones();
+      } else if (action === "milestone-save") {
+        const row = el.closest(".accel-edit");
+        const title = row.querySelector('[data-field="title"]').value.trim();
+        const due = row.querySelector('[data-field="due"]').value;
+        if (!title || !due) return;
+        store("milestones", { ...accel.milestones[id], title, due });
+        editingMilestone = null;
+        renderMilestones();
+        renderSummary();
+      } else if (action === "milestone-delete") {
+        if (!confirm(`Delete the milestone “${accel.milestones[id].title}”?`)) return;
+        unstore("milestones", id);
+        editingMilestone = null;
+        renderMilestones();
+        renderSummary();
+      } else if (action === "export") exportAccel();
+      else if (action === "import") document.getElementById("accel-import").click();
+    });
+
+    panel.addEventListener("change", (ev) => {
+      const { action, id } = ev.target.dataset;
+      if (!accelReady) return;
+      if (action === "block-done") setBlockDone(id, ev.target.checked);
+      else if (action === "milestone-done") {
+        store("milestones", { ...accel.milestones[id], done: ev.target.checked ? dayKey() : "" });
+        renderMilestones();
+        renderSummary();
+      }
+    });
+
+    function exportAccel() {
+      const data = { app: "violin-school", version: 1, exported: new Date().toISOString() };
+      for (const name of Object.keys(ACCEL_STORES)) {
+        data[name] = name === "settings"
+          ? Object.entries(accel.settings).map(([key, value]) => ({ key, value }))
+          : Object.values(accel[name]);
+      }
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `violin-practice-${dayKey()}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // Import replaces this browser's record with the one in the file.
+    document.getElementById("accel-import").addEventListener("change", async (ev) => {
+      const file = ev.target.files[0];
+      ev.target.value = "";
+      if (!file) return;
+      let data;
+      try {
+        data = JSON.parse(await file.text());
+      } catch {}
+      if (data?.app !== "violin-school") return alert("That file isn't a practice record exported from Violin School.");
+      if (!confirm(`Replace the practice record in this browser with the one exported ${showDay(dayKey(new Date(data.exported)))}?`)) return;
+      stopBlockTimer();
+      for (const name of Object.keys(ACCEL_STORES)) {
+        accel[name] = {};
+        try { accelDb?.transaction(name, "readwrite").objectStore(name).clear(); } catch {}
+        (data[name] ?? []).forEach((record) => store(name, record));
+      }
+      renderAccel();
+    });
+
+    async function loadAccel() {
+      renderSummary();
+      accelDb = await openAccelDb();
+      if (accelDb) {
+        for (const name of Object.keys(ACCEL_STORES)) {
+          for (const record of await readStore(name)) {
+            if (name === "settings") accel.settings[record.key] = record.value;
+            else if (name === "days") accel.days[record.date] = { ...newDay(record.date), ...record };
+            else accel[name][record[ACCEL_STORES[name]]] = record;
+          }
+        }
+      }
+
+      // The practice log used to be kept in localStorage; it is brought in once.
+      if (!accel.settings.imported) {
+        try {
+          const old = JSON.parse(localStorage.getItem("fidluaefing-practice"));
+          for (const [date, { seconds = 0, pieces = [] }] of Object.entries(old?.days ?? {})) {
+            const day = dayOf(date);
+            store("days", { ...day, seconds: Math.max(day.seconds, seconds), pieces: [...new Set([...day.pieces, ...pieces])] });
+          }
+          for (const [id, { last = "", bpm = 0 }] of Object.entries(old?.pieces ?? {})) {
+            const record = accel.pieces[id] ?? { id, last: "", bpm: 0 };
+            store("pieces", { id, last: last > record.last ? last : record.last, bpm: Math.max(record.bpm, bpm) });
+          }
+        } catch {}
+        setSetting("imported", true);
+      }
+
+      // The start is the first day on record until it is set, and the plan's milestones count from it.
+      if (!accel.settings.start) {
+        const first = Object.keys(accel.days).sort()[0];
+        setSetting("start", first && first < dayKey() ? first : dayKey());
+      }
+      if (!accel.settings.seeded) {
+        if (!Object.keys(accel.milestones).length) seedMilestones(accel.settings.start);
+        setSetting("seeded", true);
+      }
+
+      accelReady = true;
+      renderAccel();
+    }
+
+    loadAccel();
+
+    // A new day while the page stays open: today's plan, cold try and listening start fresh.
+    let accelDate = dayKey();
+    setInterval(() => {
+      if (!accelReady || dayKey() === accelDate) return;
+      accelDate = dayKey();
+      renderAccel();
+    }, 60000);
 
     let resizeTimer = null;
     window.addEventListener("resize", () => {
