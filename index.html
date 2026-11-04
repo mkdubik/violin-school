@@ -102,6 +102,17 @@
       margin-bottom: 1.5rem;
     }
 
+    .songbook-group {
+      margin: 0.6rem 0 -0.1rem;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8a8278;
+    }
+    .songbook-group:first-child { margin-top: 0; }
+
     .btn-list {
       display: flex;
       flex-direction: column;
@@ -3994,40 +4005,6 @@
           [e("A5"), e("A5"), "A5"],
         ],
       },
-      // The Londonderry Air as sung to Danny Boy, checked against Petrie's 1855 printing and two
-      // song versions; where they differ it follows the songs. The last line slows down.
-      dannyBoy: {
-        title: "Danny Boy",
-        detail: "Londonderry Air · G major · 4/4",
-        meta: "Londonderry Air · Irish traditional · G major · 4/4 · starts on a pickup · slows down at the end",
-        accent: "#6a7e9a",
-        tempo: [{ bar: 1, bpm: 66 }, { bar: 16, bpm: 66 }, { bar: 17, bpm: 44 }],
-        pickup: true,
-        measures: [
-          [e("F#4"), e("G4"), e("A4")],
-          [dotted("B4"), e("A4"), e("B4"), e("E5"), e("D5"), e("B4")],
-          [e("A4"), e("G4"), "E4", rest(0.5), e("G4"), e("B4"), e("C5")],
-          [dotted("D5"), e("E5"), e("D5"), e("B4"), e("G4"), e("B4")],
-          [h("A4"), rest(0.5), e("F#4"), e("G4"), e("A4")],
-          [dotted("B4"), e("A4"), e("B4"), e("E5"), e("D5"), e("B4")],
-          [e("A4"), e("G4"), "E4", rest(0.5), e("F#4"), e("G4"), e("A4")],
-          [dotted("B4"), e("C5"), e("B4"), e("A4"), e("G4"), e("A4")],
-          [h("G4"), rest(0.5), e("D5"), e("E5"), e("F#5")],
-          [dotted("G5"), e("F#5"), e("F#5"), e("E5"), e("D5"), e("E5")],
-          [e("D5"), e("B4"), "G4", rest(0.5), e("D5"), e("E5"), e("F#5")],
-          [dotted("G5"), e("F#5"), e("F#5"), e("E5"), e("D5"), e("B4")],
-          [h("A4"), rest(0.5), e("D5"), e("D5"), e("D5")],
-          [dotted("B5"), e("A5"), e("A5"), e("G5"), e("E5"), e("G5")],
-          [e("D5"), e("B4"), "G4", rest(0.5), e("F#4"), e("G4"), e("A4")],
-          [e("B4"), e("E5"), e("D5"), e("B4"), e("A4"), e("G4"), e("E4"), e("F#4")],
-          [w("G4")],
-        ],
-        piano: [
-          "-", "G", "C", "G", "A7 D7", "G", "C D7", "G D7", "G D7",
-          "G G C D7", "G C D7 D7", "G G C E7", "A7 D7", "G C", "G Em Am D7", "G D7", "G",
-        ],
-        sheetLayout: { systems: [5, 4, 4, 4] },
-      },
       // From the Wikipedia score of the Ninth Symphony's theme, in G major. The last line
       // comes in a beat early, tied over the bar, as Beethoven wrote it.
       odeToJoy: {
@@ -4056,102 +4033,6 @@
         ],
         piano: ["G", "G D", "G", "G D", "G", "G D", "G", "D G", "D G", "D7 G", "D7 G", "A7 A7 D G", "G", "G D", "G", "D G"],
         sheetLayout: { measuresPerSystem: 4 },
-      },
-      // The sea shanty as session players write it (Paul Hardy's tunebook, checked against
-      // a sung version), in G major.
-      shenandoah: {
-        title: "Shenandoah",
-        detail: "American folk song · G major · 4/4",
-        meta: "Folk song · G major · 4/4 · starts on a pickup, played twice",
-        accent: "#5a9ec4",
-        tempo: [{ bar: 1, bpm: 72 }],
-        repeat: true,
-        pickup: true,
-        measures: [
-          ["D4"],
-          [e("G4"), e("G4"), dotted("G4"), e("A4"), e("B4"), e("C5")],
-          [h("E5"), "D5", e("G5"), e("F#5")],
-          [tied(h("E5")), e("E5"), e("D5"), e("E5"), e("D5")],
-          [s("B4"), tied(s("D5")), h("D5"), REST, e("D5")],
-          [e("E5"), e("E5"), dotted("E5"), e("B4"), e("D5"), e("B4")],
-          ["A4", dotted("G4"), rest(0.5), e("G4"), e("A4")],
-          [tied(h("B4")), e("B4"), e("G4"), e("B4"), e("E5")],
-          ["D5", e("G4"), e("A4"), dotted("B4"), e("G4")],
-          ["A4", h("G4")],
-        ],
-        piano: ["-", "G Am", "C G", "C", "G", "Em", "C", "G", "D G C C", "D7 G"],
-        sheetLayout: { systems: [5, 5] },
-      },
-      // Pachelbel's first violin from its entry: the cello's two bars, then the first four
-      // variations over the bass that never changes (D A B F♯ G D G A).
-      canon: {
-        title: "Canon in D",
-        detail: "Pachelbel · D major · 4/4",
-        meta: "J. Pachelbel · D major · 4/4 · the first violin's opening, after two bars of cello",
-        accent: "#8a7ec4",
-        tempo: [{ bar: 1, bpm: 56 }],
-        measures: [
-          [rest(4)],
-          [rest(4)],
-          ["F#5", "E5", "D5", "C#5"],
-          ["B4", "A4", "B4", "C#5"],
-          ["D5", "C#5", "B4", "A4"],
-          ["G4", "F#4", "G4", "E4"],
-          [e("D4"), e("F#4"), e("A4"), e("G4"), e("F#4"), e("D4"), e("F#4"), e("E4")],
-          [e("D4"), e("B3"), e("D4"), e("A4"), e("G4"), e("B4"), e("A4"), e("G4")],
-          [e("F#4"), e("D4"), e("E4"), e("C#5"), e("D5"), e("F#5"), e("A5"), e("A4")],
-          [e("B4"), e("G4"), e("A4"), e("F#4"), e("D4"), e("D5"), dotted(e("D5")), s("C#5")],
-          [w("D5")],
-        ],
-        piano: [
-          "D A Bm F#m", "G D G A", "D A Bm F#m", "G D G A", "D A Bm F#m",
-          "G D G A", "D A Bm F#m", "G D G A", "D A Bm F#m", "G D G A", "D",
-        ],
-        sheetLayout: { systems: [4, 4, 3] },
-      },
-      // Holst's hymn tune Thaxted (from Jupiter) as in the Methodist Hymnbook of 1933, a tone
-      // up in D major to sit near the original E♭. Each line ends on a half bar that shares a
-      // bar with the next line's pickup.
-      iVowToThee: {
-        title: "I Vow to Thee, My Country",
-        detail: "Holst · D major · 3/4",
-        meta: "Thaxted · G. Holst, from Jupiter · D major · 3/4 · starts on a pickup · slows down at the end",
-        accent: "#c45a5a",
-        tempo: [{ bar: 1, bpm: 84 }, { bar: 24, bpm: 84 }, { bar: 25, bpm: 60 }],
-        pickup: true,
-        measures: [
-          [e("F#4"), e("A4")],
-          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
-          [e("D5"), e("E5"), "D5", "C#5"],
-          [e("B4"), e("C#5"), "B4", "A4"],
-          [h("F#4"), e("F#4"), e("A4")],
-          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
-          [e("D5"), e("E5"), "F#5", "F#5"],
-          [e("F#5"), e("E5"), "D5", "E5"],
-          [h("D5"), e("A4"), e("F#4")],
-          [dotted("E4"), e("E4"), e("D4"), e("F#4")],
-          ["E4", "A4", e("A4"), e("F#4")],
-          [dotted("E4"), e("E4"), e("F#4"), e("A4")],
-          [h("B4"), e("B4"), e("C#5")],
-          [dotted(e("D5")), s("D5"), "C#5", "B4"],
-          ["A4", "D5", "F#4"],
-          [e("E4"), e("D4"), "E4", "F#4"],
-          [h("A4"), e("F#4"), e("A4")],
-          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
-          [e("D5"), e("E5"), "D5", "C#5"],
-          [e("B4"), e("C#5"), "B4", "A4"],
-          [h("F#4"), e("F#4"), e("A4")],
-          [dotted("B4"), e("D5"), dotted(e("C#5")), s("A4")],
-          [e("D5"), e("E5"), "F#5", "F#5"],
-          [e("F#5"), e("E5"), "D5", "E5"],
-          [h("D5")],
-        ],
-        piano: [
-          "D", "G G Em", "D", "G G A", "Bm Bm A", "G G Em", "D", "G", "D",
-          "A A Bm", "A A D", "A A D", "G G Em", "Bm D G", "D Em D", "G Em Bm", "A Bm A",
-          "G G A7", "D D F#m", "G G A", "Bm Bm A", "G G A7", "D", "G G Em", "D",
-        ],
-        sheetLayout: { systems: [5, 4, 4, 4, 4, 4] },
       },
       // The United States' national anthem: John Stafford Smith's tune (To Anacreon in Heaven)
       // to Francis Scott Key's words of 1814, in the Service Version of 1918 as printed in The
@@ -4587,11 +4468,13 @@
         ["G3", "B3", "D4", "G4", "B4", "D5", "G5"], ["G3", "D4"]),
     };
 
-    // Songbooks shown in the Notes tab, in order. Add a piece by listing its PIECES id here;
+    // Songbooks shown in the Notes tab, in order within their group: `group: "suzuki"` puts one
+    // with the Suzuki work (the volumes, scales and études), and the rest go under Other. Add a piece by listing its PIECES id here;
     // a { title, detail, accent, pieces } entry lists its pieces under one row that opens and closes.
     const COLLECTIONS = [
       {
         id: "vol1",
+        group: "suzuki",
         title: "Vol 1",
         detail: "Suzuki Violin School · A and G major · first position",
         accent: "#d4a574",
@@ -4619,7 +4502,7 @@
         title: "Heartstrings",
         detail: "Pieces that move an audience · first position",
         accent: "#b86a7a",
-        pieces: ["odeToJoy", "shenandoah", "dannyBoy", "canon", "iVowToThee", "starSpangledBanner", "lofsongur", "traumerei", "aveMaria"],
+        pieces: ["odeToJoy", "starSpangledBanner", "lofsongur", "traumerei", "aveMaria"],
       },
       {
         id: "jol",
@@ -4637,6 +4520,7 @@
       },
       {
         id: "scales",
+        group: "suzuki",
         title: "Scales",
         detail: "Scales and arpeggios over a drone · A, D and G major · first position",
         accent: "#8a9e6a",
@@ -6193,10 +6077,22 @@
       document.getElementById("collection-list").style.display = "block";
     }
 
-    document.getElementById("collection-buttons").replaceChildren(...COLLECTIONS.map((collection) => {
-      const count = pieceCount(collection.pieces);
-      const detail = `${count} ${count === 1 ? "piece" : "pieces"} · ${collection.detail}`;
-      return catalogCard({ icon: "♫", name: collection.title, detail, accent: collection.accent }, () => openCollection(collection));
+    // The songbook list in two groups: the Suzuki work first, then everything else.
+    const SONGBOOK_GROUPS = [
+      { title: "Suzuki work", has: (collection) => collection.group === "suzuki" },
+      { title: "Other", has: (collection) => collection.group !== "suzuki" },
+    ];
+    document.getElementById("collection-buttons").replaceChildren(...SONGBOOK_GROUPS.flatMap((group) => {
+      const books = COLLECTIONS.filter(group.has);
+      if (!books.length) return [];
+      const heading = document.createElement("h2");
+      heading.className = "songbook-group";
+      heading.textContent = group.title;
+      return [heading, ...books.map((collection) => {
+        const count = pieceCount(collection.pieces);
+        const detail = `${count} ${count === 1 ? "piece" : "pieces"} · ${collection.detail}`;
+        return catalogCard({ icon: "♫", name: collection.title, detail, accent: collection.accent }, () => openCollection(collection));
+      })];
     }));
 
     document.getElementById("collection-back").addEventListener("click", closeCollection);
