@@ -4468,13 +4468,13 @@
         ["G3", "B3", "D4", "G4", "B4", "D5", "G5"], ["G3", "D4"]),
     };
 
-    // Songbooks shown in the Notes tab, in order within their group: `group: "suzuki"` puts one
-    // with the Suzuki work (the volumes, scales and études), and the rest go under Other. Add a piece by listing its PIECES id here;
+    // Songbooks shown in the Notes tab, in order within their group: `group: "school"` puts one
+    // under Violin school (the volumes, lesson pieces, scales and études), and the rest go under Other. Add a piece by listing its PIECES id here;
     // a { title, detail, accent, pieces } entry lists its pieces under one row that opens and closes.
     const COLLECTIONS = [
       {
         id: "vol1",
-        group: "suzuki",
+        group: "school",
         title: "Vol 1",
         detail: "Suzuki Violin School · A and G major · first position",
         accent: "#d4a574",
@@ -4492,6 +4492,7 @@
       },
       {
         id: "other",
+        group: "school",
         title: "Other pieces",
         detail: "From lessons · A minor · first position",
         accent: "#c4826a",
@@ -4520,7 +4521,7 @@
       },
       {
         id: "scales",
-        group: "suzuki",
+        group: "school",
         title: "Scales",
         detail: "Scales and arpeggios over a drone · A, D and G major · first position",
         accent: "#8a9e6a",
@@ -6077,10 +6078,10 @@
       document.getElementById("collection-list").style.display = "block";
     }
 
-    // The songbook list in two groups: the Suzuki work first, then everything else.
+    // The songbook list in two groups: Violin school first, then everything else.
     const SONGBOOK_GROUPS = [
-      { title: "Suzuki work", has: (collection) => collection.group === "suzuki" },
-      { title: "Other", has: (collection) => collection.group !== "suzuki" },
+      { title: "Violin school", has: (collection) => collection.group === "school" },
+      { title: "Other", has: (collection) => collection.group !== "school" },
     ];
     document.getElementById("collection-buttons").replaceChildren(...SONGBOOK_GROUPS.flatMap((group) => {
       const books = COLLECTIONS.filter(group.has);

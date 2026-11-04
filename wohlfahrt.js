@@ -1722,7 +1722,7 @@
   },
   collection: {
     id: "wohlfahrt",
-    group: "suzuki",
+    group: "school",
     title: "Wohlfahrt Op. 45",
     detail: "Études, Book I · Nos. 1–30 · first position",
     accent: "#7a8a6a",
