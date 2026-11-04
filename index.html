@@ -1173,7 +1173,7 @@
     /* A block timer is shown across every tab, pinned to the top, so it can be seen while
        playing; at the end it turns gold and pulses until dismissed, since the chime is easy
        to miss under the violin. */
-    body.timing { padding-top: 4.5rem; }
+    body.timing { padding-top: calc(1.5rem + 3.25rem); }
     .timer-bar {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -1304,6 +1304,9 @@
        matches this query). A panel that still doesn't fit scrolls inside itself. */
     @media (min-width: 960px) and (min-height: 560px) {
       body { align-items: stretch; padding: 0.75rem 1.5rem; }
+      /* Room for the timer bar, keeping the layout one screen high. */
+      body.timing { padding-top: calc(0.75rem + 3.25rem); }
+      body.timing .app { height: calc(100dvh - 1.5rem - 3.25rem); }
 
       .app, .app.wide {
         max-width: 1180px;
@@ -1524,7 +1527,7 @@
   </style>
 </head>
 <body>
-  <div class="timer-bar" id="timer-bar" role="timer" aria-live="polite" hidden></div>
+  <div class="timer-bar" id="timer-bar" role="timer" hidden></div>
   <div class="app">
     <h1>Violin School</h1>
 
@@ -8431,17 +8434,23 @@
     });
 
     // Keep the screen on while a block is timed, so the countdown stays in view on a phone.
-    let wakeLock = null;
-    async function keepAwake(on) {
-      try {
-        if (on && !wakeLock && "wakeLock" in navigator) {
-          wakeLock = await navigator.wakeLock.request("screen");
-          wakeLock.addEventListener("release", () => { wakeLock = null; });
-        } else if (!on && wakeLock) {
-          await wakeLock.release();
-          wakeLock = null;
-        }
-      } catch { wakeLock = null; }
+    // A request still pending is kept in `wakeLock` too, so a second start doesn't take a second
+    // lock and a stop before it resolves still lets it go.
+    let wakeLock = null; // a Promise of the lock
+    function keepAwake(on) {
+      if (on && !wakeLock && "wakeLock" in navigator) {
+        const pending = navigator.wakeLock.request("screen").then((lock) => {
+          lock.addEventListener("release", () => { if (wakeLock === pending) wakeLock = null; });
+          if (wakeLock !== pending) lock.release().catch(() => {});
+          return lock;
+        });
+        pending.catch(() => { if (wakeLock === pending) wakeLock = null; });
+        wakeLock = pending;
+      } else if (!on && wakeLock) {
+        const pending = wakeLock;
+        wakeLock = null;
+        pending.then((lock) => lock.release()).catch(() => {});
+      }
     }
     // The browser drops the lock when the page is hidden; take it again on return.
     document.addEventListener("visibilitychange", () => {
