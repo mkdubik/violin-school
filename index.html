@@ -4491,14 +4491,6 @@
         ],
       },
       {
-        id: "other",
-        group: "school",
-        title: "Other pieces",
-        detail: "From lessons · A minor · first position",
-        accent: "#c4826a",
-        pieces: ["russakeisari"],
-      },
-      {
         id: "heartstrings",
         title: "Heartstrings",
         detail: "Pieces that move an audience · first position",
@@ -4541,6 +4533,15 @@
       Object.assign(PIECES, pieces);
       COLLECTIONS.push(collection);
     }
+    // Pieces from lessons come last among the Violin school songbooks, after the études.
+    COLLECTIONS.push({
+      id: "other",
+      group: "school",
+      title: "Other pieces",
+      detail: "From lessons · A minor · first position",
+      accent: "#c4826a",
+      pieces: ["russakeisari"],
+    });
 
     let activePieceId = null;
     let piecePlayback = null;
