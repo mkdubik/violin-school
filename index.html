@@ -7968,7 +7968,7 @@
         <p><strong>Why a streak.</strong> Skill comes from steady repetition more than long sessions. Thirty minutes every day beats three and a half hours on Sunday, because each night&rsquo;s sleep consolidates what you practised that day.</p>`,
       plan: `
         <p><strong>Why two halves.</strong> The hour is split into a morning half and an evening half because spaced practice beats one long session. Motor learning keeps consolidating between sessions, and studies of finger sequences (Walker and colleagues, 2002) found skills improved after a night&rsquo;s sleep with no further practice. Two sessions, with sleep between the evening and the next morning, give that consolidation twice a day.</p>
-        <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down in a bar at the top of every tab, chimes and turns gold at the end, and ticks the block for you. The gold bar stays until you tap OK, or start the next block from it. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. While it runs, the screen stays on. Timed minutes count as practice.</p>
+        <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down in a bar at the top of every tab, chimes and turns gold at the end, and ticks the block for you. Pause and resume it from the bar; stop it with the block&rsquo;s own button here. The gold bar stays until you tap OK, or start the next block from it. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. While it runs, the screen stays on. Timed minutes count as practice.</p>
         <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening does the études and review, then reading and theory, which need less fresh hands.</p>
         <p>Tap ⓘ on a block for what it is for.</p>`,
       cold: `
@@ -8086,7 +8086,9 @@
     let accelDb = null;
     let accelReady = false;
     let accelBlocked = false;
-    let blockTimer = null; // the plan block being timed, { id, end, interval }
+    let blockTimer = null; // the plan block being timed, { id, end, total, interval, paused }
+    // Time left on the block timer; while paused, `paused` holds it and the clock stands still.
+    const timerLeft = () => blockTimer.paused ?? blockTimer.end - Date.now();
     let editingMilestone = null;
 
     // Days go by their local date, "2026-11-04".
@@ -8252,7 +8254,7 @@
     // Every 5 seconds with a sound, the mic or a block timer on, while the app is on screen, is practice.
     setInterval(() => {
       if (!accelReady || document.visibilityState !== "visible") return;
-      if (!(piecePlayback || metro.running || rhythmLoop || activeTone || pitchListener || learnSound || blockTimer)) return;
+      if (!(piecePlayback || metro.running || rhythmLoop || activeTone || pitchListener || learnSound || (blockTimer && blockTimer.paused == null))) return;
       const day = today();
       day.seconds += 5;
       store("days", day);
@@ -8319,7 +8321,7 @@
           <label class="accel-check"><input type="checkbox" data-action="block-done" data-id="${block.id}"${done ? " checked" : ""}>
             <span><span class="accel-name">${block.name}</span><span class="accel-detail">${block.detail}</span></span></label>
           ${infoButton(info)}
-          <button type="button" class="accel-btn accel-timer${timing ? " on" : ""}" data-action="block-timer" data-id="${block.id}" title="${timing ? "Stop the timer" : `Time ${block.min} minutes`}">${timing ? clock(blockTimer.end - Date.now()) : `▶ ${block.min} min`}</button>
+          <button type="button" class="accel-btn accel-timer${timing ? " on" : ""}" data-action="block-timer" data-id="${block.id}" title="${timing ? "Stop the timer" : `Time ${block.min} minutes`}">${timing ? clock(timerLeft()) : `▶ ${block.min} min`}</button>
         </div>
         ${infoText(info)}`;
       }).join("");
@@ -8364,8 +8366,20 @@
       renderTimerBar();
     }
 
+    // Pausing is only in the bar: stopping is the block's own button in the Accelerator tab.
+    function pauseBlockTimer() {
+      if (!blockTimer) return;
+      if (blockTimer.paused == null) blockTimer.paused = timerLeft();
+      else {
+        blockTimer.end = Date.now() + blockTimer.paused;
+        blockTimer.paused = null;
+      }
+      renderTimerBar();
+    }
+
     function tickBlockTimer() {
-      const left = blockTimer.end - Date.now();
+      if (blockTimer.paused != null) return;
+      const left = timerLeft();
       if (left <= 0) {
         const { id } = blockTimer;
         timerEnded = id;
@@ -8393,10 +8407,11 @@
       bar.classList.toggle("ended", !blockTimer && !!block);
       if (!block) return bar.innerHTML = "";
       if (blockTimer) {
-        const left = blockTimer.end - Date.now();
-        bar.innerHTML = `<span class="timer-bar-name">${block.name}</span>
+        const left = timerLeft();
+        const paused = blockTimer.paused != null;
+        bar.innerHTML = `<span class="timer-bar-name">${block.name}${paused ? " · paused" : ""}</span>
           <span class="timer-bar-clock">${clock(left)}</span>
-          <button type="button" class="accel-btn" data-bar="stop">Stop</button>
+          <button type="button" class="accel-btn" data-bar="pause">${paused ? "▶ Resume" : "❚❚ Pause"}</button>
           <span class="timer-bar-progress" style="width: ${(1 - left / blockTimer.total) * 100}%"></span>`;
         return;
       }
@@ -8410,7 +8425,7 @@
     document.getElementById("timer-bar").addEventListener("click", (event) => {
       const btn = event.target.closest("[data-bar]");
       if (!btn) return;
-      if (btn.dataset.bar === "stop") stopBlockTimer();
+      if (btn.dataset.bar === "pause") pauseBlockTimer();
       else if (btn.dataset.bar === "next") toggleBlockTimer(btn.dataset.id);
       else { timerEnded = null; renderTimerBar(); }
     });
