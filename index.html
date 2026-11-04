@@ -1169,6 +1169,33 @@
       background: color-mix(in srgb, #d4a574 14%, transparent);
     }
     .accel-timer { min-width: 4.2rem; font-variant-numeric: tabular-nums; }
+
+    /* A block timer is shown across every tab, pinned to the top, so it can be seen while
+       playing; at the end it turns gold and pulses until dismissed, since the chime is easy
+       to miss under the violin. */
+    body.timing { padding-top: 4.5rem; }
+    .timer-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 0.55rem 1rem;
+      background: #1c1a18;
+      border-bottom: 1px solid #3a3530;
+      color: #f5f0e8;
+    }
+    .timer-bar[hidden] { display: none; }
+    .timer-bar-name { font-size: 0.9rem; color: #c8c0b4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .timer-bar-clock { font-size: 1.9rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+    .timer-bar-progress { position: absolute; left: 0; bottom: -1px; height: 3px; background: #d4a574; }
+    .timer-bar.ended { background: #d4a574; color: #1c1a18; border-color: #d4a574; animation: timer-pulse 1s ease-in-out infinite alternate; }
+    .timer-bar.ended .timer-bar-name { color: #1c1a18; font-weight: 600; }
+    .timer-bar.ended .accel-btn { background: #1c1a18; color: #f5f0e8; border-color: #1c1a18; }
+    @keyframes timer-pulse { from { background: #d4a574; } to { background: #f0c890; } }
+    @media (prefers-reduced-motion: reduce) { .timer-bar.ended { animation: none; } }
     .accel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
     .accel-actions .accel-detail { margin: 0 auto 0 0; }
     .accel-spot { padding: 0.6rem 0; border-top: 1px solid #262320; }
@@ -1497,6 +1524,7 @@
   </style>
 </head>
 <body>
+  <div class="timer-bar" id="timer-bar" role="timer" aria-live="polite" hidden></div>
   <div class="app">
     <h1>Violin School</h1>
 
@@ -7940,7 +7968,7 @@
         <p><strong>Why a streak.</strong> Skill comes from steady repetition more than long sessions. Thirty minutes every day beats three and a half hours on Sunday, because each night&rsquo;s sleep consolidates what you practised that day.</p>`,
       plan: `
         <p><strong>Why two halves.</strong> The hour is split into a morning half and an evening half because spaced practice beats one long session. Motor learning keeps consolidating between sessions, and studies of finger sequences (Walker and colleagues, 2002) found skills improved after a night&rsquo;s sleep with no further practice. Two sessions, with sleep between the evening and the next morning, give that consolidation twice a day.</p>
-        <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down, chimes at the end and ticks the block for you. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. Timed minutes count as practice.</p>
+        <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down in a bar at the top of every tab, chimes and turns gold at the end, and ticks the block for you. The gold bar stays until you tap OK, or start the next block from it. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. While it runs, the screen stays on. Timed minutes count as practice.</p>
         <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening does the études and review, then reading and theory, which need less fresh hands.</p>
         <p>Tap ⓘ on a block for what it is for.</p>`,
       cold: `
@@ -8320,21 +8348,27 @@
       if (was === id) return;
       getCtx(); // made now, on the tap, so the chime may sound later
       const block = ACCEL_PLAN.find((b) => b.id === id);
-      blockTimer = { id, end: Date.now() + block.min * 60000, interval: setInterval(tickBlockTimer, 250) };
+      timerEnded = null;
+      blockTimer = { id, end: Date.now() + block.min * 60000, total: block.min * 60000, interval: setInterval(tickBlockTimer, 250) };
+      keepAwake(true);
       renderPlan();
+      renderTimerBar();
     }
 
     function stopBlockTimer() {
       if (!blockTimer) return;
       clearInterval(blockTimer.interval);
       blockTimer = null;
+      keepAwake(false);
       renderPlan();
+      renderTimerBar();
     }
 
     function tickBlockTimer() {
       const left = blockTimer.end - Date.now();
       if (left <= 0) {
         const { id } = blockTimer;
+        timerEnded = id;
         stopBlockTimer();
         chime();
         setBlockDone(id, true);
@@ -8342,7 +8376,62 @@
       }
       const btn = document.querySelector(`#accel-plan [data-action="block-timer"][data-id="${blockTimer.id}"]`);
       if (btn) btn.textContent = clock(left);
+      const bar = document.getElementById("timer-bar");
+      bar.querySelector(".timer-bar-clock").textContent = clock(left);
+      bar.querySelector(".timer-bar-progress").style.width = `${(1 - left / blockTimer.total) * 100}%`;
     }
+
+    // The bar over every tab: the running block's countdown, or, once it ends, a gold notice with
+    // the next block, which stays until it is dismissed or the next timer starts.
+    let timerEnded = null; // id of the block whose timer just ran out
+    function renderTimerBar() {
+      const bar = document.getElementById("timer-bar");
+      const id = blockTimer?.id ?? timerEnded;
+      const block = ACCEL_PLAN.find((b) => b.id === id);
+      bar.hidden = !block;
+      document.body.classList.toggle("timing", !!block);
+      bar.classList.toggle("ended", !blockTimer && !!block);
+      if (!block) return bar.innerHTML = "";
+      if (blockTimer) {
+        const left = blockTimer.end - Date.now();
+        bar.innerHTML = `<span class="timer-bar-name">${block.name}</span>
+          <span class="timer-bar-clock">${clock(left)}</span>
+          <button type="button" class="accel-btn" data-bar="stop">Stop</button>
+          <span class="timer-bar-progress" style="width: ${(1 - left / blockTimer.total) * 100}%"></span>`;
+        return;
+      }
+      const next = ACCEL_PLAN[ACCEL_PLAN.indexOf(block) + 1];
+      const sameHalf = next && next.part === block.part;
+      bar.innerHTML = `<span class="timer-bar-name">${block.name} done ✓</span>
+        ${sameHalf ? `<button type="button" class="accel-btn" data-bar="next" data-id="${next.id}">▶ ${next.name} ${next.min} min</button>` : ""}
+        <button type="button" class="accel-btn" data-bar="dismiss">OK</button>`;
+    }
+
+    document.getElementById("timer-bar").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-bar]");
+      if (!btn) return;
+      if (btn.dataset.bar === "stop") stopBlockTimer();
+      else if (btn.dataset.bar === "next") toggleBlockTimer(btn.dataset.id);
+      else { timerEnded = null; renderTimerBar(); }
+    });
+
+    // Keep the screen on while a block is timed, so the countdown stays in view on a phone.
+    let wakeLock = null;
+    async function keepAwake(on) {
+      try {
+        if (on && !wakeLock && "wakeLock" in navigator) {
+          wakeLock = await navigator.wakeLock.request("screen");
+          wakeLock.addEventListener("release", () => { wakeLock = null; });
+        } else if (!on && wakeLock) {
+          await wakeLock.release();
+          wakeLock = null;
+        }
+      } catch { wakeLock = null; }
+    }
+    // The browser drops the lock when the page is hidden; take it again on return.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && blockTimer) keepAwake(true);
+    });
 
     function chime() {
       const audio = getCtx();
