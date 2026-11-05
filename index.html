@@ -4397,30 +4397,32 @@
         sheetLayout: { systems: [4, 4, 4] },
       },
       // The Scales songbook: A, D and G major in first position, one octave (G major in both octaves), and two where it fits.
+      // Every open string after the first note is marked f4, played with the 4th finger on the string below, so the
+      // "Show 4th finger" box shows where; play it with the open string once to check the 4th finger is in tune.
       scaleA1: scale("A major scale", "One octave · A and E strings", "A major", "Scale, one octave", "#4a8fc4",
-        ["A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
+        ["A4", "B4", "C#5", "D5", f4("E5"), "F#5", "G#5", "A5"], ["A3", "E4"]),
       arpeggioA1: scale("A major arpeggio", "One octave · A and E strings", "A major", "Arpeggio, one octave", "#6a7ec4",
-        ["A4", "C#5", "E5", "A5"], ["A3", "E4"]),
+        ["A4", "C#5", f4("E5"), "A5"], ["A3", "E4"]),
       scaleA2: scale("A major scale, two octaves", "From the G string to the E string", "A major", "Scale, two octaves", "#4a8fc4",
-        ["A3", "B3", "C#4", "D4", "E4", "F#4", "G#4", "A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"], ["A3", "E4"]),
+        ["A3", "B3", "C#4", f4("D4"), "E4", "F#4", "G#4", f4("A4"), "B4", "C#5", "D5", f4("E5"), "F#5", "G#5", "A5"], ["A3", "E4"]),
       arpeggioA2: scale("A major arpeggio, two octaves", "From the G string to the E string", "A major", "Arpeggio, two octaves", "#6a7ec4",
-        ["A3", "C#4", "E4", "A4", "C#5", "E5", "A5"], ["A3", "E4"]),
+        ["A3", "C#4", "E4", f4("A4"), "C#5", f4("E5"), "A5"], ["A3", "E4"]),
       scaleD1: scale("D major scale", "One octave · D and A strings", "D major", "Scale, one octave", "#5a9e6f",
-        ["D4", "E4", "F#4", "G4", "A4", "B4", "C#5", "D5"], ["D3", "A3"]),
+        ["D4", "E4", "F#4", "G4", f4("A4"), "B4", "C#5", "D5"], ["D3", "A3"]),
       arpeggioD1: scale("D major arpeggio", "One octave · D and A strings", "D major", "Arpeggio, one octave", "#4a9e7a",
-        ["D4", "F#4", "A4", "D5"], ["D3", "A3"]),
+        ["D4", "F#4", f4("A4"), "D5"], ["D3", "A3"]),
       scaleG0: scale("G major scale, from open G", "One octave · G and D strings", "G major", "Scale, one octave", "#c47a3a",
-        ["G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4"], ["G3", "D4"]),
+        ["G3", "A3", "B3", "C4", f4("D4"), "E4", "F#4", "G4"], ["G3", "D4"]),
       arpeggioG0: scale("G major arpeggio, from open G", "One octave · G and D strings", "G major", "Arpeggio, one octave", "#c4826a",
-        ["G3", "B3", "D4", "G4"], ["G3", "D4"]),
+        ["G3", "B3", f4("D4"), "G4"], ["G3", "D4"]),
       scaleG1: scale("G major scale", "One octave · D, A and E strings", "G major", "Scale, one octave", "#c47a3a",
-        ["G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"], ["G3", "D4"]),
+        ["G4", f4("A4"), "B4", "C5", "D5", f4("E5"), "F#5", "G5"], ["G3", "D4"]),
       arpeggioG1: scale("G major arpeggio", "One octave · D, A and E strings", "G major", "Arpeggio, one octave", "#c4826a",
         ["G4", "B4", "D5", "G5"], ["G3", "D4"]),
       scaleG2: scale("G major scale, two octaves", "From the open G string up", "G major", "Scale, two octaves", "#c47a3a",
-        ["G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"], ["G3", "D4"]),
+        ["G3", "A3", "B3", "C4", f4("D4"), "E4", "F#4", "G4", f4("A4"), "B4", "C5", "D5", f4("E5"), "F#5", "G5"], ["G3", "D4"]),
       arpeggioG2: scale("G major arpeggio, two octaves", "From the open G string up", "G major", "Arpeggio, two octaves", "#c4826a",
-        ["G3", "B3", "D4", "G4", "B4", "D5", "G5"], ["G3", "D4"]),
+        ["G3", "B3", f4("D4"), "G4", "B4", "D5", "G5"], ["G3", "D4"]),
     };
 
     // Songbooks shown in the Notes tab, in order within their group: `group: "school"` puts one
@@ -7795,9 +7797,9 @@
     const ACCEL_PLAN = [
       { id: "cold", part: "Morning", min: 5, name: "Cold try", detail: "Yesterday's hard spot once, before warming up" },
       { id: "tone", part: "Morning", min: 5, name: "Tone", detail: "Open strings, long slow bows, a straight bow" },
-      { id: "scales", part: "Morning", min: 10, name: "Scales", detail: "With the drone, from the Scales songbook" },
+      { id: "scales", part: "Morning", min: 10, name: "Scales", detail: "With the drone and Show 4th finger on, from the Scales songbook" },
       { id: "new", part: "Morning", min: 10, name: "New piece", detail: "Its hard spots, again and again" },
-      { id: "etude", part: "Evening", min: 10, name: "Étude", detail: "Wohlfahrt Op. 45 in Notes, or the finger patterns in Learn" },
+      { id: "fingers", part: "Evening", min: 10, name: "Scales and 4th finger", detail: "Another key's scale, the finger patterns in Learn, the 4th finger in place of open strings" },
       { id: "review", part: "Evening", min: 10, name: "Review", detail: "The rotation, a couple of minutes each" },
       { id: "reading", part: "Evening", min: 5, name: "Sight-reading", detail: "Something you have never played" },
       { id: "theory", part: "Evening", min: 5, name: "Theory and ear", detail: "The quizzes in Learn" },
@@ -7806,7 +7808,7 @@
 
     // The accelerated plan to framhaldspróf, as months from the start. Each date can be changed.
     const DEFAULT_MILESTONES = [
-      { months: 6, title: "Suzuki Book 1, clean at tempo from the sheet" },
+      { months: 6, title: "Suzuki Book 1, clean at tempo from the sheet; Wohlfahrt études begin" },
       { months: 15, title: "Book 2; vibrato and 3rd position begun" },
       { months: 20, title: "Grunnpróf (≈ Book 3) and grunnpróf in theory" },
       { months: 32, title: "Book 4; shifting between 1st and 3rd position" },
@@ -7825,7 +7827,8 @@
       plan: `
         <p><strong>Why two halves.</strong> The hour is split into a morning half and an evening half because spaced practice beats one long session. Motor learning keeps consolidating between sessions, and studies of finger sequences (Walker and colleagues, 2002) found skills improved after a night&rsquo;s sleep with no further practice. Two sessions, with sleep between the evening and the next morning, give that consolidation twice a day.</p>
         <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down in a bar at the top of every tab, chimes and turns gold at the end, and ticks the block for you. Pause and resume it from the bar; stop it with the block&rsquo;s own button here. The gold bar stays until you tap OK, or start the next block from it. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. While it runs, the screen stays on. Timed minutes count as practice.</p>
-        <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening does the études and review, then reading and theory, which need less fresh hands.</p>
+        <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening goes back to scales, in another key and with the 4th finger, then review, reading and theory, which need less fresh hands. That is 20 minutes of scales a day: they carry over into every piece in their key, so at this stage they give the most for the time.</p>
+        <p><strong>No études yet.</strong> Wohlfahrt Op. 45 usually starts around Suzuki Book 2–3. Until then the Book 1 pieces are the studies, and the time is better spent on scales and finger patterns. The étude block comes back with the Book 1 milestone.</p>
         <p>Tap ⓘ on a block for what it is for.</p>`,
       cold: `
         <p><strong>What it is.</strong> The first thing in the morning, before any warm-up, you play yesterday&rsquo;s hard spot once, at the tempo it had reached, and say honestly whether it was clean.</p>
@@ -7862,14 +7865,16 @@
         <p><strong>Why.</strong> With the left hand out of the way, all your attention goes to the bow: its weight, speed and contact point, which make the sound. Tone is the first thing an examiner or audience hears, and bow habits are hard to fix later. A mirror shows whether the bow stays straight.</p>`,
       scales: `
         <p><strong>What.</strong> The scale and arpeggio of the key you are working in, with the drone on (the key note and its 5th under the scale, in the Scales songbook). At the moment: G major from the open G string, two octaves, then one octave as a warm-down.</p>
-        <p><strong>Why.</strong> Scales are the finger patterns of every piece in that key, in their simplest form, so they make the pieces easier. The drone gives a steady reference to tune each note against: a note in tune rings with it, out of tune it beats. G major from open G uses both finger patterns: high 2 on the G and D strings, low 2 on the A and E strings, which the minuets and the Gavotte need.</p>`,
+        <p><strong>Why.</strong> Scales are the finger patterns of every piece in that key, in their simplest form, so they make the pieces easier. The drone gives a steady reference to tune each note against: a note in tune rings with it, out of tune it beats. G major from open G uses both finger patterns: high 2 on the G and D strings, low 2 on the A and E strings, which the minuets and the Gavotte need.</p>
+        <p><strong>The 4th finger.</strong> Tick Show 4th finger in Notes: every open string after the first note is marked 4, played with the 4th finger on the string below instead. Play it that way. Now and then play the open string after it to check it is in tune: they should sound the same.</p>`,
       new: `
         <p><strong>What.</strong> The next piece in the book, and only its hard parts: loop the bars that go wrong, slowly, and save them as hard spots so they climb to tempo over the days. Play the whole piece through only when its spots are close to clean.</p>
         <p><strong>Why.</strong> Playing a piece top to bottom over and over spends most of the time on the bars you can already play. Work at the spots is where the piece actually improves. For brand-new material, plain repetition is the right method; mixing it in with other things comes later, in review.</p>
         <p>One new piece at a time, in book order. A piece is done when it is clean at full tempo from the sheet.</p>`,
-      etude: `
-        <p><strong>What.</strong> An étude (a study) from Wohlfahrt&rsquo;s 60 Studies, Op. 45, in the Wohlfahrt songbook in Notes: the usual first étude book, in first position. Until you are ready for it, the finger-pattern drills in Learn.</p>
-        <p><strong>Why.</strong> Each étude works one technique, a bowing, a string crossing or a finger pattern, much harder and longer than a piece would, which pieces alone don&rsquo;t do. The exams ask for études as well as pieces. Play them slower than marked and clean, and use hard spots for the bars that trip you up.</p>`,
+      fingers: `
+        <p><strong>What.</strong> A second scale, in a different key from the morning&rsquo;s (A, D or G major from the Scales songbook), with the 4th finger on every open string it can replace. Then the finger-pattern drills in Learn, and the bars of your current piece where an open string can be a 4th finger instead.</p>
+        <p><strong>Why the 4th finger.</strong> It is the weakest finger and the one beginners avoid, so it gets the least practice. Using it wherever an open string could be played keeps the hand in its frame over the string, keeps the bow on one string between notes, and is what vibrato and the higher positions need later: an open string can&rsquo;t take vibrato. Keep the hand relaxed and the finger curved; when it tires, stop and shake it out.</p>
+        <p><strong>Études later.</strong> Wohlfahrt Op. 45, in Notes, starts once Book 1 is done.</p>`,
       review_block: `
         <p>Ten minutes on the Review rotation card: a couple of minutes on each item, switching between them, then round again. Tap ⓘ on the Review rotation card for why switching works better than finishing one thing first.</p>`,
       reading: `
