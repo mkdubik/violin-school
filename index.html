@@ -1739,7 +1739,7 @@
 
     <!-- Accelerator -->
     <div class="panel" id="panel-accelerator">
-      <p class="subtitle">An hour a day, half in the morning and half in the evening</p>
+      <p class="subtitle">An hour a day, 35 minutes in the morning and 25 in the evening</p>
       <div class="accel-toggle" data-info="extended">
         <label class="check-row"><input type="checkbox" id="accel-extended"> Extended: methods beyond the studies</label>
       </div>
@@ -7796,14 +7796,13 @@
     // a copy as a file and Import brings one back.
     const ACCEL_PLAN = [
       { id: "cold", part: "Morning", min: 5, name: "Cold try", detail: "Yesterday's hard spot once, before warming up" },
-      { id: "tone", part: "Morning", min: 5, name: "Tone", detail: "Open strings, long slow bows, a straight bow" },
+      { id: "tone", part: "Morning", min: 10, name: "Tone and bow", detail: "Open strings: long slow bows, a straight bow, then string crossings" },
       { id: "scales", part: "Morning", min: 10, name: "Scales", detail: "With the drone and Show 4th finger on, from the Scales songbook" },
       { id: "new", part: "Morning", min: 10, name: "New piece", detail: "Its hard spots, again and again" },
       { id: "fingers", part: "Evening", min: 10, name: "Scales and 4th finger", detail: "Another key's scale, the finger patterns in Learn, the 4th finger in place of open strings" },
       { id: "review", part: "Evening", min: 10, name: "Review", detail: "The rotation, a couple of minutes each" },
       { id: "reading", part: "Evening", min: 5, name: "Sight-reading", detail: "Something you have never played" },
-      { id: "theory", part: "Evening", min: 5, name: "Theory and ear", detail: "The quizzes in Learn" },
-    ];
+          ];
     const PLAN_MINUTES = ACCEL_PLAN.reduce((sum, block) => sum + block.min, 0);
 
     // The accelerated plan to framhaldspróf, as months from the start. Each date can be changed.
@@ -7827,8 +7826,8 @@
       plan: `
         <p><strong>Why two halves.</strong> The hour is split into a morning half and an evening half because spaced practice beats one long session. Motor learning keeps consolidating between sessions, and studies of finger sequences (Walker and colleagues, 2002) found skills improved after a night&rsquo;s sleep with no further practice. Two sessions, with sleep between the evening and the next morning, give that consolidation twice a day.</p>
         <p><strong>How to use it.</strong> Tick a block when it is done, or tap ▶ to time it: the timer counts down in a bar at the top of every tab, chimes and turns gold at the end, and ticks the block for you. Pause and resume it from the bar; stop it with the block&rsquo;s own button here. The gold bar stays until you tap OK, or start the next block from it. One timer runs at a time, and it keeps running when you switch to Notes or Metronome to play. While it runs, the screen stays on. Timed minutes count as practice.</p>
-        <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening goes back to scales, in another key and with the 4th finger, then review, reading and theory, which need less fresh hands. That is 20 minutes of scales a day: they carry over into every piece in their key, so at this stage they give the most for the time.</p>
-        <p><strong>No études yet.</strong> Wohlfahrt Op. 45 usually starts around Suzuki Book 2–3. Until then the Book 1 pieces are the studies, and the time is better spent on scales and finger patterns. The étude block comes back with the Book 1 milestone.</p>
+        <p><strong>The order.</strong> The morning starts with the cold try, while you are still unwarmed, then tone and scales to set up the bow and the left hand before the new piece. The evening goes back to scales, in another key and with the 4th finger, then review and reading, which need less fresh hands. Theory and ear, the Learn quizzes, go outside the hour, on the phone, like listening. That is 20 minutes of scales a day: they carry over into every piece in their key, so at this stage they give the most for the time.</p>
+        <p><strong>No études yet.</strong> Wohlfahrt Op. 45 usually starts around Suzuki Book 2–3. Until then the Book 1 pieces are the studies, and the time is better spent on scales and finger patterns. Once Book 1 is done, use this evening block for Wohlfahrt instead.</p>
         <p>Tap ⓘ on a block for what it is for.</p>`,
       cold: `
         <p><strong>What it is.</strong> The first thing in the morning, before any warm-up, you play yesterday&rsquo;s hard spot once, at the tempo it had reached, and say honestly whether it was clean.</p>
@@ -7862,7 +7861,8 @@
         <p>Five minutes for yesterday&rsquo;s hard spot, played once cold, before anything else. The Cold try card below says which spot and records how it went. Recording it ticks this block. After the one cold run, use the rest of the time on that spot properly, slowly.</p>`,
       tone: `
         <p><strong>What.</strong> Open strings with long, slow, whole bows, from the frog to the tip and back, keeping the bow parallel to the bridge and at the same contact point. Listen for an even sound from start to end, with no crunch and no fade at the tip.</p>
-        <p><strong>Why.</strong> With the left hand out of the way, all your attention goes to the bow: its weight, speed and contact point, which make the sound. Tone is the first thing an examiner or audience hears, and bow habits are hard to fix later. A mirror shows whether the bow stays straight.</p>`,
+        <p><strong>Why.</strong> With the left hand out of the way, all your attention goes to the bow: its weight, speed and contact point, which make the sound. Tone is the first thing an examiner or audience hears, and bow habits are hard to fix later. A mirror shows whether the bow stays straight.</p>
+        <p><strong>Why 10 minutes.</strong> The bow makes the sound; the left hand only picks the note. After 5 minutes of long bows, spend 5 on string crossings (two strings back and forth, slurred and separate, from the elbow) and on bow distribution: the same note in whole, half and quarter bows at even speed.</p>`,
       scales: `
         <p><strong>What.</strong> The scale and arpeggio of the key you are working in, with the drone on (the key note and its 5th under the scale, in the Scales songbook). At the moment: G major from the open G string, two octaves, then one octave as a warm-down.</p>
         <p><strong>Why.</strong> Scales are the finger patterns of every piece in that key, in their simplest form, so they make the pieces easier. The drone gives a steady reference to tune each note against: a note in tune rings with it, out of tune it beats. G major from open G uses both finger patterns: high 2 on the G and D strings, low 2 on the A and E strings, which the minuets and the Gavotte need.</p>
